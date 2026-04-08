@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorksBox - Cours dans le Cloud</title>
+    
+    <!-- Chargement de React et ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel pour compiler le JSX directement dans le navigateur -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS pour le style -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+    
+    <!-- Zone où React va s'afficher. En attendant, on met un message au cas où ça plante ! -->
+    <div id="root">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
+            <div style="width: 50px; height: 50px; border: 4px solid #cbd5e1; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #1e293b; margin-bottom: 10px; font-family: sans-serif;">Chargement de LycéeShare...</h2>
+            <p style="color: #64748b; font-family: sans-serif; max-width: 400px;">
+                Si cet écran reste bloqué plus de 3 secondes, il y a une erreur dans le code. <br/><br/>
+                <b>Appuyez sur F12</b> (ou clic droit > Inspecter > Console) pour voir le problème en rouge.
+            </p>
+        </div>
+    </div>
+
+    <!-- Script de type module pour permettre les imports Firebase -->
+    <script type="text/babel" data-type="module">
+        // === Imports de la Base de Données (Firebase) ===
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        const { useState, useEffect, useMemo } = React;
+
+        // === 1. Configuration Firebase ===
+        const appId = 'lycee-share'; 
+
+        // Collez VOTRE propre configuration ici. 
+        // Si vous laissez "VOTRE_API_KEY", le site fonctionnera quand même (en mode local temporaire) sans planter.
+        const firebaseConfig = {
+  apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
+  authDomain: "lycee-share.firebaseapp.com",
+  projectId: "lycee-share",
+  storageBucket: "lycee-share.firebasestorage.app",
+  messagingSenderId: "578872424130",
+  appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
+  measurementId: "G-3Q6998C0JH"
+};
+        
+        let db = null;
+        let auth = null;
+
+        try {
+            // Sécurité : On ne lance Firebase QUE si vous avez changé la clé API
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "VOTRE_API_KEY" && !firebaseConfig.apiKey.includes("xxxxxxxx")) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("Firebase initialisé avec succès !");
+            } else {
+                console.warn("⚠️ Base de données non connectée : Veuillez configurer vos clés Firebase. Le site tourne en mémoire locale.");
+            }
+        } catch (e) {
+            console.error("Erreur critique lors du lancement de Firebase :", e);
+        }
+
+        // === 2. Définition des Icônes ===
+        const Icon = ({ children, className }) => (
+            <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {children}
+            </svg>
+        );
+
+        const BookOpen = ({className}) => <Icon className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></Icon>;
+        const Download = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
+        const Calculator = ({className}) => <Icon className={className}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></Icon>;
+        const Upload = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>;
+        const Folder = ({className}) => <Icon className={className}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></Icon>;
+        const FileText = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></Icon>;
+        const ChevronLeft = ({className}) => <Icon className={className}><polyline points="15 18 9 12 15 6"/></Icon>;
+        const Search = ({className}) => <Icon className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
+        const Plus = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+        const X = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+        const FileDigit = ({className}) => <Icon className={className}><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><rect width="4" height="6" x="2" y="12" rx="1"/><path d="M10 12h2v6"/><path d="M10 18h4"/></Icon>;
+        const LinkIcon = ({className}) => <Icon className={className}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></Icon>;
+        const Edit2 = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
+        const Trash2 = ({className}) => <Icon className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
+        const AlertCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+
+        // === 3. Données Statiques ===
+        const SUBJECTS = [
+          "Allemand",
+          "Anglais",
+          "Enseignement technologique en anglais",
+          "Histoire Géographie",
+          "Ingénierie et développement durable",
+          "Mathématiques",
+          "Philosophie",
+          "Physique Chimie",
+          "SIN"
+        ];
+
+        // Code secret Admin
+        const ADMIN_PASSWORD = "6400";
+
+        // === 4. Composant Principal ===
+        function App() {
+          const [currentView, setCurrentView] = useState('home');
+          const [selectedSubject, setSelectedSubject] = useState(null);
+          const [searchQuery, setSearchQuery] = useState('');
+          
+          // États pour les données et la BDD
+          const [courses, setCourses] = useState([]);
+          const [isLoading, setIsLoading] = useState(true);
+          const [user, setUser] = useState(null);
+          
+          // États pour les Modals
+          const [isAdmin, setIsAdmin] = useState(false);
+          const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+          const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+          const [editingCourse, setEditingCourse] = useState(null); 
+          const [courseToDelete, setCourseToDelete] = useState(null);
+
+          // Initialisation et Authentification Firebase
+          useEffect(() => {
+            if (!auth) {
+                // Mode local (pas de BDD)
+                setIsLoading(false);
+                return;
+            }
+            
+            const initAuth = async () => {
+              try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                  await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                  await signInAnonymously(auth);
+                }
+              } catch (e) {
+                console.error("Erreur d'authentification", e);
+                setIsLoading(false);
+              }
+            };
+            initAuth();
+            
+            const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                setUser(currentUser);
+            });
+            return () => unsubscribe();
+          }, []);
+
+          // Chargement des données Firestore
+          useEffect(() => {
+            if (!auth || !user || !db) return;
+
+            const coursesRef = collection(db, 'artifacts', appId, 'public', 'data', 'courses');
+            
+            const unsubscribe = onSnapshot(coursesRef, (snapshot) => {
+              const loadedCourses = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+              }));
+              
+              // Tri par date de la plus récente à la plus ancienne
+              loadedCourses.sort((a, b) => new Date(b.date) - new Date(a.date));
+              
+              setCourses(loadedCourses);
+              setIsLoading(false);
+            }, (error) => {
+              console.error("Erreur de récupération des données:", error);
+              setIsLoading(false);
+            });
+
+            return () => unsubscribe();
+          }, [user]);
+
+          // Filtres
+          const filteredSubjects = SUBJECTS.filter(subject => 
+            subject.toLowerCase().includes(searchQuery.toLowerCase())
+          );
+
+          const coursesForSubject = useMemo(() => {
+            if (!selectedSubject) return {};
+            const filtered = courses.filter(c => c.subject === selectedSubject);
+            return filtered.reduce((acc, course) => {
+              if (!acc[course.chapter]) {
+                acc[course.chapter] = [];
+              }
+              acc[course.chapter].push(course);
+              return acc;
+            }, {});
+          }, [courses, selectedSubject]);
+
+          // Navigation
+          const openSubject = (subject) => {
+            setSelectedSubject(subject);
+            setCurrentView('subject');
+            setSearchQuery('');
+          };
+
+          const goHome = () => {
+            setSelectedSubject(null);
+            setCurrentView('home');
+            setSearchQuery('');
+          };
+
+          // Ajouter ou Mettre à jour un cours
+          const handleSaveCourse = async (savedCourse) => {
+            if (db && user) {
+                try {
+                    const docId = savedCourse.id.toString();
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', docId);
+                    await setDoc(docRef, savedCourse);
+                } catch (e) {
+                    console.error("Erreur de sauvegarde:", e);
+                }
+            } else {
+                // Mode local
+                if (editingCourse) {
+                    setCourses(courses.map(c => c.id === savedCourse.id ? savedCourse : c));
+                } else {
+                    setCourses([savedCourse, ...courses]);
+                }
+            }
+
+            setIsUploadModalOpen(false);
+            setEditingCourse(null);
+            
+            if (currentView !== 'subject' || selectedSubject !== savedCourse.subject) {
+              openSubject(savedCourse.subject);
+            }
+          };
+
+          // Supprimer un cours
+          const executeDelete = async () => {
+            if (!courseToDelete) return;
+            
+            if (db && user) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseToDelete.toString());
+                    await deleteDoc(docRef);
+                } catch(e) {
+                    console.error("Erreur de suppression:", e);
+                }
+            } else {
+                 setCourses(courses.filter(c => c.id !== courseToDelete));
+            }
+            setCourseToDelete(null);
+          };
+
+          // Modals Triggers
+          const toggleAdminMode = () => {
+            if (isAdmin) {
+              setIsAdmin(false);
+            } else {
+              setIsLoginModalOpen(true);
+            }
+          };
+
+          const openAddModal = () => {
+            setEditingCourse(null);
+            setIsUploadModalOpen(true);
+          };
+
+          const openEditModal = (course) => {
+            setEditingCourse(course);
+            setIsUploadModalOpen(true);
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
+              {/* Navbar */}
+              <nav className="bg-slate-900 text-white shadow-lg sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex justify-between h-16">
+                    <div className="flex items-center space-x-3 cursor-pointer" onClick={goHome}>
+                      <div className="bg-blue-500 p-2 rounded-lg">
+                        <BookOpen className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="font-bold text-xl tracking-tight">WorksBox</span>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      {/* Pastille BDD (indique si on est connecté au Cloud) */}
+                      <div className={`hidden sm:flex items-center text-xs px-2 py-1 rounded-full border ${db ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : 'bg-slate-800 text-slate-400 border-slate-700'}`} title={db ? "Connecté au Cloud" : "Mode Local (Non sauvegardé en ligne)"}>
+                        <div className={`w-2 h-2 rounded-full mr-2 ${db ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></div>
+                        {db ? 'À jour' : 'Mode Local'}
+                      </div>
+
+                      <button 
+                        onClick={toggleAdminMode}
+                        className={`text-sm font-medium px-3 py-1.5 rounded-full transition-colors ${isAdmin ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                      >
+                        {isAdmin ? 'Mode Édition Actif (Déconnexion)' : 'Passer en Admin'}
+                      </button>
+                      
+                      {isAdmin && (
+                        <button 
+                          onClick={openAddModal}
+                          className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span className="hidden sm:inline">Ajouter un lien</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </nav>
+
+              {/* Main Content */}
+              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-500 font-medium">Connexion à la base de données...</p>
+                    </div>
+                ) : (
+                    <>
+                        {currentView === 'home' && (
+                        <div className="space-y-8 animate-in fade-in duration-300">
+                            <div className="text-center max-w-2xl mx-auto mb-10">
+                            <h1 className="text-4xl font-extrabold text-slate-900 mb-4">Ressources & Cours</h1>
+                            <p className="text-lg text-slate-600">
+                                Accédez à tous les cours au format numérique et optimisés pour calculatrice Casio.
+                            </p>
+                            </div>
+
+                            <div className="max-w-md mx-auto relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-5 w-5 text-slate-400" />
+                            </div>
+                            <input
+                                type="text"
+                                className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm transition-shadow"
+                                placeholder="Rechercher une matière..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+                            {filteredSubjects.map((subject, index) => {
+                                const courseCount = courses.filter(c => c.subject === subject).length;
+                                return (
+                                <div 
+                                    key={index}
+                                    onClick={() => openSubject(subject)}
+                                    className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-400 cursor-pointer transition-all group flex items-start space-x-4"
+                                >
+                                    <div className="bg-blue-50 text-blue-600 p-3 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <Folder className="w-8 h-8" />
+                                    </div>
+                                    <div>
+                                    <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition-colors">
+                                        {subject}
+                                    </h3>
+                                    <p className="text-sm text-slate-500 font-medium">
+                                        {courseCount} document{courseCount !== 1 ? 's' : ''}
+                                    </p>
+                                    </div>
+                                </div>
+                                );
+                            })}
+                            {filteredSubjects.length === 0 && (
+                                <div className="col-span-full text-center py-12 text-slate-500">
+                                Aucune matière trouvée pour "{searchQuery}".
+                                </div>
+                            )}
+                            </div>
+                        </div>
+                        )}
+
+                        {currentView === 'subject' && (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <div className="flex items-center space-x-4 mb-8">
+                            <button 
+                                onClick={goHome}
+                                className="p-2 bg-white border border-slate-200 rounded-full text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                            >
+                                <ChevronLeft className="w-5 h-5" />
+                            </button>
+                            <h1 className="text-3xl font-bold text-slate-900">{selectedSubject}</h1>
+                            </div>
+
+                            {Object.keys(coursesForSubject).length === 0 ? (
+                            <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center flex flex-col items-center">
+                                <div className="bg-slate-100 p-4 rounded-full mb-4">
+                                <FileText className="w-10 h-10 text-slate-400" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800 mb-2">Aucun cours disponible</h3>
+                                <p className="text-slate-500 max-w-md">
+                                Il n'y a pas encore de cours liés pour cette matière. 
+                                {isAdmin ? " Utilisez le bouton 'Ajouter un lien' pour en ajouter un." : " Revenez plus tard !"}
+                                </p>
+                                {isAdmin && (
+                                <button 
+                                    onClick={openAddModal}
+                                    className="mt-6 flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition-colors"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    <span>Ajouter le premier lien</span>
+                                </button>
+                                )}
+                            </div>
+                            ) : (
+                            <div className="space-y-8">
+                                {Object.entries(coursesForSubject).map(([chapter, chapterCourses]) => (
+                                <div key={chapter} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                    <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+                                    <h2 className="text-xl font-bold text-slate-800 flex items-center">
+                                        <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm">
+                                        CH
+                                        </span>
+                                        {chapter}
+                                    </h2>
+                                    </div>
+                                    
+                                    <ul className="divide-y divide-slate-100">
+                                    {chapterCourses.map((course) => (
+                                        <li key={course.id} className="p-6 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        
+                                        <div className="flex items-start space-x-4 flex-1">
+                                            <div className="mt-1 text-slate-400">
+                                            <FileText className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                            <h4 className="text-lg font-semibold text-slate-900">{course.title}</h4>
+                                            <p className="text-sm text-slate-500 mt-1">Ajouté le {new Date(course.date).toLocaleDateString('fr-FR')}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center space-x-3 ml-10 sm:ml-0">
+                                            {course.digitalLink && (
+                                            <a 
+                                                href={course.digitalLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                                                title="Ouvrir la version numérique"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                                <span className="hidden lg:inline">Version Numérique</span>
+                                                <span className="lg:hidden">Numérique</span>
+                                            </a>
+                                            )}
+                                            
+                                            {course.casioLink && (
+                                            <a 
+                                                href={course.casioLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium transition-colors"
+                                                title="Ouvrir pour Casio"
+                                            >
+                                                <Calculator className="w-4 h-4" />
+                                                <span className="hidden lg:inline">Version Casio</span>
+                                                <span className="lg:hidden">Casio</span>
+                                            </a>
+                                            )}
+
+                                            {isAdmin && (
+                                            <div className="flex items-center space-x-1 border-l border-slate-200 pl-3 ml-2">
+                                                <button 
+                                                onClick={() => openEditModal(course)}
+                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Modifier ce cours"
+                                                >
+                                                <Edit2 className="w-5 h-5" />
+                                                </button>
+                                                <button 
+                                                onClick={() => setCourseToDelete(course.id)}
+                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Supprimer ce cours"
+                                                >
+                                                <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                            )}
+                                        </div>
+                                        </li>
+                                    ))}
+                                    </ul>
+                                </div>
+                                ))}
+                            </div>
+                            )}
+                        </div>
+                        )}
+                    </>
+                )}
+              </main>
+
+              {/* === Modals === */}
+
+              {/* Login Modal */}
+              {isLoginModalOpen && (
+                <AdminLoginModal 
+                    onClose={() => setIsLoginModalOpen(false)} 
+                    onSuccess={() => { setIsAdmin(true); setIsLoginModalOpen(false); }} 
+                    correctPassword={ADMIN_PASSWORD}
+                />
+              )}
+
+              {/* Delete Confirm Modal */}
+              {courseToDelete && (
+                <ConfirmModal 
+                    message="Êtes-vous sûr de vouloir supprimer définitivement ce cours de la plateforme ?"
+                    onConfirm={executeDelete}
+                    onCancel={() => setCourseToDelete(null)}
+                />
+              )}
+
+              {/* Upload / Edit Modal */}
+              {isUploadModalOpen && (
+                <UploadModal 
+                  onClose={() => { setIsUploadModalOpen(false); setEditingCourse(null); }}
+                  onSaveCourse={handleSaveCourse}
+                  subjects={SUBJECTS}
+                  initialSubject={selectedSubject}
+                  initialData={editingCourse}
+                />
+              )}
+            </div>
+          );
+        }
+
+        // === 5. Composants des Modals ===
+
+        function AdminLoginModal({ onClose, onSuccess, correctPassword }) {
+            const [pwd, setPwd] = useState('');
+            const [error, setError] = useState('');
+
+            const submit = (e) => {
+                e.preventDefault();
+                if (pwd === correctPassword) {
+                    onSuccess();
+                } else {
+                    setError('Code de sécurité incorrect.');
+                    setPwd('');
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <form onSubmit={submit} className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-5 border-b border-slate-200">
+                            <h2 className="text-xl font-bold text-slate-800">Accès Administrateur</h2>
+                            <p className="text-sm text-slate-500 mt-1">Veuillez entrer le code de sécurité.</p>
+                        </div>
+                        <div className="p-6">
+                            {error && (
+                                <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg mb-4 text-sm">
+                                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+                            <input 
+                                type="password" 
+                                autoFocus
+                                placeholder="Code secret..."
+                                value={pwd}
+                                onChange={(e) => setPwd(e.target.value)}
+                                className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                            />
+                            <div className="flex justify-end space-x-3 mt-6">
+                                <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
+                                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">Valider</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            );
+        }
+
+        function ConfirmModal({ message, onConfirm, onCancel }) {
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6 text-center">
+                            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Trash2 className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirmation</h3>
+                            <p className="text-slate-500 text-sm">{message}</p>
+                        </div>
+                        <div className="flex border-t border-slate-100 bg-slate-50">
+                            <button onClick={onCancel} className="flex-1 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors border-r border-slate-100">Annuler</button>
+                            <button onClick={onConfirm} className="flex-1 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">Oui, supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function UploadModal({ onClose, onSaveCourse, subjects, initialSubject, initialData }) {
+          const isEditing = !!initialData;
+          const [errorMsg, setErrorMsg] = useState('');
+
+          const [formData, setFormData] = useState({
+            subject: initialData ? initialData.subject : (initialSubject || subjects[0]),
+            chapter: initialData ? initialData.chapter : '',
+            title: initialData ? initialData.title : '',
+            hasDigital: initialData ? !!initialData.digitalLink : true,
+            digitalLink: initialData ? initialData.digitalLink : '',
+            hasCasio: initialData ? !!initialData.casioLink : false,
+            casioLink: initialData ? initialData.casioLink : ''
+          });
+
+          const handleSubmit = (e) => {
+            e.preventDefault();
+            setErrorMsg('');
+
+            if (!formData.chapter.trim() || !formData.title.trim()) {
+              setErrorMsg("Veuillez remplir le chapitre et le titre du cours.");
+              return;
+            }
+            if (!formData.hasDigital && !formData.hasCasio) {
+              setErrorMsg("Veuillez sélectionner au moins un format (Numérique ou Casio).");
+              return;
+            }
+            if (formData.hasDigital && !formData.digitalLink.trim()) {
+              setErrorMsg("Veuillez fournir le lien Google Drive pour la version numérique.");
+              return;
+            }
+            if (formData.hasCasio && !formData.casioLink.trim()) {
+              setErrorMsg("Veuillez fournir le lien Google Drive pour la version Casio.");
+              return;
+            }
+
+            const savedCourse = {
+              id: isEditing ? initialData.id : Date.now().toString(),
+              subject: formData.subject,
+              chapter: formData.chapter,
+              title: formData.title,
+              digitalLink: formData.hasDigital ? formData.digitalLink : "",
+              casioLink: formData.hasCasio ? formData.casioLink : "",
+              date: isEditing ? initialData.date : new Date().toISOString()
+            };
+            
+            onSaveCourse(savedCourse);
+          };
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center">
+                    {isEditing ? <Edit2 className="w-5 h-5 mr-2 text-blue-600" /> : <LinkIcon className="w-5 h-5 mr-2 text-blue-600" />}
+                    {isEditing ? "Modifier le cours" : "Lier un cours depuis Drive"}
+                  </h2>
+                  <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded-lg transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">
+                  {errorMsg && (
+                      <div className="flex items-start space-x-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
+                          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                          <span>{errorMsg}</span>
+                      </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Matière</label>
+                    <select 
+                      value={formData.subject}
+                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                    >
+                      {subjects.map(sub => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Chapitre</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Nombres Complexes, Thermodynamique..."
+                      value={formData.chapter}
+                      onChange={(e) => setFormData({...formData, chapter: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Titre du cours</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: Fiche de révision détaillée"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="block text-sm font-semibold text-slate-700 mb-3">Liens de partage Google Drive</label>
+                    <div className="space-y-3">
+                      
+                      <div className={`border rounded-xl transition-colors ${formData.hasDigital ? 'border-blue-300 bg-blue-50/30' : 'border-slate-200 hover:bg-slate-50'}`}>
+                        <label className="flex items-start space-x-3 p-3 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.hasDigital}
+                            onChange={(e) => setFormData({...formData, hasDigital: e.target.checked})}
+                            className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center font-medium text-slate-900">
+                              <FileDigit className="w-4 h-4 mr-1.5 text-slate-500"/> Lien Version Numérique
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5 mb-2">Cochez si vous avez un PDF/Word sur votre Drive.</p>
+                            
+                            {formData.hasDigital && (
+                              <input 
+                                type="url" 
+                                placeholder="Collez le lien de partage Drive ici..."
+                                value={formData.digitalLink}
+                                onChange={(e) => setFormData({...formData, digitalLink: e.target.value})}
+                                onClick={(e) => e.preventDefault()}
+                                className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                              />
+                            )}
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className={`border rounded-xl transition-colors ${formData.hasCasio ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200 hover:bg-slate-50'}`}>
+                        <label className="flex items-start space-x-3 p-3 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.hasCasio}
+                            onChange={(e) => setFormData({...formData, hasCasio: e.target.checked})}
+                            className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center font-medium text-slate-900">
+                              <Calculator className="w-4 h-4 mr-1.5 text-emerald-500"/> Lien Version Casio
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5 mb-2">Cochez si vous avez un fichier adapté pour Casio.</p>
+                            
+                            {formData.hasCasio && (
+                              <input 
+                                type="url" 
+                                placeholder="Collez le lien de partage Drive ici..."
+                                value={formData.casioLink}
+                                onChange={(e) => setFormData({...formData, casioLink: e.target.value})}
+                                onClick={(e) => e.preventDefault()}
+                                className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                              />
+                            )}
+                          </div>
+                        </label>
+                      </div>
+
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-3 pt-6 mt-6">
+                    <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">Annuler</button>
+                    <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm">{isEditing ? "Enregistrer" : "Ajouter au site"}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          );
+        }
+
+        // === 6. Rendu ===
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
