@@ -22,7 +22,7 @@
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
             <div style="width: 50px; height: 50px; border: 4px solid #cbd5e1; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
             <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-            <h2 style="font-size: 1.5rem; font-weight: bold; color: #1e293b; margin-bottom: 10px; font-family: sans-serif;">Chargement de LycéeShare...</h2>
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #1e293b; margin-bottom: 10px; font-family: sans-serif;">Chargement de WorksBox...</h2>
             <p style="color: #64748b; font-family: sans-serif; max-width: 400px;">
                 Si cet écran reste bloqué plus de 3 secondes, il y a une erreur dans le code. <br/><br/>
                 <b>Appuyez sur F12</b> (ou clic droit > Inspecter > Console) pour voir le problème en rouge.
@@ -42,23 +42,21 @@
         // === 1. Configuration Firebase ===
         const appId = 'lycee-share'; 
 
-        // Collez VOTRE propre configuration ici. 
-        // Si vous laissez "VOTRE_API_KEY", le site fonctionnera quand même (en mode local temporaire) sans planter.
+        // Votre configuration Firebase
         const firebaseConfig = {
-  apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
-  authDomain: "lycee-share.firebaseapp.com",
-  projectId: "lycee-share",
-  storageBucket: "lycee-share.firebasestorage.app",
-  messagingSenderId: "578872424130",
-  appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
-  measurementId: "G-3Q6998C0JH"
-};
+          apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
+          authDomain: "lycee-share.firebaseapp.com",
+          projectId: "lycee-share",
+          storageBucket: "lycee-share.firebasestorage.app",
+          messagingSenderId: "578872424130",
+          appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
+          measurementId: "G-3Q6998C0JH"
+        };
         
         let db = null;
         let auth = null;
 
         try {
-            // Sécurité : On ne lance Firebase QUE si vous avez changé la clé API
             if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "VOTRE_API_KEY" && !firebaseConfig.apiKey.includes("xxxxxxxx")) {
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
@@ -85,6 +83,10 @@
         const Folder = ({className}) => <Icon className={className}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></Icon>;
         const FileText = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></Icon>;
         const ChevronLeft = ({className}) => <Icon className={className}><polyline points="15 18 9 12 15 6"/></Icon>;
+        const ChevronDown = ({className}) => <Icon className={className}><polyline points="6 9 12 15 18 9"/></Icon>;
+        const ChevronUp = ({className}) => <Icon className={className}><polyline points="18 15 12 9 6 15"/></Icon>;
+        const ArrowUp = ({className}) => <Icon className={className}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></Icon>;
+        const ArrowDown = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></Icon>;
         const Search = ({className}) => <Icon className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>;
         const Plus = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
         const X = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
@@ -93,6 +95,11 @@
         const Edit2 = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
         const Trash2 = ({className}) => <Icon className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
         const AlertCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+        const Eye = ({className}) => <Icon className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const ExternalLink = ({className}) => <Icon className={className}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Icon>;
+        const Shield = ({className}) => <Icon className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Icon>;
+        const HelpCircle = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></Icon>;
+        const HomeIcon = ({className}) => <Icon className={className}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
 
         // === 3. Données Statiques ===
         const SUBJECTS = [
@@ -107,8 +114,18 @@
           "SIN"
         ];
 
-        // Code secret Admin
         const ADMIN_PASSWORD = "6400";
+
+        const getTagStyle = (tag) => {
+            switch(tag) {
+                case 'Cours': return 'bg-blue-100 text-blue-700 border border-blue-200';
+                case 'TP': return 'bg-purple-100 text-purple-700 border border-purple-200';
+                case 'Exercice': return 'bg-orange-100 text-orange-700 border border-orange-200';
+                case 'Interro': return 'bg-rose-100 text-rose-700 border border-rose-200';
+                case 'DS': return 'bg-red-100 text-red-700 border border-red-200';
+                default: return 'bg-slate-100 text-slate-700 border border-slate-200';
+            }
+        };
 
         // === 4. Composant Principal ===
         function App() {
@@ -116,22 +133,20 @@
           const [selectedSubject, setSelectedSubject] = useState(null);
           const [searchQuery, setSearchQuery] = useState('');
           
-          // États pour les données et la BDD
           const [courses, setCourses] = useState([]);
           const [isLoading, setIsLoading] = useState(true);
           const [user, setUser] = useState(null);
           
-          // États pour les Modals
           const [isAdmin, setIsAdmin] = useState(false);
           const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
           const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
           const [editingCourse, setEditingCourse] = useState(null); 
           const [courseToDelete, setCourseToDelete] = useState(null);
+          const [previewData, setPreviewData] = useState(null);
 
-          // Initialisation et Authentification Firebase
+          // Initialisation Firebase
           useEffect(() => {
             if (!auth) {
-                // Mode local (pas de BDD)
                 setIsLoading(false);
                 return;
             }
@@ -156,20 +171,23 @@
             return () => unsubscribe();
           }, []);
 
-          // Chargement des données Firestore
+          // Chargement des données
           useEffect(() => {
             if (!auth || !user || !db) return;
 
             const coursesRef = collection(db, 'artifacts', appId, 'public', 'data', 'courses');
             
             const unsubscribe = onSnapshot(coursesRef, (snapshot) => {
-              const loadedCourses = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-              }));
-              
-              // Tri par date de la plus récente à la plus ancienne
-              loadedCourses.sort((a, b) => new Date(b.date) - new Date(a.date));
+              const loadedCourses = snapshot.docs.map(doc => {
+                  const data = doc.data();
+                  // Rétrocompatibilité : S'il n'y a pas d'ordre, on se base sur la date (négatif pour que les plus récents soient en haut)
+                  return {
+                      id: doc.id,
+                      chapterOrder: typeof data.chapterOrder === 'number' ? data.chapterOrder : -new Date(data.date).getTime(),
+                      courseOrder: typeof data.courseOrder === 'number' ? data.courseOrder : -new Date(data.date).getTime(),
+                      ...data
+                  };
+              });
               
               setCourses(loadedCourses);
               setIsLoading(false);
@@ -181,136 +199,211 @@
             return () => unsubscribe();
           }, [user]);
 
-          // Filtres
+          // Organisation des Chapitres et Tri
+          const chaptersData = useMemo(() => {
+            if (!selectedSubject) return [];
+            const filtered = courses.filter(c => c.subject === selectedSubject);
+
+            const groups = {};
+            filtered.forEach(course => {
+                if (!groups[course.chapter]) {
+                    groups[course.chapter] = {
+                        name: course.chapter,
+                        courses: []
+                    };
+                }
+                groups[course.chapter].courses.push(course);
+            });
+
+            Object.values(groups).forEach(group => {
+                // L'ordre du chapitre est déterminé par le document avec le chapterOrder le plus bas
+                group.chapterOrder = Math.min(...group.courses.map(c => c.chapterOrder));
+                // Les cours à l'intérieur sont triés par courseOrder
+                group.courses.sort((a, b) => a.courseOrder - b.courseOrder);
+            });
+
+            // Tri final des chapitres
+            return Object.values(groups).sort((a, b) => a.chapterOrder - b.chapterOrder);
+          }, [courses, selectedSubject]);
+
           const filteredSubjects = SUBJECTS.filter(subject => 
             subject.toLowerCase().includes(searchQuery.toLowerCase())
           );
 
-          const coursesForSubject = useMemo(() => {
-            if (!selectedSubject) return {};
-            const filtered = courses.filter(c => c.subject === selectedSubject);
-            return filtered.reduce((acc, course) => {
-              if (!acc[course.chapter]) {
-                acc[course.chapter] = [];
-              }
-              acc[course.chapter].push(course);
-              return acc;
-            }, {});
-          }, [courses, selectedSubject]);
+          // Actions de Navigation
+          const openSubject = (s) => { setSelectedSubject(s); setCurrentView('subject'); setSearchQuery(''); };
+          const goHome = () => { setSelectedSubject(null); setCurrentView('home'); setSearchQuery(''); };
+          const openTerms = () => { setSelectedSubject(null); setCurrentView('terms'); };
+          const openCasioGuide = () => { setSelectedSubject(null); setCurrentView('casioGuide'); };
 
-          // Navigation
-          const openSubject = (subject) => {
-            setSelectedSubject(subject);
-            setCurrentView('subject');
-            setSearchQuery('');
-          };
-
-          const goHome = () => {
-            setSelectedSubject(null);
-            setCurrentView('home');
-            setSearchQuery('');
-          };
-
-          // Ajouter ou Mettre à jour un cours
-          const handleSaveCourse = async (savedCourse) => {
+          // === Actions d'Édition Batch (Sauvegarde Firestore de masse) ===
+          const applyBatchUpdates = async (updates) => {
             if (db && user) {
                 try {
-                    const docId = savedCourse.id.toString();
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', docId);
-                    await setDoc(docRef, savedCourse);
-                } catch (e) {
-                    console.error("Erreur de sauvegarde:", e);
-                }
+                    await Promise.all(updates.map(c => 
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', c.id.toString()), c)
+                    ));
+                } catch(e) { console.error(e); }
             } else {
-                // Mode local
-                if (editingCourse) {
-                    setCourses(courses.map(c => c.id === savedCourse.id ? savedCourse : c));
-                } else {
-                    setCourses([savedCourse, ...courses]);
-                }
+                setCourses(prev => {
+                    const next = [...prev];
+                    updates.forEach(updatedCourse => {
+                        const idx = next.findIndex(c => c.id === updatedCourse.id);
+                        if(idx !== -1) next[idx] = updatedCourse;
+                    });
+                    return next;
+                });
             }
+          };
+
+          // === Fonctionnalités de Déplacement ===
+          const moveChapter = async (chapterName, direction) => {
+            const index = chaptersData.findIndex(c => c.name === chapterName);
+            if (index === -1) return;
+            
+            if (direction === 'up' && index > 0) {
+                await swapChapterOrders(chaptersData[index], chaptersData[index - 1]);
+            } else if (direction === 'down' && index < chaptersData.length - 1) {
+                await swapChapterOrders(chaptersData[index], chaptersData[index + 1]);
+            }
+          };
+
+          const swapChapterOrders = async (chapA, chapB) => {
+            const tempOrder = chapA.chapterOrder;
+            const updates = [];
+            
+            chapA.courses.forEach(c => { updates.push({ ...c, chapterOrder: chapB.chapterOrder }); });
+            chapB.courses.forEach(c => { updates.push({ ...c, chapterOrder: tempOrder }); });
+            
+            await applyBatchUpdates(updates);
+          };
+
+          const moveCourse = async (course, direction) => {
+            const chapterGroup = chaptersData.find(c => c.name === course.chapter);
+            if (!chapterGroup) return;
+            const coursesList = chapterGroup.courses;
+            const index = coursesList.findIndex(c => c.id === course.id);
+            if (index === -1) return;
+
+            if (direction === 'up' && index > 0) {
+                const other = coursesList[index - 1];
+                await applyBatchUpdates([
+                    { ...course, courseOrder: other.courseOrder },
+                    { ...other, courseOrder: course.courseOrder }
+                ]);
+            } else if (direction === 'down' && index < coursesList.length - 1) {
+                const other = coursesList[index + 1];
+                await applyBatchUpdates([
+                    { ...course, courseOrder: other.courseOrder },
+                    { ...other, courseOrder: course.courseOrder }
+                ]);
+            }
+          };
+
+          const handleSaveCourse = async (savedCourse) => {
+            if (!editingCourse) {
+                // Attribution de l'ordre pour un nouveau document
+                const existingChapter = courses.find(c => c.subject === savedCourse.subject && c.chapter === savedCourse.chapter);
+                if (existingChapter) {
+                    savedCourse.chapterOrder = existingChapter.chapterOrder;
+                } else {
+                    const subjectCourses = courses.filter(c => c.subject === savedCourse.subject);
+                    const maxChapOrder = subjectCourses.length > 0 ? Math.max(...subjectCourses.map(c => c.chapterOrder)) : 0;
+                    savedCourse.chapterOrder = maxChapOrder + 1;
+                }
+                
+                const chapterCourses = courses.filter(c => c.subject === savedCourse.subject && c.chapter === savedCourse.chapter);
+                const maxCourseOrder = chapterCourses.length > 0 ? Math.max(...chapterCourses.map(c => c.courseOrder)) : 0;
+                savedCourse.courseOrder = maxCourseOrder + 1;
+            }
+
+            await applyBatchUpdates([savedCourse]);
 
             setIsUploadModalOpen(false);
             setEditingCourse(null);
-            
             if (currentView !== 'subject' || selectedSubject !== savedCourse.subject) {
               openSubject(savedCourse.subject);
             }
           };
 
-          // Supprimer un cours
           const executeDelete = async () => {
             if (!courseToDelete) return;
-            
             if (db && user) {
                 try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseToDelete.toString());
-                    await deleteDoc(docRef);
-                } catch(e) {
-                    console.error("Erreur de suppression:", e);
-                }
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseToDelete.toString()));
+                } catch(e) { console.error("Erreur de suppression:", e); }
             } else {
                  setCourses(courses.filter(c => c.id !== courseToDelete));
             }
             setCourseToDelete(null);
           };
 
-          // Modals Triggers
           const toggleAdminMode = () => {
-            if (isAdmin) {
-              setIsAdmin(false);
-            } else {
-              setIsLoginModalOpen(true);
-            }
+            if (isAdmin) setIsAdmin(false);
+            else setIsLoginModalOpen(true);
           };
 
-          const openAddModal = () => {
-            setEditingCourse(null);
-            setIsUploadModalOpen(true);
-          };
-
-          const openEditModal = (course) => {
-            setEditingCourse(course);
-            setIsUploadModalOpen(true);
-          };
+          const openAddModal = () => { setEditingCourse(null); setIsUploadModalOpen(true); };
+          const openEditModal = (course) => { setEditingCourse(course); setIsUploadModalOpen(true); };
 
           return (
             <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-              {/* Navbar */}
+              {/* Navbar Principal */}
               <nav className="bg-slate-900 text-white shadow-lg sticky top-0 z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="flex justify-between h-16">
-                    <div className="flex items-center space-x-3 cursor-pointer" onClick={goHome}>
-                      <div className="bg-blue-500 p-2 rounded-lg">
-                        <BookOpen className="w-6 h-6 text-white" />
-                      </div>
-                      <span className="font-bold text-xl tracking-tight">WorksBox</span>
+                  <div className="flex justify-between items-center h-16">
+                    
+                    <div className="flex items-center space-x-8">
+                        <div className="flex items-center space-x-3 cursor-pointer" onClick={goHome}>
+                            <div className="bg-blue-500 p-2 rounded-lg">
+                                <BookOpen className="w-6 h-6 text-white" />
+                            </div>
+                            <span className="font-bold text-xl tracking-tight">WorksBox</span>
+                        </div>
+                        
+                        <div className="hidden lg:flex items-center space-x-6">
+                            <button onClick={goHome} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${(currentView === 'home' || currentView === 'subject') ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}>
+                                <HomeIcon className="w-4 h-4 mr-1.5" /> Accueil
+                            </button>
+                            <button onClick={openTerms} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'terms' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}>
+                                <Shield className="w-4 h-4 mr-1.5" /> Conditions d'utilisations
+                            </button>
+                            <button onClick={openCasioGuide} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'casioGuide' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}>
+                                <HelpCircle className="w-4 h-4 mr-1.5" /> Tuto Calculatrice
+                            </button>
+                        </div>
                     </div>
+
                     <div className="flex items-center space-x-4">
-                      {/* Pastille BDD (indique si on est connecté au Cloud) */}
                       <div className={`hidden sm:flex items-center text-xs px-2 py-1 rounded-full border ${db ? 'bg-emerald-900/50 text-emerald-400 border-emerald-700' : 'bg-slate-800 text-slate-400 border-slate-700'}`} title={db ? "Connecté au Cloud" : "Mode Local (Non sauvegardé en ligne)"}>
                         <div className={`w-2 h-2 rounded-full mr-2 ${db ? 'bg-emerald-500 animate-pulse' : 'bg-slate-500'}`}></div>
                         {db ? 'À jour' : 'Mode Local'}
                       </div>
 
-                      <button 
-                        onClick={toggleAdminMode}
-                        className={`text-sm font-medium px-3 py-1.5 rounded-full transition-colors ${isAdmin ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-                      >
-                        {isAdmin ? 'Mode Édition Actif (Déconnexion)' : 'Passer en Admin'}
+                      <button onClick={toggleAdminMode} className={`text-sm font-medium px-3 py-1.5 rounded-full transition-colors ${isAdmin ? 'bg-amber-500 text-white shadow-md' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
+                        {isAdmin ? 'Mode Édition Actif (Déconnexion)' : 'Mode Admin'}
                       </button>
                       
                       {isAdmin && (
-                        <button 
-                          onClick={openAddModal}
-                          className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                        >
+                        <button onClick={openAddModal} className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                           <Plus className="w-4 h-4" />
                           <span className="hidden sm:inline">Ajouter un lien</span>
                         </button>
                       )}
                     </div>
                   </div>
+                </div>
+
+                <div className="lg:hidden border-t border-slate-800 bg-slate-900 px-4 py-2 flex space-x-6 overflow-x-auto scrollbar-hide">
+                    <button onClick={goHome} className={`whitespace-nowrap flex items-center text-xs font-medium py-1 transition-colors ${(currentView === 'home' || currentView === 'subject') ? 'text-white border-b border-blue-500' : 'text-slate-400'}`}>
+                        <HomeIcon className="w-3.5 h-3.5 mr-1.5" /> Accueil
+                    </button>
+                    <button onClick={openTerms} className={`whitespace-nowrap flex items-center text-xs font-medium py-1 transition-colors ${currentView === 'terms' ? 'text-white border-b border-blue-500' : 'text-slate-400'}`}>
+                        <Shield className="w-3.5 h-3.5 mr-1.5" /> Conditions d'utilisations
+                    </button>
+                    <button onClick={openCasioGuide} className={`whitespace-nowrap flex items-center text-xs font-medium py-1 transition-colors ${currentView === 'casioGuide' ? 'text-white border-b border-blue-500' : 'text-slate-400'}`}>
+                        <HelpCircle className="w-3.5 h-3.5 mr-1.5" /> Tuto Calculatrice
+                    </button>
                 </div>
               </nav>
 
@@ -390,7 +483,7 @@
                             <h1 className="text-3xl font-bold text-slate-900">{selectedSubject}</h1>
                             </div>
 
-                            {Object.keys(coursesForSubject).length === 0 ? (
+                            {chaptersData.length === 0 ? (
                             <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center flex flex-col items-center">
                                 <div className="bg-slate-100 p-4 rounded-full mb-4">
                                 <FileText className="w-10 h-10 text-slate-400" />
@@ -411,128 +504,256 @@
                                 )}
                             </div>
                             ) : (
-                            <div className="space-y-8">
-                                {Object.entries(coursesForSubject).map(([chapter, chapterCourses]) => (
-                                <div key={chapter} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-                                    <h2 className="text-xl font-bold text-slate-800 flex items-center">
-                                        <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm">
-                                        CH
-                                        </span>
-                                        {chapter}
-                                    </h2>
-                                    </div>
-                                    
-                                    <ul className="divide-y divide-slate-100">
-                                    {chapterCourses.map((course) => (
-                                        <li key={course.id} className="p-6 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        
-                                        <div className="flex items-start space-x-4 flex-1">
-                                            <div className="mt-1 text-slate-400">
-                                            <FileText className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                            <h4 className="text-lg font-semibold text-slate-900">{course.title}</h4>
-                                            <p className="text-sm text-slate-500 mt-1">Ajouté le {new Date(course.date).toLocaleDateString('fr-FR')}</p>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center space-x-3 ml-10 sm:ml-0">
-                                            {course.digitalLink && (
-                                            <a 
-                                                href={course.digitalLink}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center space-x-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
-                                                title="Ouvrir la version numérique"
-                                            >
-                                                <Download className="w-4 h-4" />
-                                                <span className="hidden lg:inline">Cours Numérique</span>
-                                                <span className="lg:hidden">Numérique</span>
-                                            </a>
-                                            )}
-                                            
-                                            {course.casioLink && (
-                                            <a 
-                                                href={course.casioLink}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="flex items-center space-x-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium transition-colors"
-                                                title="Ouvrir pour Casio"
-                                            >
-                                                <Calculator className="w-4 h-4" />
-                                                <span className="hidden lg:inline">Cours sur Calculatrice</span>
-                                                <span className="lg:hidden">Casio</span>
-                                            </a>
-                                            )}
-
-                                            {isAdmin && (
-                                            <div className="flex items-center space-x-1 border-l border-slate-200 pl-3 ml-2">
-                                                <button 
-                                                onClick={() => openEditModal(course)}
-                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                title="Modifier ce cours"
-                                                >
-                                                <Edit2 className="w-5 h-5" />
-                                                </button>
-                                                <button 
-                                                onClick={() => setCourseToDelete(course.id)}
-                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                title="Supprimer ce cours"
-                                                >
-                                                <Trash2 className="w-5 h-5" />
-                                                </button>
-                                            </div>
-                                            )}
-                                        </div>
-                                        </li>
-                                    ))}
-                                    </ul>
-                                </div>
+                            <div className="space-y-6">
+                                {chaptersData.map((chapterGroup, index) => (
+                                    <ChapterBlock 
+                                        key={chapterGroup.name} 
+                                        chapter={chapterGroup.name} 
+                                        chapterCourses={chapterGroup.courses} 
+                                        isAdmin={isAdmin}
+                                        openEditModal={openEditModal}
+                                        setCourseToDelete={setCourseToDelete}
+                                        setPreviewData={setPreviewData}
+                                        moveChapter={moveChapter}
+                                        moveCourse={moveCourse}
+                                        isFirstChapter={index === 0}
+                                        isLastChapter={index === chaptersData.length - 1}
+                                    />
                                 ))}
                             </div>
                             )}
                         </div>
+                        )}
+
+                        {/* === VUES TUTO / CGU (identiques) === */}
+                        {currentView === 'casioGuide' && (
+                          <div className="space-y-8 animate-in fade-in duration-300 max-w-4xl mx-auto">
+                            <h1 className="text-3xl font-extrabold text-slate-900 flex items-center">
+                                <div className="bg-blue-100 p-3 rounded-xl mr-4">
+                                    <HelpCircle className="w-8 h-8 text-blue-600"/>
+                                </div>
+                                Comment mettre des cours sur calculatrice Casio Graph 35+Ell ?
+                            </h1>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 sm:p-10 space-y-8">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 flex items-center mb-3">
+                                        <span className="bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm mr-3">1</span>
+                                        Le matériel pré-requis pour démarrer
+                                    </h3>
+                                    <p className="text-slate-600 leading-relaxed ml-10">
+                                        Vous aurez besoin d'une calculatrice Casio Graph 35+Ell, d'un câble <strong>Mini USB (Souvent fourni avec la calculatrice)</strong> et d'un ordinateur avec un port USB 2.0 ou supérieur.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 flex items-center mb-3">
+                                        <span className="bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm mr-3">2</span>
+                                        Télécharger les fichiers adaptés pour calculatrice
+                                    </h3>
+                                    <p className="text-slate-600 leading-relaxed ml-10">
+                                        Téléchargez les fichiers au format <strong>.txt</strong> ou <strong>.g1m</strong> depuis WorksBox (en cliquant sur "Version Casio"). Ces fichiers ont déjà été formatés spécifiquement pour être parfaitement lisibles sur le petit écran de votre calculatrice, sans couper les mots.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 flex items-center mb-3">
+                                        <span className="bg-slate-800 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm mr-3">3</span>
+                                        Mettre le fichier dans sa calculatrice
+                                    </h3>
+                                    <div className="ml-10 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                                        <ul className="list-disc list-outside text-slate-600 space-y-3 ml-4">
+                                            <li><strong className="text-slate-700">Branchez</strong> votre calculatrice à votre ordinateur via le câble USB.</li>
+                                            <li>Sur l'écran de la calculatrice, un menu apparaît. Choisissez <strong className="text-slate-700">Mode connexion : Clé USB</strong> (appuyer sur F1 pour sélectionner).</li>
+                                            <li>La calculatrice va apparaître sur votre ordinateur comme une clé USB classique.</li>
+                                            <li>Ouvrez ce lecteur depuis votre ordinateur, et allez dans le dossier <strong>@MainMem</strong>, une fois dedans, vous devriez voir un dossier <strong>PROGRAM</strong> (si vous ne le voyez pas, créé le vous même).</li>
+                                            <li>Une fois dans le dossier PROGRAM, copiez-collez les fichiers téléchargés depuis WorksBox. Attendez que le transfert soit terminé avant de déconnecter la calculatrice.</li>
+                                            <li>Une fois terminé, déconnectez proprement le câble. Sur la calculatrice, allez dans le menu et sélectionnez "PROGR" et appuyez sur F2 pour lire vos cours.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {currentView === 'terms' && (
+                          <div className="space-y-8 animate-in fade-in duration-300 max-w-4xl mx-auto">
+                            <h1 className="text-3xl font-extrabold text-slate-900 flex items-center">
+                                <div className="bg-blue-100 p-3 rounded-xl mr-4">
+                                    <Shield className="w-8 h-8 text-blue-600"/>
+                                </div>
+                                Conditions d'utilisations
+                            </h1>
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 sm:p-10 space-y-6 text-slate-600 leading-relaxed">
+                                <p className="text-lg text-slate-800 font-medium pb-4 border-b border-slate-100">
+                                    Bienvenue sur WorksBox, la plateforme pour récupérer ses cours ou revevoir une version calculatrice. En utilisant ce site, vous acceptez les conditions suivantes :
+                                </p>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2 mt-4">1. Utilisation des cours sur calculatrice Casio Graph 35+Ell</h3>
+                                    <p>L'utilisation des cours sur calculatrice est autorisée lors de simples exercices en classe ou d'évaluations (seulement si l'enseignant n'exige pas le "MODE EXAMEN"), lors d'épreuves nationales comme le BAC par exemple, l'utilisation des logiciels seront interdits et le "MODE EXAMEN" est obligatoire, pour tout utilisation de programmes sur calculatrice lors d'épreuves, le site WorksBox ne sera pas tenu responsable des conséquences arrivés lors de ces épreuves.</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2 mt-4">2. Contenu des cours sur WorksBox</h3>
+                                    <p>WorksBox ne peut pas garantir la posséssion de l'entièreté des cours fournis par le lycée François Bazin. Dans ce genre de cas, l'utilisation de vos cours personnelles est recommandée.</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2 mt-4">3. Demande d'hébergement d'un fichier</h3>
+                                    <p>Il est possible que vous possédiez un fichier comme un cours ou un autre type de document que WorksBox ne possède pas, si vous souhaiteriez son hébergement sur la plateforme, veuillez nous contacter via par mail : roman.ferriere4@gmail.com</p>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-800 mb-2 mt-4">4. Utilisation de l'Intelligence Artificielle (IA)</h3>
+                                    <p>La version des cours sur calculatrice Casio Graph 35+Ell à été adaptée par l'IA Gemini 3 pro pour une compatibilité optimale des cours en mode calculatrice.</p>
+                                </div>
+                            </div>
+                          </div>
                         )}
                     </>
                 )}
               </main>
 
               {/* === Modals === */}
-
-              {/* Login Modal */}
-              {isLoginModalOpen && (
-                <AdminLoginModal 
-                    onClose={() => setIsLoginModalOpen(false)} 
-                    onSuccess={() => { setIsAdmin(true); setIsLoginModalOpen(false); }} 
-                    correctPassword={ADMIN_PASSWORD}
-                />
-              )}
-
-              {/* Delete Confirm Modal */}
-              {courseToDelete && (
-                <ConfirmModal 
-                    message="Êtes-vous sûr de vouloir supprimer définitivement ce cours de la plateforme ?"
-                    onConfirm={executeDelete}
-                    onCancel={() => setCourseToDelete(null)}
-                />
-              )}
-
-              {/* Upload / Edit Modal */}
-              {isUploadModalOpen && (
-                <UploadModal 
-                  onClose={() => { setIsUploadModalOpen(false); setEditingCourse(null); }}
-                  onSaveCourse={handleSaveCourse}
-                  subjects={SUBJECTS}
-                  initialSubject={selectedSubject}
-                  initialData={editingCourse}
-                />
-              )}
+              {previewData && <PreviewModal data={previewData} onClose={() => setPreviewData(null)} />}
+              {isLoginModalOpen && <AdminLoginModal onClose={() => setIsLoginModalOpen(false)} onSuccess={() => { setIsAdmin(true); setIsLoginModalOpen(false); }} correctPassword={ADMIN_PASSWORD} />}
+              {courseToDelete && <ConfirmModal message="Êtes-vous sûr de vouloir supprimer définitivement ce cours ?" onConfirm={executeDelete} onCancel={() => setCourseToDelete(null)} />}
+              {isUploadModalOpen && <UploadModal onClose={() => { setIsUploadModalOpen(false); setEditingCourse(null); }} onSaveCourse={handleSaveCourse} subjects={SUBJECTS} initialSubject={selectedSubject} initialData={editingCourse} />}
             </div>
           );
         }
 
-        // === 5. Composants des Modals ===
+        // === 5. Composants Enfants & Modals ===
+
+        function ChapterBlock({ chapter, chapterCourses, isAdmin, openEditModal, setCourseToDelete, setPreviewData, moveChapter, moveCourse, isFirstChapter, isLastChapter }) {
+            const [isExpanded, setIsExpanded] = useState(chapterCourses.length <= 1);
+
+            return (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div 
+                        className="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors flex justify-between items-center"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        <div className="flex items-center flex-1 min-w-0">
+                            <h2 className="text-xl font-bold text-slate-800 flex items-center truncate">
+                                <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg flex items-center justify-center mr-3 text-sm flex-shrink-0">CH</span>
+                                <span className="truncate">{chapter}</span>
+                            </h2>
+                            <span className="hidden sm:inline-block ml-3 text-sm font-medium text-slate-500 bg-white px-2.5 py-0.5 rounded-full border border-slate-200 whitespace-nowrap">
+                                {chapterCourses.length} document{chapterCourses.length > 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        
+                        <div className="flex items-center flex-shrink-0 ml-4">
+                            {isAdmin && (
+                                <div className="flex items-center space-x-1 mr-4 border-r border-slate-300 pr-4" onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => moveChapter(chapter, 'up')} disabled={isFirstChapter} className="p-1 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 bg-white rounded shadow-sm border border-slate-200" title="Monter ce chapitre"><ArrowUp className="w-4 h-4"/></button>
+                                    <button onClick={() => moveChapter(chapter, 'down')} disabled={isLastChapter} className="p-1 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400 bg-white rounded shadow-sm border border-slate-200" title="Descendre ce chapitre"><ArrowDown className="w-4 h-4"/></button>
+                                </div>
+                            )}
+                            <button className="text-slate-400 hover:text-slate-600 transition-colors">
+                                {isExpanded ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {isExpanded && (
+                        <ul className="divide-y divide-slate-100 animate-in slide-in-from-top-2 duration-200">
+                            {chapterCourses.map((course, index) => {
+                                const courseTag = course.tag || 'Cours';
+                                const isFirstCourse = index === 0;
+                                const isLastCourse = index === chapterCourses.length - 1;
+
+                                return (
+                                    <li key={course.id} className="p-4 sm:p-6 hover:bg-slate-50 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+                                        
+                                        <div className="flex items-start space-x-4 flex-1 min-w-0">
+                                            <div className="mt-1 text-slate-400 flex-shrink-0">
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                                                    <h4 className="text-lg font-semibold text-slate-900 truncate">{course.title}</h4>
+                                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${getTagStyle(courseTag)}`}>
+                                                        {courseTag}
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm text-slate-500 mt-1">Ajouté le {new Date(course.date).toLocaleDateString('fr-FR')}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex items-center space-x-3 ml-10 sm:ml-0 flex-wrap gap-y-2 flex-shrink-0">
+                                            {isAdmin && (
+                                                <div className="flex items-center space-x-1 border-r border-slate-200 pr-3 mr-1">
+                                                    <button onClick={() => moveCourse(course, 'up')} disabled={isFirstCourse} className="p-1.5 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400" title="Monter ce fichier"><ArrowUp className="w-4 h-4"/></button>
+                                                    <button onClick={() => moveCourse(course, 'down')} disabled={isLastCourse} className="p-1.5 text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-slate-400" title="Descendre ce fichier"><ArrowDown className="w-4 h-4"/></button>
+                                                </div>
+                                            )}
+
+                                            {course.digitalLink && (
+                                                <button onClick={() => setPreviewData({ link: course.digitalLink, title: course.title, type: 'Numérique' })} className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-sm font-medium transition-colors" title="Aperçu du cours numérique">
+                                                    <Eye className="w-4 h-4" />
+                                                    <span className="hidden sm:inline">Visualiser PDF</span>
+                                                    <span className="sm:hidden">PDF</span>
+                                                </button>
+                                            )}
+                                            
+                                            {course.casioLink && (
+                                                <button onClick={() => setPreviewData({ link: course.casioLink, title: course.title, type: 'Casio' })} className="flex items-center space-x-2 px-3 sm:px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-medium transition-colors" title="Aperçu du cours Casio">
+                                                    <Calculator className="w-4 h-4" />
+                                                    <span className="hidden sm:inline">Version Casio</span>
+                                                    <span className="sm:hidden">Casio</span>
+                                                </button>
+                                            )}
+
+                                            {isAdmin && (
+                                                <div className="flex items-center space-x-1 border-l border-slate-200 pl-3 ml-2">
+                                                    <button onClick={() => openEditModal(course)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Modifier">
+                                                        <Edit2 className="w-5 h-5" />
+                                                    </button>
+                                                    <button onClick={() => setCourseToDelete(course.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                                                        <Trash2 className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
+                </div>
+            );
+        }
+
+        function PreviewModal({ data, onClose }) {
+            let previewUrl = data.link;
+            if (previewUrl.includes('drive.google.com/file/d/')) {
+                previewUrl = previewUrl.replace(/\/view.*$/, '/preview');
+            }
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full h-full max-w-6xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
+                            <div className="flex items-center flex-1 min-w-0 pr-4">
+                                <FileText className="w-5 h-5 text-blue-600 mr-2 flex-shrink-0" />
+                                <h2 className="text-lg font-bold text-slate-800 truncate">
+                                    {data.title} <span className="text-sm font-normal text-slate-500 ml-2">({data.type})</span>
+                                </h2>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                                <a href={data.link} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors shadow-sm" title="Ouvrir dans un nouvel onglet">
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Ouvrir dans Drive</span>
+                                </a>
+                                <button onClick={onClose} className="text-slate-400 hover:text-slate-700 bg-slate-200/50 hover:bg-slate-200 p-1.5 rounded-lg transition-colors">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex-1 bg-slate-200 relative">
+                            <iframe src={previewUrl} className="absolute inset-0 w-full h-full border-0" title={`Aperçu de ${data.title}`} allow="autoplay"></iframe>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
 
         function AdminLoginModal({ onClose, onSuccess, correctPassword }) {
             const [pwd, setPwd] = useState('');
@@ -540,12 +761,8 @@
 
             const submit = (e) => {
                 e.preventDefault();
-                if (pwd === correctPassword) {
-                    onSuccess();
-                } else {
-                    setError('Code de sécurité incorrect.');
-                    setPwd('');
-                }
+                if (pwd === correctPassword) onSuccess();
+                else { setError('Code de sécurité incorrect.'); setPwd(''); }
             };
 
             return (
@@ -608,6 +825,7 @@
             subject: initialData ? initialData.subject : (initialSubject || subjects[0]),
             chapter: initialData ? initialData.chapter : '',
             title: initialData ? initialData.title : '',
+            tag: initialData ? (initialData.tag || 'Cours') : 'Cours',
             hasDigital: initialData ? !!initialData.digitalLink : true,
             digitalLink: initialData ? initialData.digitalLink : '',
             hasCasio: initialData ? !!initialData.casioLink : false,
@@ -619,7 +837,7 @@
             setErrorMsg('');
 
             if (!formData.chapter.trim() || !formData.title.trim()) {
-              setErrorMsg("Veuillez remplir le chapitre et le titre du cours.");
+              setErrorMsg("Veuillez remplir le chapitre et le titre du document.");
               return;
             }
             if (!formData.hasDigital && !formData.hasCasio) {
@@ -640,6 +858,7 @@
               subject: formData.subject,
               chapter: formData.chapter,
               title: formData.title,
+              tag: formData.tag,
               digitalLink: formData.hasDigital ? formData.digitalLink : "",
               casioLink: formData.hasCasio ? formData.casioLink : "",
               date: isEditing ? initialData.date : new Date().toISOString()
@@ -654,7 +873,7 @@
                 <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 bg-slate-50 flex-shrink-0">
                   <h2 className="text-xl font-bold text-slate-800 flex items-center">
                     {isEditing ? <Edit2 className="w-5 h-5 mr-2 text-blue-600" /> : <LinkIcon className="w-5 h-5 mr-2 text-blue-600" />}
-                    {isEditing ? "Modifier le cours" : "Lier un cours depuis Drive"}
+                    {isEditing ? "Modifier le document" : "Lier un document depuis Drive"}
                   </h2>
                   <button onClick={onClose} className="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-1 rounded-lg transition-colors">
                     <X className="w-6 h-6" />
@@ -669,68 +888,46 @@
                       </div>
                   )}
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Matière</label>
-                    <select 
-                      value={formData.subject}
-                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
-                    >
-                      {subjects.map(sub => (
-                        <option key={sub} value={sub}>{sub}</option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Matière</label>
+                        <select value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                        {subjects.map(sub => (<option key={sub} value={sub}>{sub}</option>))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Type de document</label>
+                        <select value={formData.tag} onChange={(e) => setFormData({...formData, tag: e.target.value})} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
+                            <option value="Cours">Cours</option>
+                            <option value="TP">TP</option>
+                            <option value="Exercice">Exercice</option>
+                            <option value="Interro">Interro</option>
+                            <option value="DS">DS</option>
+                        </select>
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-1">Chapitre</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: Nombres Complexes, Thermodynamique..."
-                      value={formData.chapter}
-                      onChange={(e) => setFormData({...formData, chapter: e.target.value})}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    />
+                    <input type="text" placeholder="Ex: Nombres Complexes, Thermodynamique..." value={formData.chapter} onChange={(e) => setFormData({...formData, chapter: e.target.value})} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Titre du cours</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ex: Fiche de révision détaillée"
-                      value={formData.title}
-                      onChange={(e) => setFormData({...formData, title: e.target.value})}
-                      className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                    />
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Titre du document</label>
+                    <input type="text" placeholder="Ex: Fiche de révision détaillée, Énoncé TP 4..." value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                   </div>
 
                   <div className="pt-2 border-t border-slate-100">
                     <label className="block text-sm font-semibold text-slate-700 mb-3">Liens de partage Google Drive</label>
                     <div className="space-y-3">
-                      
                       <div className={`border rounded-xl transition-colors ${formData.hasDigital ? 'border-blue-300 bg-blue-50/30' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <label className="flex items-start space-x-3 p-3 cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={formData.hasDigital}
-                            onChange={(e) => setFormData({...formData, hasDigital: e.target.checked})}
-                            className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-                          />
+                          <input type="checkbox" checked={formData.hasDigital} onChange={(e) => setFormData({...formData, hasDigital: e.target.checked})} className="mt-1 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" />
                           <div className="flex-1">
-                            <div className="flex items-center font-medium text-slate-900">
-                              <FileDigit className="w-4 h-4 mr-1.5 text-slate-500"/> Lien Version Numérique
-                            </div>
+                            <div className="flex items-center font-medium text-slate-900"><FileDigit className="w-4 h-4 mr-1.5 text-slate-500"/> Lien Version Numérique</div>
                             <p className="text-xs text-slate-500 mt-0.5 mb-2">Cochez si vous avez un PDF/Word sur votre Drive.</p>
-                            
                             {formData.hasDigital && (
-                              <input 
-                                type="url" 
-                                placeholder="Collez le lien de partage Drive ici..."
-                                value={formData.digitalLink}
-                                onChange={(e) => setFormData({...formData, digitalLink: e.target.value})}
-                                onClick={(e) => e.preventDefault()}
-                                className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                              />
+                              <input type="url" placeholder="Collez le lien de partage Drive ici..." value={formData.digitalLink} onChange={(e) => setFormData({...formData, digitalLink: e.target.value})} onClick={(e) => e.preventDefault()} className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white" />
                             )}
                           </div>
                         </label>
@@ -738,32 +935,16 @@
 
                       <div className={`border rounded-xl transition-colors ${formData.hasCasio ? 'border-emerald-300 bg-emerald-50/30' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <label className="flex items-start space-x-3 p-3 cursor-pointer">
-                          <input 
-                            type="checkbox" 
-                            checked={formData.hasCasio}
-                            onChange={(e) => setFormData({...formData, hasCasio: e.target.checked})}
-                            className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
-                          />
+                          <input type="checkbox" checked={formData.hasCasio} onChange={(e) => setFormData({...formData, hasCasio: e.target.checked})} className="mt-1 w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
                           <div className="flex-1">
-                            <div className="flex items-center font-medium text-slate-900">
-                              <Calculator className="w-4 h-4 mr-1.5 text-emerald-500"/> Lien Version Casio
-                            </div>
+                            <div className="flex items-center font-medium text-slate-900"><Calculator className="w-4 h-4 mr-1.5 text-emerald-500"/> Lien Version Casio</div>
                             <p className="text-xs text-slate-500 mt-0.5 mb-2">Cochez si vous avez un fichier adapté pour Casio.</p>
-                            
                             {formData.hasCasio && (
-                              <input 
-                                type="url" 
-                                placeholder="Collez le lien de partage Drive ici..."
-                                value={formData.casioLink}
-                                onChange={(e) => setFormData({...formData, casioLink: e.target.value})}
-                                onClick={(e) => e.preventDefault()}
-                                className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                              />
+                              <input type="url" placeholder="Collez le lien de partage Drive ici..." value={formData.casioLink} onChange={(e) => setFormData({...formData, casioLink: e.target.value})} onClick={(e) => e.preventDefault()} className="w-full text-sm border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white" />
                             )}
                           </div>
                         </label>
                       </div>
-
                     </div>
                   </div>
                   
