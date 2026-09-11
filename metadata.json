@@ -1,0 +1,8 @@
+{
+  "name": "WorksBox",
+  "description": "Plateforme de partage et consultation de cours et ressources scolaires avec support calculatrice Casio.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

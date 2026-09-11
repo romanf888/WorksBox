@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with personal preferences and saved favorites",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "selectedSchool": { "type": "string", "maxLength": 128 },
+        "selectedClass": { "type": "string", "maxLength": 128 },
+        "favorites": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "email"]
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Course resource document",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 256 },
+        "subject": { "type": "string", "maxLength": 128 },
+        "chapter": { "type": "string", "maxLength": 256 },
+        "chapterOrder": { "type": "number" },
+        "courseOrder": { "type": "number" },
+        "school": { "type": "string", "maxLength": 128 },
+        "classe": { "type": "string", "maxLength": 128 },
+        "digitalLink": { "type": "string", "maxLength": 1024 },
+        "casioLink": { "type": "string", "maxLength": 1024 },
+        "videoLink": { "type": "string", "maxLength": 1024 },
+        "imageLink": { "type": "string", "maxLength": 1024 },
+        "audioLink": { "type": "string", "maxLength": 1024 },
+        "tag": { "type": "string", "maxLength": 64 },
+        "isVisible": { "type": "boolean" },
+        "viewsDigital": { "type": "number" },
+        "viewsCasio": { "type": "number" }
+      },
+      "required": ["title", "subject", "chapter"]
+    },
+    "Article": {
+      "title": "Article",
+      "description": "News and announcements",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 256 },
+        "content": { "type": "string", "maxLength": 5000 },
+        "date": { "type": "string", "maxLength": 64 },
+        "school": { "type": "string", "maxLength": 128 },
+        "classe": { "type": "string", "maxLength": 128 },
+        "imageUrl": { "type": "string", "maxLength": 1024 },
+        "videoUrl": { "type": "string", "maxLength": 1024 },
+        "pinned": { "type": "boolean" }
+      },
+      "required": ["title", "content", "date"]
+    },
+    "GlobalSettings": {
+      "title": "GlobalSettings",
+      "description": "Global settings for school and subjects",
+      "type": "object",
+      "properties": {
+        "schools": { "type": "array" },
+        "classes": { "type": "array" },
+        "subjectOrder": { "type": "array" },
+        "tagColors": { "type": "object" },
+        "announcement": { "type": "string", "maxLength": 512 },
+        "termsContent": { "type": "string", "maxLength": 50000 },
+        "casioGuideContent": { "type": "string", "maxLength": 50000 }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile with saved preferences and favorites"
+    },
+    "/artifacts/{appId}/public/data/courses/{courseId}": {
+      "schema": { "$ref": "#/entities/Course" },
+      "description": "Courses collection"
+    },
+    "/artifacts/{appId}/public/data/articles/{articleId}": {
+      "schema": { "$ref": "#/entities/Article" },
+      "description": "Articles collection"
+    },
+    "/artifacts/{appId}/public/data/settings/global": {
+      "schema": { "$ref": "#/entities/GlobalSettings" },
+      "description": "Global platform settings"
+    }
+  }
+}
