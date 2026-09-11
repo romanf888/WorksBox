@@ -46,9 +46,9 @@
 
         const { useState, useEffect, useMemo } = React;
 
-        // Configuration de la base de données lycee-share (cours, articles et réglages)
+        // Configuration Firebase du projet lycee-share (cours, articles, réglages et authentification)
         const lyceeShareAppId = 'lycee-share'; 
-        const lyceeShareConfig = {
+        const firebaseConfig = {
           apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
           authDomain: "lycee-share.firebaseapp.com",
           projectId: "lycee-share",
@@ -57,24 +57,12 @@
           appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
           measurementId: "G-3Q6998C0JH"
         };
-
-        // Base de données WorksBox pour les comptes utilisateurs et favoris synchronisés
-        const accountConfig = {
-          projectId: "loyal-science-0szp9",
-          appId: "1:589770041043:web:771f73fc30668054349626",
-          apiKey: "AIzaSyBpWKftClA4EUhs-pIjUzf1iSV3EvJW6w0",
-          authDomain: "loyal-science-0szp9.firebaseapp.com",
-          firestoreDatabaseId: "ai-studio-worksbox-69716350-0adc-4735-9e61-8fb35c555725",
-          storageBucket: "loyal-science-0szp9.firebasestorage.app",
-          messagingSenderId: "589770041043",
-          oAuthClientId: "589770041043-4v4t4dhc9u7ksi47epr7glod2ont6t79.apps.googleusercontent.com"
-        };
         
         let dataDb = null;
         let dataAuth = null;
 
         try {
-            const dataApp = initializeApp(lyceeShareConfig, 'lyceeShareData');
+            const dataApp = initializeApp(firebaseConfig, 'lyceeShareData');
             dataAuth = getAuth(dataApp);
             dataDb = getFirestore(dataApp);
             signInAnonymously(dataAuth).catch(err => {
@@ -88,9 +76,9 @@
         let userDb = null;
 
         try {
-            const accountApp = initializeApp(accountConfig);
+            const accountApp = initializeApp(firebaseConfig);
             auth = getAuth(accountApp);
-            userDb = getFirestore(accountApp, accountConfig.firestoreDatabaseId);
+            userDb = getFirestore(accountApp);
         } catch (e) {
             console.error('Erreur Firebase Auth WorksBox :', e);
         }
@@ -1196,7 +1184,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     <div>
                                         <p className="font-bold text-slate-900 text-sm">Domaine non autorisé dans Firebase</p>
                                         <p className="mt-1 text-slate-600 leading-relaxed">
-                                            Pour que Google OAuth fonctionne, ce domaine doit être ajouté dans les <strong>Domaines autorisés</strong> de Firebase Console (projet <code>loyal-science-0szp9</code>).
+                                            Pour que Google OAuth fonctionne, ce domaine doit être ajouté dans les <strong>Domaines autorisés</strong> de Firebase Console (projet <code>lycee-share</code>).
                                         </p>
                                     </div>
                                 </div>
@@ -1218,7 +1206,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                                 <div className="pt-1 flex flex-col sm:flex-row gap-2">
                                     <a 
-                                        href="https://console.firebase.google.com/project/loyal-science-0szp9/authentication/settings" 
+                                        href="https://console.firebase.google.com/project/lycee-share/authentication/settings" 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="inline-flex items-center justify-center px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-[11px] transition-colors"
