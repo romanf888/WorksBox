@@ -306,22 +306,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [isLoading, setIsLoading] = useState(true);
           const [dataUser, setDataUser] = useState(null);
           const [user, setUser] = useState(null);
-          const [localUser, setLocalUser] = useState(() => {
-              try {
-                  const saved = localStorage.getItem('worksbox_local_user');
-                  return saved ? JSON.parse(saved) : null;
-              } catch (e) {
-                  return null;
-              }
-          });
-          const [userProfile, setUserProfile] = useState(() => {
-              try {
-                  const saved = localStorage.getItem('worksbox_local_user');
-                  return saved ? JSON.parse(saved) : null;
-              } catch (e) {
-                  return null;
-              }
-          });
+          // Par défaut, l'utilisateur n'a aucun compte au démarrage. C'est à lui de choisir de se connecter.
+          const [localUser, setLocalUser] = useState(null);
+          const [userProfile, setUserProfile] = useState(null);
           const [showAuthModal, setShowAuthModal] = useState(false);
           const [showAccountModal, setShowAccountModal] = useState(false);
           const [authLoading, setAuthLoading] = useState(false);
@@ -329,6 +316,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [previewData, setPreviewData] = useState(null);
 
           const activeUser = user || localUser;
+
+          // Nettoyage de tout compte élève implicite hérité pour s'assurer que le visiteur commence sans compte
+          useEffect(() => {
+              if (!user && !localUser) {
+                  localStorage.removeItem('worksbox_local_user');
+              }
+          }, []);
 
           const [selectedSchool, setSelectedSchool] = useState(() => localStorage.getItem('wb_selected_school') || '');
           const [selectedClass, setSelectedClass] = useState(() => localStorage.getItem('wb_selected_class') || '');
@@ -348,6 +342,12 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           }, [favorites]);
 
           const toggleFav = async (courseId) => {
+              // Si l'utilisateur n'est pas connecté, demander la connexion pour utiliser les favoris
+              if (!activeUser) {
+                  setShowAuthModal(true);
+                  return;
+              }
+
               const newFavs = favorites.includes(courseId)
                   ? favorites.filter(id => id !== courseId)
                   : [...favorites, courseId];
@@ -444,6 +444,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           code: 'auth/unauthorized-domain',
                           domain: window.location.hostname,
                           message: `Le domaine "${window.location.hostname}" n'est pas encore autorisé dans Firebase pour la connexion Google OAuth.`
+                      });
+                  } else if (err.code === 'auth/operation-not-allowed' || err.message?.includes('operation-not-allowed')) {
+                      setAuthError({
+                          code: 'auth/operation-not-allowed',
+                          message: 'La connexion avec Google n\'est pas encore activée dans la console Firebase pour le projet lycee-share.'
                       });
                   } else if (err.code === 'auth/popup-closed-by-user') {
                       setAuthError({
@@ -662,7 +667,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const openSubject = (subject) => { setSelectedSubject(subject); setCurrentView('subject'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
           const openTerms = () => { setSelectedSubject(null); setCurrentView('terms'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
           const openCasioGuide = () => { setSelectedSubject(null); setCurrentView('casioGuide'); window.scrollTo({top: 0, behavior: 'smooth'}); };
-          const openFavorites = () => { setSelectedSubject(null); setCurrentView('favorites'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openFavorites = () => { 
+              setSelectedSubject(null); 
+              setCurrentView('favorites'); 
+              window.scrollTo({top: 0, behavior: 'smooth'}); 
+              if (!activeUser) {
+                  setShowAuthModal(true);
+              }
+          };
 
           const handleView = async (course, type) => {
               if (type === 'Numérique') setPreviewData({ link: course.digitalLink, title: course.title, type: 'Numérique' });
@@ -839,7 +851,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         </div>
                         <div className="hidden lg:flex items-center space-x-6">
                             <button onClick={goHome} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${(currentView === 'home' || currentView === 'subject') ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><HomeIcon className="w-4 h-4 mr-1.5" /> Accueil</button>
-                            <button onClick={openFavorites} className={`text-sm font-medium flex items-center transition-colors hover:text-amber-400 ${currentView === 'favorites' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 mt-1' : 'text-slate-400'}`}><Star className="w-4 h-4 mr-1.5" filled={currentView === 'favorites'} /> Favoris {favorites.length > 0 && <span className="ml-1.5 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{favorites.length}</span>}</button>
+                            <button onClick={openFavorites} className={`text-sm font-medium flex items-center transition-colors hover:text-amber-400 ${currentView === 'favorites' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 mt-1' : 'text-slate-400'}`}><Star className="w-4 h-4 mr-1.5" filled={currentView === 'favorites'} /> Favoris {activeUser && favorites.length > 0 && <span className="ml-1.5 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{favorites.length}</span>}</button>
                             <button onClick={openTerms} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'terms' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><Shield className="w-4 h-4 mr-1.5" /> Conditions</button>
                             <button onClick={openCasioGuide} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'casioGuide' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><HelpCircle className="w-4 h-4 mr-1.5" /> Tuto Casio</button>
                         </div>
@@ -1031,28 +1043,63 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <div className="bg-amber-100 p-3 rounded-xl"><Star className="w-8 h-8 text-amber-500" filled={true}/></div>
                                 <div><h1 className="text-3xl font-bold text-slate-900">Mes Favoris</h1><p className="text-slate-500">Retrouvez ici vos cours sauvegardés.</p></div>
                             </div>
-                            {(!user || user.isAnonymous) && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                    <div className="flex items-center space-x-3">
-                                        <div className="bg-blue-100 text-blue-600 p-2 rounded-xl flex-shrink-0"><UserIcon className="w-5 h-5"/></div>
-                                        <div>
-                                            <p className="text-xs sm:text-sm font-bold text-blue-950">Synchronisez vos favoris dans le cloud</p>
-                                            <p className="text-xs text-blue-700">Connectez-vous pour ne jamais perdre vos cours et les retrouver sur tous vos appareils.</p>
-                                        </div>
+
+                            {!activeUser ? (
+                                <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 sm:p-12 text-center max-w-lg mx-auto my-6 animate-in zoom-in-95 duration-200">
+                                    <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-100 shadow-sm">
+                                        <Star className="w-8 h-8" filled={true} />
                                     </div>
-                                    <button onClick={() => setShowAuthModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all whitespace-nowrap">Se connecter</button>
+                                    <h2 className="text-2xl font-black text-slate-900 mb-2">Connexion requise</h2>
+                                    <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                                        Pour ajouter des cours à vos favoris et les retrouver lors de vos révisions, vous devez vous connecter.
+                                    </p>
+                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                        <button 
+                                            id="btn-favorites-login-cta"
+                                            onClick={() => setShowAuthModal(true)} 
+                                            className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2"
+                                        >
+                                            <UserIcon className="w-4 h-4" />
+                                            <span>Se connecter pour utiliser les favoris</span>
+                                        </button>
+                                        <button 
+                                            onClick={goHome} 
+                                            className="w-full sm:w-auto px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl active:scale-95 transition-all"
+                                        >
+                                            Explorer les cours
+                                        </button>
+                                    </div>
                                 </div>
-                            )}
-                            {favoriteCourses.length === 0 ? (
-                                <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-500">Aucun favori enregistré.</div>
                             ) : (
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <ul className="divide-y divide-slate-100">
-                                        {favoriteCourses.map(course => (
-                                            <CourseListItem key={course.id} course={course} handleView={handleView} tagColors={settings.tagColors} isFav={true} toggleFav={() => toggleFav(course.id)} showSubject={true} />
-                                        ))}
-                                    </ul>
-                                </div>
+                                <>
+                                    {(!user || user.isAnonymous) && (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                                            <div className="flex items-center space-x-3">
+                                                <div className="bg-blue-100 text-blue-600 p-2 rounded-xl flex-shrink-0"><UserIcon className="w-5 h-5"/></div>
+                                                <div>
+                                                    <p className="text-xs sm:text-sm font-bold text-blue-950">Synchronisez vos favoris dans le cloud</p>
+                                                    <p className="text-xs text-blue-700">Connectez-vous avec Google pour ne jamais perdre vos cours et les retrouver sur tous vos appareils.</p>
+                                                </div>
+                                            </div>
+                                            <button onClick={() => setShowAuthModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all whitespace-nowrap">Lier avec Google</button>
+                                        </div>
+                                    )}
+                                    {favoriteCourses.length === 0 ? (
+                                        <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-500">
+                                            <Star className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                                            <p className="font-bold text-slate-700">Aucun favori enregistré pour le moment.</p>
+                                            <p className="text-xs text-slate-400 mt-1">Cliquez sur l'étoile d'un cours pour l'enregistrer dans cette liste.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                                            <ul className="divide-y divide-slate-100">
+                                                {favoriteCourses.map(course => (
+                                                    <CourseListItem key={course.id} course={course} handleView={handleView} tagColors={settings.tagColors} isFav={true} toggleFav={() => toggleFav(course.id)} showSubject={true} />
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                         )}
@@ -1147,12 +1194,16 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 (typeof error === 'object' && error.code === 'auth/unauthorized-domain') ||
                 (typeof error === 'string' && error.includes('unauthorized-domain'))
             );
+            const isOperationNotAllowed = error && (
+                (typeof error === 'object' && error.code === 'auth/operation-not-allowed') ||
+                (typeof error === 'string' && error.includes('operation-not-allowed'))
+            );
             const currentHost = window.location.hostname;
             const isInIframe = window.self !== window.top;
 
             const handleLocalSubmit = (e) => {
                 e.preventDefault();
-                const nameToUse = studentName.trim() || 'Élève WorksBox';
+                const nameToUse = studentName.trim() || 'Élève';
                 localStorage.setItem('wb_student_name', nameToUse);
                 onLocalSignIn(nameToUse);
             };
@@ -1172,12 +1223,40 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-sm">
                                 <UserIcon className="w-7 h-7" />
                             </div>
-                            <h2 className="text-2xl font-black text-slate-900">Espace Compte</h2>
-                            <p className="text-xs sm:text-sm text-slate-500 mt-1">Connectez-vous pour synchroniser vos favoris et vos préférences scolaires.</p>
+                            <h2 className="text-2xl font-black text-slate-900">Connexion</h2>
+                            <p className="text-xs sm:text-sm text-slate-500 mt-1">Connectez-vous pour utiliser vos favoris et synchroniser vos préférences.</p>
                         </div>
 
-                        {/* Erreur spécifique Domaine non autorisé */}
-                        {isUnauthorizedDomain ? (
+                        {/* Erreur spécifique Fournisseur Google non activé dans Firebase */}
+                        {isOperationNotAllowed ? (
+                            <div className="mb-5 p-4 bg-amber-50/90 border border-amber-200 text-amber-900 text-xs rounded-2xl space-y-3 animate-in fade-in">
+                                <div className="flex items-start space-x-2.5">
+                                    <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-bold text-slate-900 text-sm">Fournisseur Google non activé</p>
+                                        <p className="mt-1 text-slate-600 leading-relaxed">
+                                            La connexion avec Google n'est pas encore activée dans la console Firebase pour le projet <strong>lycee-share</strong>.
+                                        </p>
+                                        <ol className="list-decimal list-inside mt-2 space-y-1 text-slate-700 font-medium">
+                                            <li>Ouvrez la console Firebase (lien ci-dessous).</li>
+                                            <li>Allez dans <em>Authentication</em> &gt; <em>Sign-in method</em>.</li>
+                                            <li>Cliquez sur <strong>Google</strong>, activez le bouton et validez.</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                <div className="pt-1">
+                                    <a 
+                                        href="https://console.firebase.google.com/project/lycee-share/authentication/providers" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center justify-center px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-[11px] transition-colors shadow-sm"
+                                    >
+                                        <span>Activer Google dans Firebase Console</span>
+                                        <ExternalLink className="w-3.5 h-3.5 ml-1.5" />
+                                    </a>
+                                </div>
+                            </div>
+                        ) : isUnauthorizedDomain ? (
                             <div className="mb-5 p-4 bg-amber-50/90 border border-amber-200 text-amber-900 text-xs rounded-2xl space-y-3 animate-in fade-in">
                                 <div className="flex items-start space-x-2.5">
                                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
