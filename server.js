@@ -486,21 +486,38 @@ RÈGLES ABSOLUES :
 
 Renvoie UNIQUEMENT un tableau JSON valide contenant les ${finalFiles.length} objets structurés.`;
 
-        // 45s timeout to allow large batches (e.g. 29-50 files) to complete comfortably
-        const geminiPromise = ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: prompt,
-          config: {
-            responseMimeType: 'application/json',
-          },
-        });
+        // Candidate models list: start with gemini-3.1-flash-lite for speed & stability, with fallback to gemini-3.8-flash & gemini-flash-latest
+        const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-flash-latest'];
+        let aiResponse = null;
+        let successfulModel = null;
 
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout Gemini')), 45000)
-        );
+        for (const modelName of candidateModels) {
+          try {
+            const geminiPromise = ai.models.generateContent({
+              model: modelName,
+              contents: prompt,
+              config: {
+                responseMimeType: 'application/json',
+              },
+            });
 
-        const aiResponse = await Promise.race([geminiPromise, timeoutPromise]);
-        const text = aiResponse.text?.trim();
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Timeout Gemini')), 30000)
+            );
+
+            aiResponse = await Promise.race([geminiPromise, timeoutPromise]);
+            if (aiResponse && aiResponse.text) {
+              successfulModel = modelName;
+              break;
+            }
+          } catch (modelErr) {
+            // High demand or temporary 503 on this model: silently try next model in candidate chain
+            const is503 = modelErr.message && (modelErr.message.includes('503') || modelErr.message.includes('high demand') || modelErr.message.includes('UNAVAILABLE'));
+            console.log(`[Gemini Info] Model ${modelName} ${is503 ? 'experiencing temporary high demand' : 'error'}, trying next fallback...`);
+          }
+        }
+
+        const text = aiResponse?.text?.trim();
 
         if (text) {
           const parsed = JSON.parse(text);
@@ -556,13 +573,14 @@ Renvoie UNIQUEMENT un tableau JSON valide contenant les ${finalFiles.length} obj
             return res.json({
               success: true,
               source: 'gemini-ai',
+              model: successfulModel,
               courses: aiCourses,
               total: aiCourses.length
             });
           }
         }
       } catch (geminiError) {
-        console.warn('Gemini classification notice:', geminiError.message);
+        console.log('[Gemini Fallback] Using heuristic classification engine due to model unavailability.');
         // Seamless fallback to baseline heuristic classification
       }
     }
