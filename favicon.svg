@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="wbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="boxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background Rounded Badge -->
+  <rect width="64" height="64" rx="16" fill="url(#wbGrad)"/>
+
+  <!-- Stylized Open Book / Cloud Box Symbol -->
+  <g filter="url(#shadow)">
+    <!-- Book Spine / Center Line -->
+    <path d="M32 20 L32 46" stroke="#bfdbfe" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Left Book Page -->
+    <path d="M32 24 C25 20, 18 21, 14 23.5 C13 24.2, 13 25.5, 13 27 L13 43 C18 40.5, 25 39.5, 32 43 Z" 
+          fill="url(#boxGrad)" stroke="#60a5fa" stroke-width="1.2" stroke-linejoin="round"/>
+
+    <!-- Right Book Page -->
+    <path d="M32 24 C39 20, 46 21, 50 23.5 C51 24.2, 51 25.5, 51 27 L51 43 C46 40.5, 39 39.5, 32 43 Z" 
+          fill="url(#boxGrad)" stroke="#60a5fa" stroke-width="1.2" stroke-linejoin="round"/>
+
+    <!-- Left Page Subtle Lines -->
+    <path d="M18 29 C22 27.5, 26 27.5, 29 28.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M18 34 C22 32.5, 26 32.5, 29 33.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Right Page Accent - Calculator / Tech Dots -->
+    <circle cx="38" cy="28.5" r="1.5" fill="#3b82f6"/>
+    <circle cx="43" cy="28.5" r="1.5" fill="#3b82f6"/>
+    <path d="M36 34 C39 33.5, 43 33.5, 46 34" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Mini Cloud / Spark Accent at Top -->
+    <path d="M28 17 C28 14.8, 29.8 13, 32 13 C34.2 13, 36 14.8, 36 17 Z" fill="#93c5fd"/>
+  </g>
+</svg>
