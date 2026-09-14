@@ -1527,6 +1527,69 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
+        function FileTypeBadge({ fileType, mediaType }) {
+            const ext = (fileType || '').toLowerCase().replace(/^\./, '');
+            const media = mediaType || '';
+
+            if (media === 'video' || ext === 'mp4' || ext === 'webm' || ext === 'mkv') {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-red-100 text-red-700 border border-red-200 uppercase tracking-wider">
+                        <VideoIcon className="w-2.5 h-2.5 mr-1" /> {ext ? ext.toUpperCase() : 'VIDÉO'}
+                    </span>
+                );
+            }
+            if (media === 'audio' || ext === 'mp3' || ext === 'wav' || ext === 'm4a') {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-wider">
+                        <MusicIcon className="w-2.5 h-2.5 mr-1" /> {ext ? ext.toUpperCase() : 'AUDIO'}
+                    </span>
+                );
+            }
+            if (media === 'casio' || ext === 'g1m' || ext === 'txt') {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wider">
+                        <Calculator className="w-2.5 h-2.5 mr-1" /> {ext ? ext.toUpperCase() : 'CASIO'}
+                    </span>
+                );
+            }
+            if (media === 'presentation' || ext === 'pptx' || ext === 'ppt') {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-orange-100 text-orange-700 border border-orange-200 uppercase tracking-wider">
+                        <FileText className="w-2.5 h-2.5 mr-1" /> PPTX
+                    </span>
+                );
+            }
+            if (media === 'spreadsheet' || ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-green-100 text-green-700 border border-green-200 uppercase tracking-wider">
+                        <FileText className="w-2.5 h-2.5 mr-1" /> XLSX
+                    </span>
+                );
+            }
+            if (media === 'image' || ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-wider">
+                        <ImageIcon className="w-2.5 h-2.5 mr-1" /> {ext ? ext.toUpperCase() : 'IMAGE'}
+                    </span>
+                );
+            }
+            if (ext === 'pdf') {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-wider">
+                        <FileText className="w-2.5 h-2.5 mr-1" /> PDF
+                    </span>
+                );
+            }
+            if (ext) {
+                return (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 uppercase tracking-wider">
+                        {ext.toUpperCase()}
+                    </span>
+                );
+            }
+            return null;
+        }
+
         function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false }) {
             const courseTag = course.tag || 'Cours';
             const style = COLOR_PALETTES[tagColors?.[courseTag]] || COLOR_PALETTES.slate;
@@ -1535,9 +1598,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                     <div className="flex items-start space-x-4 flex-1 min-w-0">
                         <button onClick={toggleFav} className="mt-1 text-slate-300 hover:text-amber-400 transition-colors"><Star className="w-6 h-6" filled={isFav} /></button>
                         <div className="min-w-0">
-                            <div className="flex items-center space-x-2 mb-1">
+                            <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
                                 {showSubject && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">{course.subject}</span>}
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${style}`}>{courseTag}</span>
+                                <FileTypeBadge fileType={course.fileType} mediaType={course.mediaType} />
                             </div>
                             <h4 className="text-lg font-semibold text-slate-900 truncate">{course.title}</h4>
                         </div>

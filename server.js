@@ -28,6 +28,91 @@ function getGeminiClient() {
   return geminiClient;
 }
 
+// Comprehensive file extension and media type detector
+function detectFileTypeAndMedia(filename = '', url = '', mimeType = '') {
+  const cleanName = (filename || '').toLowerCase().trim();
+  const cleanUrl = (url || '').toLowerCase().trim();
+
+  // 1. Extract extension from filename or URL
+  let ext = '';
+  const extMatch = cleanName.match(/\.([a-z0-9]{2,5})(?:[\?#].*)?$/i);
+  if (extMatch) {
+    ext = extMatch[1].toLowerCase();
+  } else {
+    const urlMatch = cleanUrl.match(/\.([a-z0-9]{2,5})(?:[\?#].*)?$/i);
+    if (urlMatch) {
+      ext = urlMatch[1].toLowerCase();
+    }
+  }
+
+  // Check mimeType if no ext
+  if (!ext && mimeType) {
+    if (mimeType.includes('video') || mimeType.includes('mp4')) ext = 'mp4';
+    else if (mimeType.includes('audio') || mimeType.includes('mpeg') || mimeType.includes('mp3')) ext = 'mp3';
+    else if (mimeType.includes('pdf')) ext = 'pdf';
+    else if (mimeType.includes('word') || mimeType.includes('document')) ext = 'docx';
+    else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) ext = 'pptx';
+    else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) ext = 'xlsx';
+    else if (mimeType.includes('image')) ext = 'png';
+  }
+
+  // Video formats
+  if (['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v', 'flv', '3gp', 'wmv'].includes(ext)) {
+    return { ext: ext || 'mp4', fileType: ext || 'mp4', mediaType: 'video', defaultTag: 'Vidéo' };
+  }
+  // Audio formats
+  if (['mp3', 'wav', 'm4a', 'ogg', 'aac', 'flac', 'wma', 'opus'].includes(ext)) {
+    return { ext: ext || 'mp3', fileType: ext || 'mp3', mediaType: 'audio', defaultTag: 'Audio' };
+  }
+  // Casio / Calculator formats
+  if (['g1m', 'g2m'].includes(ext)) {
+    return { ext: ext || 'g1m', fileType: ext || 'g1m', mediaType: 'casio', defaultTag: 'Casio' };
+  }
+  // Image formats
+  if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'bmp', 'ico'].includes(ext)) {
+    return { ext: ext || 'png', fileType: ext || 'png', mediaType: 'image', defaultTag: 'Fiche' };
+  }
+  // Presentation formats
+  if (['ppt', 'pptx', 'odp', 'key'].includes(ext)) {
+    return { ext: ext || 'pptx', fileType: ext || 'pptx', mediaType: 'presentation', defaultTag: 'Diaporama' };
+  }
+  // Spreadsheet formats
+  if (['xls', 'xlsx', 'ods', 'csv'].includes(ext)) {
+    return { ext: ext || 'xlsx', fileType: ext || 'xlsx', mediaType: 'spreadsheet', defaultTag: 'Tableur' };
+  }
+  // Plain text / Casio text
+  if (ext === 'txt') {
+    const isCasioText = /casio|calc|prog|g1m|formule|calculatrice/i.test(cleanName);
+    return {
+      ext: 'txt',
+      fileType: 'txt',
+      mediaType: isCasioText ? 'casio' : 'document',
+      defaultTag: isCasioText ? 'Casio' : 'Cours'
+    };
+  }
+  // Word / Office document
+  if (['doc', 'docx', 'odt', 'rtf'].includes(ext)) {
+    return { ext: ext || 'docx', fileType: ext || 'docx', mediaType: 'document', defaultTag: 'Cours' };
+  }
+  // PDF
+  if (ext === 'pdf') {
+    return { ext: 'pdf', fileType: 'pdf', mediaType: 'document', defaultTag: 'Cours' };
+  }
+
+  // Fallback: check keywords in name
+  if (/vidéo|video|capsule|\.mp4/i.test(cleanName)) {
+    return { ext: 'mp4', fileType: 'mp4', mediaType: 'video', defaultTag: 'Vidéo' };
+  }
+  if (/audio|podcast|ecoute|son|\.mp3/i.test(cleanName)) {
+    return { ext: 'mp3', fileType: 'mp3', mediaType: 'audio', defaultTag: 'Audio' };
+  }
+  if (/casio|\.g1m/i.test(cleanName)) {
+    return { ext: 'g1m', fileType: 'g1m', mediaType: 'casio', defaultTag: 'Casio' };
+  }
+
+  return { ext: ext || 'pdf', fileType: ext || 'pdf', mediaType: 'document', defaultTag: 'Cours' };
+}
+
 // Heuristic fallback classifier when AI is unavailable or as a baseline
 function heuristicClassify(files, context = {}) {
   const defaultSubject = context.targetSubject || 'Général';
@@ -47,15 +132,21 @@ function heuristicClassify(files, context = {}) {
 
   return files.map((file, index) => {
     const rawName = file.name || file.title || 'Document sans titre';
-    const cleanExt = rawName.replace(/\.(pdf|docx?|pptx?|odt|txt|g1m|zip)$/i, '');
+    const cleanExt = rawName.replace(/\.(pdf|docx?|pptx?|odt|txt|g1m|g2m|zip|mp4|mov|avi|mkv|webm|m4v|mp3|wav|m4a|ogg|aac|flac|png|jpe?g|webp|gif|xlsx?|ods|csv)$/i, '');
     
+    const { ext, fileType, mediaType, defaultTag } = detectFileTypeAndMedia(rawName, file.url, file.mimeType);
+
     // Determine tag
-    let tag = 'Cours';
+    let tag = defaultTag;
     if (/\btp\b|travaux.*pratique/i.test(cleanExt)) tag = 'TP';
     else if (/\btd\b|travaux.*dirige/i.test(cleanExt)) tag = 'TD';
     else if (/fiche|synthese|recap|resume/i.test(cleanExt)) tag = 'Fiche';
     else if (/formulaire|aide.*memoire/i.test(cleanExt)) tag = 'Formulaire';
     else if (/exo|exercice|corrige|devoir|dm|ds/i.test(cleanExt)) tag = 'Exercices';
+    else if (mediaType === 'video') tag = 'Vidéo';
+    else if (mediaType === 'audio') tag = 'Audio';
+    else if (mediaType === 'casio') tag = 'Casio';
+    else if (mediaType === 'presentation') tag = 'Diaporama';
 
     // Determine subject
     let subject = defaultSubject !== 'Général' ? defaultSubject : '';
@@ -91,8 +182,7 @@ function heuristicClassify(files, context = {}) {
     // Capitalize first letter
     cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
 
-    const digitalLink = file.url || file.digitalLink || (file.id ? `https://drive.google.com/file/d/${file.id}/view` : '');
-    const isCasioFile = /\.g1m$|\.txt$/i.test(rawName);
+    const fileUrl = file.url || file.digitalLink || (file.id ? `https://drive.google.com/file/d/${file.id}/view` : '');
 
     return {
       id: `imported-${Date.now()}-${index}`,
@@ -102,10 +192,15 @@ function heuristicClassify(files, context = {}) {
       chapterOrder: chapterNumber,
       courseOrder: index + 1,
       tag: tag,
+      fileType: fileType,
+      mediaType: mediaType,
       school: defaultSchool,
       classe: defaultClass,
-      digitalLink: isCasioFile ? '' : digitalLink,
-      casioLink: isCasioFile ? digitalLink : '',
+      digitalLink: mediaType === 'casio' ? '' : fileUrl,
+      videoLink: mediaType === 'video' ? fileUrl : '',
+      audioLink: mediaType === 'audio' ? fileUrl : '',
+      casioLink: mediaType === 'casio' ? fileUrl : '',
+      imageLink: mediaType === 'image' ? fileUrl : '',
       viewsDigital: 0,
       viewsCasio: 0,
       isVisible: true,
@@ -137,37 +232,100 @@ app.post('/api/drive/classify', async (req, res) => {
       }));
     }
 
-    // 2. Extract files / links from raw text or Google Drive URLs
+    // 2. Comprehensive Multi-Format File & Link Extractor
     const textToScan = `${driveUrl}\n${rawText}`.trim();
     if (textToScan) {
-      const lines = textToScan.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      // Universal regex for all Google Drive / Docs / Sheets / Slides / Forms variations
+      const driveRegex = /https?:\/\/(?:drive|docs)\.google\.com\/(?:file(?:\/u\/\d+)?\/d\/|open\?id=|uc\?[^"\s]*id=|(?:document|presentation|spreadsheets|forms)(?:\/u\/\d+)?\/d\/)([a-zA-Z0-9_-]+)[^\s,;"'<>()]*/gi;
       
-      // Look for Google Drive file links in the text
-      const driveFileRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/g;
-      const allDriveFileMatches = [...textToScan.matchAll(driveFileRegex)];
+      const lines = textToScan.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const processedUrls = new Set();
 
-      lines.forEach(line => {
-        // Check if line is just a link or has filename + link
-        const driveMatch = line.match(/https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-        const url = driveMatch ? driveMatch[0] + '/view' : '';
-        const id = driveMatch ? driveMatch[1] : '';
+      // Pass 1: Parse structured lines (supporting alternating lines: Title on line N, URL on line N+1)
+      for (let i = 0; i < lines.length; i++) {
+        const currentLine = lines[i];
+        const lineDriveMatches = [...currentLine.matchAll(driveRegex)];
 
-        // Remove URL from line to get filename
-        let potentialName = line.replace(/https:\/\/drive\.google\.com\S+/g, '').trim();
-        potentialName = potentialName.replace(/[()\[\]]/g, '').trim();
+        if (lineDriveMatches.length === 1) {
+          const matchedUrl = lineDriveMatches[0][0];
+          const fileId = lineDriveMatches[0][1];
+          let potentialName = currentLine.replace(matchedUrl, '').trim();
+          potentialName = potentialName.replace(/[()\[\]]/g, '').trim();
 
-        if (!potentialName && driveMatch) {
-          potentialName = `Document Drive (${id.slice(0, 6)})`;
+          // Check if previous line was an orphan title
+          if (!potentialName && i > 0) {
+            const prevLine = lines[i - 1];
+            const prevMatches = [...prevLine.matchAll(driveRegex)];
+            if (prevMatches.length === 0 && prevLine.length > 2 && prevLine.length < 160) {
+              potentialName = prevLine;
+            }
+          }
+
+          if (!processedUrls.has(matchedUrl)) {
+            processedUrls.add(matchedUrl);
+            extractedFiles.push({
+              name: potentialName || `Document Drive (${fileId.slice(0, 6)})`,
+              url: matchedUrl,
+              id: fileId
+            });
+          }
+        } else if (lineDriveMatches.length > 1) {
+          // Multiple URLs on the same line (e.g. comma/space separated paste of 20+ links)
+          for (const m of lineDriveMatches) {
+            const url = m[0];
+            const id = m[1];
+            if (!processedUrls.has(url)) {
+              processedUrls.add(url);
+              extractedFiles.push({
+                name: `Document Drive (${id.slice(0, 6)})`,
+                url: url,
+                id: id
+              });
+            }
+          }
+        } else {
+          // Line without a Drive URL: could be a title followed by a URL on the next line
+          const nextLine = (i + 1 < lines.length) ? lines[i + 1] : '';
+          const nextMatches = [...nextLine.matchAll(driveRegex)];
+          if (nextMatches.length !== 1) {
+            // General external URL or document title
+            const generalUrlMatch = currentLine.match(/https?:\/\/[^\s,;"'<>()]+/);
+            if (generalUrlMatch) {
+              const url = generalUrlMatch[0];
+              const name = currentLine.replace(url, '').trim();
+              if (!processedUrls.has(url)) {
+                processedUrls.add(url);
+                extractedFiles.push({
+                  name: name || `Ressource (${url.slice(0, 25)})`,
+                  url: url,
+                  id: ''
+                });
+              }
+            } else if (currentLine.length > 2 && currentLine.length < 200 && !currentLine.startsWith('http')) {
+              extractedFiles.push({
+                name: currentLine,
+                url: '',
+                id: ''
+              });
+            }
+          }
         }
+      }
 
-        if (potentialName || url) {
+      // Pass 2: Safety sweep to guarantee EVERY single Google Drive link in text is captured
+      const allDriveMatches = [...textToScan.matchAll(driveRegex)];
+      for (const m of allDriveMatches) {
+        const url = m[0];
+        const id = m[1];
+        if (!processedUrls.has(url)) {
+          processedUrls.add(url);
           extractedFiles.push({
-            name: potentialName || `Document ${extractedFiles.length + 1}`,
+            name: `Document Drive (${id.slice(0, 6)})`,
             url: url,
             id: id
           });
         }
-      });
+      }
     }
 
     // If a Google Drive Folder ID was passed and an API key is available
@@ -193,24 +351,77 @@ app.post('/api/drive/classify', async (req, res) => {
       }
     }
 
-    // Filter out duplicates and empty items
+    // Fast parallel metadata resolution for public drive files lacking clear filenames
+    const filesToEnrich = extractedFiles.filter(f => f.id && f.name.startsWith('Document Drive ('));
+    if (filesToEnrich.length > 0 && filesToEnrich.length <= 40) {
+      await Promise.all(
+        filesToEnrich.map(async (file) => {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 2000);
+            const res = await fetch(`https://drive.google.com/file/d/${file.id}/view`, {
+              signal: controller.signal,
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
+            });
+            clearTimeout(timer);
+            if (res.ok) {
+              const html = await res.text();
+              const ogMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+              if (ogMatch && ogMatch[1] && !ogMatch[1].includes('Google Drive - ') && !ogMatch[1].includes('Page introuvable')) {
+                file.name = ogMatch[1].trim();
+              }
+            }
+          } catch (_) {
+            // Non-blocking
+          }
+        })
+      );
+    }
+
+    // Filter out duplicates
     const uniqueFilesMap = new Map();
     extractedFiles.forEach(f => {
-      const key = `${f.name}__${f.url}`;
-      if (f.name && !uniqueFilesMap.has(key)) {
+      const key = f.url ? f.url : f.name;
+      if (!uniqueFilesMap.has(key)) {
         uniqueFilesMap.set(key, f);
       }
     });
     const finalFiles = Array.from(uniqueFilesMap.values());
 
     if (finalFiles.length === 0) {
+      if (driveUrl && (driveUrl.includes('/folders/') || driveUrl.includes('id='))) {
+        const subjectName = targetSubject || 'Ressources';
+        return res.json({
+          success: true,
+          source: 'dossier-global',
+          isFolderOnly: true,
+          courses: [{
+            id: `drive-folder-${Date.now()}`,
+            title: `Dossier complet - ${subjectName}`,
+            subject: subjectName,
+            chapter: 'Dossier & Documents de la matière',
+            chapterOrder: 1,
+            courseOrder: 1,
+            tag: 'Cours',
+            school: targetSchool || '',
+            classe: targetClass || '',
+            digitalLink: driveUrl,
+            casioLink: '',
+            viewsDigital: 0,
+            viewsCasio: 0,
+            isVisible: true
+          }],
+          message: "Lien de dossier Drive détecté ! Vous pouvez enregistrer ce dossier global directement, ou coller le contenu des fichiers pour un découpage automatique par cours avec l'IA."
+        });
+      }
+
       return res.status(400).json({
         success: false,
         error: "Aucun fichier détecté. Veuillez fournir un lien de dossier Google Drive, coller des liens ou la liste des noms de fichiers."
       });
     }
 
-    // Baseline heuristic classification
+    // Baseline heuristic classification (guarantees 1 course for every single file)
     const baselineCourses = heuristicClassify(finalFiles, {
       targetSchool,
       targetClass,
@@ -223,29 +434,61 @@ app.post('/api/drive/classify', async (req, res) => {
     if (ai) {
       try {
         const prompt = `Tu es un assistant pédagogique spécialisé pour les lycéens (classes de Lycée, Terminale STI2D, BTS, Général).
-Voici la liste brute de ${finalFiles.length} fichier(s) scolaires issus de Google Drive :
+Voici la liste de ${finalFiles.length} fichier(s) scolaires issus de Google Drive :
 ${JSON.stringify(finalFiles.map((f, i) => ({ index: i, name: f.name, url: f.url })), null, 2)}
 
 Contexte :
 - Établissement : "${targetSchool}"
 - Classe : "${targetClass}"
-- Matière souhaitée / hint : "${targetSubject || 'À déduire automatiquement des titres ou du contenu'}"
+- Matière souhaitée / hint : "${targetSubject || 'À déduire automatiquement des titres ou du contexte'}"
 
-Pour CHAQUE fichier, analyse scrupuleusement le nom et le contexte pour produire :
-1. "title" : Titre propre, élégant, débarrassé des extensions (.pdf, .g1m, .txt, etc.), sans underscores, avec accents et typographie soignée.
-2. "subject" : Matière scolaire (ex: "Mathématiques", "Physique Chimie", "SIN", "ITEC", "Philosophie", "Anglais", etc.).
-3. "chapter" : Chapitre exact (ex: "Chapitre 1 : Les Suites numériques", "Chapitre 2 : Cinématique et Mouvements"). Tous les cours d'un même chapitre doivent avoir EXACTEMENT le même intitulé de chapitre.
-4. "tag" : Un tag parmi "Cours", "TP", "TD", "Fiche", "Formulaire", "Exercices".
-5. "digitalLink" : Le lien Google Drive (ou conserve l'URL fournie).
-6. "casioLink" : Si le fichier est un fichier calculatrice (.txt ou .g1m), mettre le lien ici.
-7. "chapterOrder" : Entier du numéro de chapitre (ex: 1, 2, 3...).
-8. "courseOrder" : Entier du numéro de cours dans le chapitre.
+RÈGLES ABSOLUES :
+1. Tu DOIS impérativement renvoyer EXACTEMENT ${finalFiles.length} objets dans le tableau JSON, un pour CHAQUE élément de la liste (de l'index 0 à ${finalFiles.length - 1}).
+2. Ne saute AUCUN fichier et ne regroupe pas les fichiers entre eux. Chaque fichier fourni doit devenir un cours distinct dans le tableau final.
+3. ANALYSE CRUCIALE DES EXTENSIONS ET TYPES DE FICHIERS :
+   - Analyse attentivement le nom ou l'URL de chaque fichier pour détecter son extension (ex: .mp4, .pdf, .mp3, .txt, .g1m, .docx, .pptx, .xlsx, .png, .jpg, etc.).
+   - "fileType" : renseigne l'extension en minuscules sans point (ex: "mp4", "pdf", "mp3", "txt", "g1m", "docx", "pptx", "xlsx", "png", "jpg"). Si inconnue, déduis-la ou utilise "pdf".
+   - "mediaType" : détermine la catégorie parmi :
+     * "video" (si mp4, mov, avi, webm, mkv, capsule vidéo...)
+     * "audio" (si mp3, wav, m4a, ogg, podcast, écoute...)
+     * "document" (si pdf, docx, doc, odt, txt général...)
+     * "casio" (si g1m, g2m, ou txt programme calculatrice...)
+     * "presentation" (si pptx, ppt, diaporama...)
+     * "image" (si png, jpg, jpeg, schéma, photo...)
+     * "spreadsheet" (si xlsx, ods, tableur...)
+   - Distribution des liens selon le type :
+     * Si vidéo (mp4...) : "videoLink" reçoit l'URL, et "digitalLink" reçoit l'URL.
+     * Si audio (mp3...) : "audioLink" reçoit l'URL, et "digitalLink" reçoit l'URL.
+     * Si calculatrice Casio (.g1m ou .txt calculatrice) : "casioLink" reçoit l'URL.
+     * Si image (png, jpg...) : "imageLink" reçoit l'URL, et "digitalLink" reçoit l'URL.
+     * Si document (pdf, docx...) : "digitalLink" reçoit l'URL.
+   - Tag pédagogique adapté :
+     * Si vidéo : "Vidéo" (ou "TP", "Cours" selon le sujet)
+     * Si audio : "Audio" ou "Podcast"
+     * Si Casio : "Casio"
+     * Si présentation : "Diaporama" ou "Cours"
+     * Si document : "Cours", "TP", "TD", "Fiche", "Formulaire", "Exercices".
+4. Chaque objet retourné doit contenir :
+   - "index" : l'entier exact de l'index d'entrée (de 0 à ${finalFiles.length - 1}).
+   - "title" : Titre propre, élégant, débarrassé de TOUTE extension (.mp4, .pdf, .mp3, .txt, .g1m, etc.), sans underscores, avec accents et typographie soignée.
+   - "subject" : Matière scolaire (ex: "Mathématiques", "Physique Chimie", "SVT", "SIN", "ITEC", "Philosophie", "Anglais", etc.).
+   - "chapter" : Chapitre exact (ex: "Chapitre 1 : L'organisation fonctionnelle du vivant", "Chapitre 2 : Le métabolisme cellulaire"). Les cours d'un même chapitre doivent avoir EXACTEMENT le même intitulé de chapitre.
+   - "chapterOrder" : Entier du numéro de chapitre (ex: 1, 2, 3...).
+   - "courseOrder" : Entier du numéro de cours dans le chapitre.
+   - "fileType" : L'extension normalisée ("mp4", "pdf", "mp3", "txt", "g1m", "docx", "pptx", "xlsx", "png", "jpg"...).
+   - "mediaType" : "video" | "audio" | "document" | "casio" | "presentation" | "image" | "spreadsheet".
+   - "tag" : Un tag adapté ("Cours", "TP", "TD", "Fiche", "Formulaire", "Exercices", "Vidéo", "Audio", "Diaporama", "Casio").
+   - "digitalLink" : L'URL fournie correspondante (ou "" si Casio pur).
+   - "videoLink" : L'URL fournie si vidéo (sinon "").
+   - "audioLink" : L'URL fournie si audio (sinon "").
+   - "casioLink" : L'URL fournie si Casio (.g1m ou .txt calculatrice, sinon "").
+   - "imageLink" : L'URL fournie si image (sinon "").
 
-Renvoie UNIQUEMENT un tableau JSON valide contenant les objets structurés.`;
+Renvoie UNIQUEMENT un tableau JSON valide contenant les ${finalFiles.length} objets structurés.`;
 
-        // Add 12s timeout for safety
+        // 45s timeout to allow large batches (e.g. 29-50 files) to complete comfortably
         const geminiPromise = ai.models.generateContent({
-          model: 'gemini-3.6-flash',
+          model: 'gemini-3.8-flash',
           contents: prompt,
           config: {
             responseMimeType: 'application/json',
@@ -253,7 +496,7 @@ Renvoie UNIQUEMENT un tableau JSON valide contenant les objets structurés.`;
         });
 
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout Gemini')), 12000)
+          setTimeout(() => reject(new Error('Timeout Gemini')), 45000)
         );
 
         const aiResponse = await Promise.race([geminiPromise, timeoutPromise]);
@@ -262,9 +505,30 @@ Renvoie UNIQUEMENT un tableau JSON valide contenant les objets structurés.`;
         if (text) {
           const parsed = JSON.parse(text);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const aiCourses = parsed.map((item, idx) => {
-              const base = baselineCourses[idx] || baselineCourses[0];
-              const isCasio = /\.g1m$|\.txt$/i.test(item.originalFilename || base.originalFilename || '');
+            // Map over baselineCourses to strictly guarantee ALL input files are retained
+            const aiCourses = baselineCourses.map((base, idx) => {
+              // Find matching entry from Gemini by index or position
+              const item = parsed.find(p => p.index === idx) || parsed[idx];
+              if (!item) {
+                return base; // Keep baseline classification if Gemini omitted this specific index
+              }
+
+              const detected = detectFileTypeAndMedia(
+                base.originalFilename || item.title || '',
+                base.digitalLink || base.videoLink || base.audioLink || ''
+              );
+
+              // Use AI fileType/mediaType or fall back to detected
+              const fileType = (item.fileType ? String(item.fileType).toLowerCase().replace(/^\./, '') : detected.fileType) || 'pdf';
+              const mediaType = item.mediaType || detected.mediaType || 'document';
+
+              const isVideo = mediaType === 'video' || fileType === 'mp4' || ['mov', 'avi', 'mkv', 'webm'].includes(fileType);
+              const isAudio = mediaType === 'audio' || fileType === 'mp3' || ['wav', 'm4a', 'ogg', 'flac'].includes(fileType);
+              const isCasio = mediaType === 'casio' || fileType === 'g1m' || (fileType === 'txt' && detected.mediaType === 'casio');
+              const isImage = mediaType === 'image' || ['png', 'jpg', 'jpeg', 'webp', 'gif'].includes(fileType);
+
+              const originalUrl = base.digitalLink || base.videoLink || base.audioLink || base.casioLink || base.imageLink || '';
+
               return {
                 id: `drive-ai-${Date.now()}-${idx}`,
                 title: item.title || base.title,
@@ -272,11 +536,16 @@ Renvoie UNIQUEMENT un tableau JSON valide contenant les objets structurés.`;
                 chapter: item.chapter || base.chapter,
                 chapterOrder: typeof item.chapterOrder === 'number' ? item.chapterOrder : base.chapterOrder,
                 courseOrder: typeof item.courseOrder === 'number' ? item.courseOrder : (idx + 1),
-                tag: item.tag || base.tag,
+                tag: item.tag || (isVideo ? 'Vidéo' : isAudio ? 'Audio' : isCasio ? 'Casio' : base.tag),
+                fileType: fileType,
+                mediaType: mediaType,
                 school: targetSchool,
                 classe: targetClass,
-                digitalLink: item.digitalLink || (isCasio ? '' : base.digitalLink),
-                casioLink: item.casioLink || (isCasio ? base.digitalLink : ''),
+                digitalLink: isCasio ? '' : (item.digitalLink || originalUrl),
+                videoLink: isVideo ? (item.videoLink || originalUrl) : (item.videoLink || ''),
+                audioLink: isAudio ? (item.audioLink || originalUrl) : (item.audioLink || ''),
+                casioLink: isCasio ? (item.casioLink || originalUrl) : (item.casioLink || ''),
+                imageLink: isImage ? (item.imageLink || originalUrl) : (item.imageLink || ''),
                 viewsDigital: 0,
                 viewsCasio: 0,
                 isVisible: true,
