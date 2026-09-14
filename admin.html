@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - WorksBox</title>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 selection:bg-red-200 selection:text-red-900">
+    
+    <div id="root">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
+            <div style="width: 50px; height: 50px; border: 4px solid #cbd5e1; border-top-color: #ef4444; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            <h2 style="font-size: 1.5rem; font-weight: bold; color: #1e293b; margin-bottom: 10px; font-family: sans-serif;">Chargement du Dashboard Admin...</h2>
+        </div>
+    </div>
+
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        const appId = 'lycee-share'; 
+        const firebaseConfig = {
+          apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
+          authDomain: "lycee-share.firebaseapp.com",
+          projectId: "lycee-share",
+          storageBucket: "lycee-share.firebasestorage.app",
+          messagingSenderId: "578872424130",
+          appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
+          measurementId: "G-3Q6998C0JH"
+        };
+        
+        let db = null;
+        let auth = null;
+
+        try {
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "VOTRE_API_KEY" && !firebaseConfig.apiKey.includes("xxxxxxxx")) {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            }
+        } catch (e) {
+            console.error("Erreur Firebase :", e);
+        }
+
+        const Icon = ({ children, className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>;
+        const Folder = ({className}) => <Icon className={className}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></Icon>;
+        const FileText = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></Icon>;
+        const ChevronLeft = ({className}) => <Icon className={className}><polyline points="15 18 9 12 15 6"/></Icon>;
+        const ChevronDown = ({className}) => <Icon className={className}><polyline points="6 9 12 15 18 9"/></Icon>;
+        const ArrowUp = ({className}) => <Icon className={className}><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></Icon>;
+        const ArrowDown = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></Icon>;
+        const Plus = ({className}) => <Icon className={className}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>;
+        const X = ({className}) => <Icon className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+        const Edit2 = ({className}) => <Icon className={className}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></Icon>;
+        const Trash2 = ({className}) => <Icon className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></Icon>;
+        const Settings = ({className}) => <Icon className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const EyeOff = ({className}) => <Icon className={className}><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></Icon>;
+        const Eye = ({className}) => <Icon className={className}><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></Icon>;
+        const BarChart = ({className}) => <Icon className={className}><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></Icon>;
+        const TrendingUp = ({className}) => <Icon className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></Icon>;
+        const SchoolIcon = ({className}) => <Icon className={className}><path d="m4 6 8-4 8 4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 5v17"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/></Icon>;
+        const Newspaper = ({className}) => <Icon className={className}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M18 10h-8"/><path d="M14 6h-4"/></Icon>;
+        const VideoIcon = ({className}) => <Icon className={className}><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></Icon>;
+        const ImageIcon = ({className}) => <Icon className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></Icon>;
+        const MusicIcon = ({className}) => <Icon className={className}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></Icon>;
+        const Calculator = ({className}) => <Icon className={className}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></Icon>;
+        const Sparkles = ({className}) => <Icon className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></Icon>;
+        const UploadCloud = ({className}) => <Icon className={className}><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></Icon>;
+        const CheckCircle = ({className}) => <Icon className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+        const BoldIcon = ({className}) => <Icon className={className}><path d="M6 12h9a4 4 0 0 1 0 8H6v-8zm0-8h8a4 4 0 0 1 0 8H6V4z"/></Icon>;
+        const ItalicIcon = ({className}) => <Icon className={className}><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></Icon>;
+        const UnderlineIcon = ({className}) => <Icon className={className}><path d="M6 3v7a6 6 0 0 0 12 0V3"/><line x1="4" y1="21" x2="20" y2="21"/></Icon>;
+        const StrikethroughIcon = ({className}) => <Icon className={className}><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/></Icon>;
+        const HighlighterIcon = ({className}) => <Icon className={className}><path d="m9 11-6 6v3h3l6-6"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></Icon>;
+        const ListIcon = ({className}) => <Icon className={className}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></Icon>;
+        const HeadingIcon = ({className}) => <Icon className={className}><path d="M6 12h12"/><path d="M6 4v16"/><path d="M18 4v16"/></Icon>;
+
+        const DriveIcon = ({className = "w-5 h-5"}) => (
+            <svg className={className} viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+            </svg>
+        );
+
+        const DEFAULT_TERMS_TEXT = `Bienvenue sur WorksBox, la plateforme pour récupérer ses cours ou recevoir une version calculatrice.`;
+        const DEFAULT_CASIO_TEXT = `Comment mettre des cours sur calculatrice Casio Graph 35+EII ?`;
+
+        const COLOR_PALETTES = {
+            blue: 'bg-blue-100 text-blue-700 border-blue-200',
+            purple: 'bg-purple-100 text-purple-700 border-purple-200',
+            orange: 'bg-orange-100 text-orange-700 border-orange-200',
+            rose: 'bg-rose-100 text-rose-700 border-rose-200',
+            red: 'bg-red-100 text-red-700 border-red-200',
+            green: 'bg-green-100 text-green-700 border-green-200',
+            teal: 'bg-teal-100 text-teal-700 border-teal-200',
+            slate: 'bg-slate-100 text-slate-700 border-slate-200'
+        };
+
+        const DEFAULT_SUBJECTS_BAZIN = ["Allemand", "Anglais", "Enseignement technologique en anglais", "Histoire Géographie", "Ingénierie et développement durable", "Mathématiques", "Philosophie", "Physique Chimie", "SIN"];
+        const DEFAULT_SCHOOLS = ["Lycée François Bazin", "Lycée Gaspard Monge"];
+        const DEFAULT_CLASSES = ["Terminale STI2D", "BTS SIO 1"];
+
+        function App() {
+          const [currentView, setCurrentView] = useState('home');
+          const [selectedSubject, setSelectedSubject] = useState(null);
+          
+          const [courses, setCourses] = useState([]);
+          const [articles, setArticles] = useState([]);
+          const [settings, setSettings] = useState({
+              announcement: "",
+              subjectOrder: DEFAULT_SUBJECTS_BAZIN,
+              tagColors: { "Cours": "blue", "TP": "purple", "Exercice": "orange", "Interro": "rose", "DS": "red" },
+              schools: DEFAULT_SCHOOLS,
+              classes: DEFAULT_CLASSES,
+              termsContent: DEFAULT_TERMS_TEXT,
+              casioGuideContent: DEFAULT_CASIO_TEXT
+          });
+          const [isLoading, setIsLoading] = useState(true);
+          const [user, setUser] = useState(null);
+          
+          const [adminSchool, setAdminSchool] = useState('Lycée François Bazin');
+          const [adminClass, setAdminClass] = useState('Terminale STI2D');
+
+          const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+          const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+          const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+          const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+          const [driveImportSubject, setDriveImportSubject] = useState('');
+
+          const [editingCourse, setEditingCourse] = useState(null); 
+          const [editingArticle, setEditingArticle] = useState(null);
+          const [courseToDelete, setCourseToDelete] = useState(null);
+          const [articleToDelete, setArticleToDelete] = useState(null);
+          const [subjectToRename, setSubjectToRename] = useState(null);
+          const [subjectToDelete, setSubjectToDelete] = useState(null);
+
+          useEffect(() => {
+            if (!auth) return;
+            const initAuth = async () => {
+              try { await signInAnonymously(auth); } catch (e) { setIsLoading(false); }
+            };
+            initAuth();
+            return onAuthStateChanged(auth, setUser);
+          }, []);
+
+          useEffect(() => {
+            if (!auth || !user || !db) return;
+            
+            const settingsRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global');
+            const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setSettings(prev => ({
+                        ...prev,
+                        ...data,
+                        schools: Array.from(new Set([...DEFAULT_SCHOOLS, ...(data.schools || [])])),
+                        classes: Array.from(new Set([...DEFAULT_CLASSES, ...(data.classes || [])]))
+                    }));
+                }
+            }, () => {});
+
+            const coursesRef = collection(db, 'artifacts', appId, 'public', 'data', 'courses');
+            const unsubCourses = onSnapshot(coursesRef, (snapshot) => {
+              const loadedCourses = snapshot.docs.map(docSnap => {
+                  const data = docSnap.data();
+                  return {
+                      id: docSnap.id,
+                      school: data.school || 'Lycée François Bazin',
+                      classe: data.classe || 'Terminale STI2D',
+                      chapterOrder: typeof data.chapterOrder === 'number' ? data.chapterOrder : -new Date(data.date).getTime(),
+                      courseOrder: typeof data.courseOrder === 'number' ? data.courseOrder : -new Date(data.date).getTime(),
+                      viewsDigital: data.viewsDigital || 0,
+                      viewsCasio: data.viewsCasio || 0,
+                      isVisible: data.isVisible !== false,
+                      ...data
+                  };
+              });
+              setCourses(loadedCourses);
+              setIsLoading(false);
+            }, () => setIsLoading(false));
+
+            const articlesRef = collection(db, 'artifacts', appId, 'public', 'data', 'articles');
+            const unsubArticles = onSnapshot(articlesRef, (snapshot) => {
+              const loadedArticles = snapshot.docs.map(docSnap => {
+                  const data = docSnap.data();
+                  return {
+                      id: docSnap.id,
+                      school: data.school || 'Lycée François Bazin',
+                      classe: data.classe || 'Terminale STI2D',
+                      ...data
+                  };
+              });
+              setArticles(loadedArticles);
+            }, () => {});
+
+            return () => { unsubSettings(); unsubCourses(); unsubArticles(); };
+          }, [user]);
+
+          const allSchools = useMemo(() => {
+              const list = new Set([...DEFAULT_SCHOOLS, ...(settings.schools || []), ...courses.map(c => c.school)]);
+              return Array.from(list).filter(Boolean);
+          }, [settings.schools, courses]);
+
+          const allClasses = useMemo(() => {
+              const list = new Set([...DEFAULT_CLASSES, ...(settings.classes || []), ...courses.map(c => c.classe)]);
+              return Array.from(list).filter(Boolean);
+          }, [settings.classes, courses]);
+
+          const filteredCourses = useMemo(() => {
+              return courses.filter(c => (c.school || 'Lycée François Bazin') === adminSchool && (c.classe || 'Terminale STI2D') === adminClass);
+          }, [courses, adminSchool, adminClass]);
+
+          const filteredArticles = useMemo(() => {
+              return articles.filter(a => (a.school || 'Lycée François Bazin') === adminSchool && (a.classe || 'Terminale STI2D') === adminClass);
+          }, [articles, adminSchool, adminClass]);
+
+          const activeSubjects = useMemo(() => {
+              const isBazinSTI2D = adminSchool === 'Lycée François Bazin' && adminClass === 'Terminale STI2D';
+              const baseList = isBazinSTI2D ? (settings.subjectOrder || DEFAULT_SUBJECTS_BAZIN) : [];
+              const subs = new Set([...baseList, ...filteredCourses.map(c => c.subject)]);
+              return Array.from(subs).filter(Boolean);
+          }, [filteredCourses, settings.subjectOrder, adminSchool, adminClass]);
+
+          const sortedSubjects = useMemo(() => {
+              const ordered = settings.subjectOrder || [];
+              const known = ordered.filter(s => activeSubjects.includes(s));
+              const unknown = activeSubjects.filter(s => !ordered.includes(s)).sort();
+              return [...known, ...unknown];
+          }, [activeSubjects, settings.subjectOrder]);
+
+          const activeTags = useMemo(() => {
+              const tags = new Set(["Cours", "TP", "Exercice", "Interro", "DS", "Fiche", "Formulaire", ...filteredCourses.map(c => c.tag).filter(Boolean)]);
+              return Array.from(tags).sort();
+          }, [filteredCourses]);
+
+          const chaptersData = useMemo(() => {
+            if (!selectedSubject) return [];
+            const filtered = filteredCourses.filter(c => c.subject === selectedSubject);
+            const groups = {};
+            filtered.forEach(course => {
+                const chap = course.chapter || "Chapitre non classé";
+                if (!groups[chap]) groups[chap] = { name: chap, courses: [] };
+                groups[chap].courses.push(course);
+            });
+            Object.values(groups).forEach(group => {
+                group.chapterOrder = Math.min(...group.courses.map(c => c.chapterOrder || 0));
+                group.courses.sort((a, b) => (a.courseOrder || 0) - (b.courseOrder || 0));
+            });
+            return Object.values(groups).sort((a, b) => a.chapterOrder - b.chapterOrder);
+          }, [filteredCourses, selectedSubject]);
+
+          const openSubject = (s) => { setSelectedSubject(s); setCurrentView('subject'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const goHome = () => { setSelectedSubject(null); setCurrentView('home'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openStats = () => { setSelectedSubject(null); setCurrentView('stats'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openArticles = () => { setSelectedSubject(null); setCurrentView('articles'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openPagesEditor = () => { setSelectedSubject(null); setCurrentView('pages'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+
+          const applyBatchUpdates = async (updates) => {
+            if (db && user) {
+                try {
+                    await Promise.all(updates.map(c => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', c.id.toString()), c)));
+                } catch(e) { console.error(e); }
+            }
+          };
+
+          const saveSettings = async (newSettings) => {
+              setSettings(newSettings);
+              if (db && user) {
+                  try { await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'global'), newSettings); } 
+                  catch(e) { console.error("Erreur sauvegarde", e); }
+              }
+          };
+
+          const handleSaveCourse = async (savedCourse) => {
+            savedCourse.school = adminSchool;
+            savedCourse.classe = adminClass;
+
+            if (!editingCourse) {
+                const existingChapter = filteredCourses.find(c => c.subject === savedCourse.subject && c.chapter === savedCourse.chapter);
+                if (existingChapter) savedCourse.chapterOrder = existingChapter.chapterOrder;
+                else {
+                    const subjectCourses = filteredCourses.filter(c => c.subject === savedCourse.subject);
+                    savedCourse.chapterOrder = subjectCourses.length > 0 ? Math.max(...subjectCourses.map(c => c.chapterOrder)) + 1 : 1;
+                }
+                const chapterCourses = filteredCourses.filter(c => c.subject === savedCourse.subject && c.chapter === savedCourse.chapter);
+                savedCourse.courseOrder = chapterCourses.length > 0 ? Math.max(...chapterCourses.map(c => c.courseOrder)) + 1 : 1;
+            }
+            await applyBatchUpdates([savedCourse]);
+            setIsUploadModalOpen(false);
+            setEditingCourse(null);
+            if (currentView !== 'subject' || selectedSubject !== savedCourse.subject) openSubject(savedCourse.subject);
+          };
+
+          // Importer plusieurs cours depuis l'analyseur IA Google Drive
+          const handleBatchImportDriveCourses = async (importedList) => {
+              if (!Array.isArray(importedList) || importedList.length === 0) return;
+              
+              const fullListWithMetadata = importedList.map((c, idx) => ({
+                  ...c,
+                  id: c.id || `drive-ai-${Date.now()}-${idx}`,
+                  school: adminSchool,
+                  classe: adminClass,
+                  viewsDigital: 0,
+                  viewsCasio: 0,
+                  isVisible: true,
+                  date: new Date().toISOString()
+              }));
+
+              await applyBatchUpdates(fullListWithMetadata);
+
+              // Met à jour la liste des matières connues si nécessaire
+              const newSubjects = Array.from(new Set(importedList.map(c => c.subject).filter(Boolean)));
+              const currentOrder = settings.subjectOrder || DEFAULT_SUBJECTS_BAZIN;
+              const updatedOrder = [...currentOrder];
+              newSubjects.forEach(s => {
+                  if (!updatedOrder.includes(s)) updatedOrder.push(s);
+              });
+              if (updatedOrder.length > currentOrder.length) {
+                  await saveSettings({ ...settings, subjectOrder: updatedOrder });
+              }
+
+              setIsDriveModalOpen(false);
+              // Ouvrir la première matière importée
+              if (importedList[0]?.subject) {
+                  openSubject(importedList[0].subject);
+              }
+          };
+
+          const executeDelete = async () => {
+            if (!courseToDelete) return;
+            if (db && user) {
+                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseToDelete.toString())); } catch(e) {}
+            }
+            setCourseToDelete(null);
+          };
+
+          const openAddModal = () => { setEditingCourse(null); setIsUploadModalOpen(true); };
+          const openEditModal = (course) => { setEditingCourse(course); setIsUploadModalOpen(true); };
+          const openAddArticleModal = () => { setEditingArticle(null); setIsArticleModalOpen(true); };
+
+          const triggerDriveImport = (subjectHint = '') => {
+              setDriveImportSubject(subjectHint || selectedSubject || '');
+              setIsDriveModalOpen(true);
+          };
+
+          return (
+            <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20">
+              <nav className="bg-red-900 text-white shadow-md sticky top-0 z-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex justify-between items-center h-16">
+                    <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-3 cursor-pointer group" onClick={goHome}>
+                            <div className="bg-red-700 p-2 rounded-lg"><Settings className="w-6 h-6 text-red-100" /></div>
+                            <span className="font-bold text-xl tracking-tight hidden sm:block">Dashboard Admin</span>
+                        </div>
+                        
+                        <div className="hidden sm:flex space-x-2 border-l border-red-800 pl-6">
+                             <button onClick={goHome} className={`px-3 py-1.5 rounded text-sm font-medium ${currentView === 'home' || currentView === 'subject' ? 'bg-red-800 text-white shadow-inner' : 'text-red-300 hover:text-white'}`}>Cours</button>
+                             <button onClick={openArticles} className={`px-3 py-1.5 rounded text-sm font-medium ${currentView === 'articles' ? 'bg-red-800 text-white shadow-inner' : 'text-red-300 hover:text-white'}`}>Articles</button>
+                             <button onClick={openPagesEditor} className={`px-3 py-1.5 rounded text-sm font-medium ${currentView === 'pages' ? 'bg-red-800 text-white shadow-inner' : 'text-red-300 hover:text-white'}`}>CGU & Tuto</button>
+                             <button onClick={openStats} className={`px-3 py-1.5 rounded text-sm font-medium ${currentView === 'stats' ? 'bg-red-800 text-white shadow-inner' : 'text-red-300 hover:text-white'}`}>Stats</button>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <a href="/" className="text-xs font-bold px-3 py-1.5 rounded bg-red-950/80 text-red-200 hover:text-white border border-red-800">
+                          ← Retour au site
+                      </a>
+
+                      {/* Bouton Import Drive IA (Option A) */}
+                      <button 
+                        id="admin-btn-import-drive"
+                        onClick={() => triggerDriveImport()}
+                        className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3.5 py-2 rounded-lg text-sm font-bold shadow-sm transition-all active:scale-95 border border-blue-400/40"
+                        title="Importer intelligemment un dossier Google Drive avec l'IA"
+                      >
+                        <DriveIcon className="w-4 h-4" />
+                        <span className="hidden md:inline">Importer Drive</span>
+                        <span className="bg-amber-400 text-slate-900 text-[10px] font-black px-1.5 py-0.5 rounded flex items-center">
+                            <Sparkles className="w-2.5 h-2.5 mr-0.5" /> IA
+                        </span>
+                      </button>
+
+                      <button onClick={openAddModal} className="flex items-center space-x-2 bg-white text-red-900 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95">
+                        <Plus className="w-4 h-4" /><span>Nouveau cours</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </nav>
+
+              <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <div className="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-500 font-medium">Connexion à la base de données...</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Barre de filtrage par Lycée et Classe */}
+                        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
+                            <div className="flex items-center space-x-2 text-slate-700 font-bold text-sm">
+                                <SchoolIcon className="w-5 h-5 text-red-600"/>
+                                <span>Espace géré :</span>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 max-w-xl">
+                                <select value={adminSchool} onChange={(e) => { setAdminSchool(e.target.value); if (currentView === 'subject') goHome(); }} className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:border-red-500 cursor-pointer flex-1">
+                                    {allSchools.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                                <select value={adminClass} onChange={(e) => { setAdminClass(e.target.value); if (currentView === 'subject') goHome(); }} className="bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:border-red-500 cursor-pointer flex-1">
+                                    {allClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* VUE COURS / MATIÈRES */}
+                        {currentView === 'home' && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mb-8">
+                                <div>
+                                    <h1 className="text-3xl font-extrabold text-slate-900">Gestion des Cours</h1>
+                                    <p className="text-slate-500 mt-1">Matières pour {adminSchool} ({adminClass})</p>
+                                </div>
+                                <button 
+                                    onClick={() => triggerDriveImport()}
+                                    className="flex items-center space-x-2 text-xs font-bold px-3.5 py-2.5 rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 transition-all self-start sm:self-auto"
+                                >
+                                    <DriveIcon className="w-4 h-4" />
+                                    <span>Importer un dossier Drive avec l'IA</span>
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                                </button>
+                            </div>
+
+                            {sortedSubjects.length === 0 ? (
+                                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+                                    <Folder className="w-12 h-12 text-slate-300 mx-auto mb-3"/>
+                                    <h3 className="text-lg font-bold text-slate-700 mb-1">Aucune matière enregistrée</h3>
+                                    <p className="text-sm text-slate-500 mb-4">Cet établissement n'a pas encore de cours.</p>
+                                    <div className="flex justify-center gap-3">
+                                        <button onClick={openAddModal} className="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-bold shadow hover:bg-red-700">Ajouter manuellement</button>
+                                        <button onClick={() => triggerDriveImport()} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow hover:bg-blue-700 flex items-center space-x-1.5"><DriveIcon className="w-4 h-4"/><span>Importer un dossier Drive</span></button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {sortedSubjects.map((subject, index) => {
+                                    const subjectCourses = filteredCourses.filter(c => c.subject === subject);
+                                    const totalViews = subjectCourses.reduce((sum, c) => sum + (c.viewsDigital || 0) + (c.viewsCasio || 0), 0);
+                                    
+                                    return (
+                                    <div key={index} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:border-red-400 hover:shadow-lg hover:-translate-y-1 cursor-pointer transition-all duration-300 flex flex-col group relative" onClick={() => openSubject(subject)}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center space-x-3 flex-1 min-w-0 pr-2">
+                                                <div className="bg-slate-100 p-2.5 rounded-lg group-hover:bg-red-100 group-hover:text-red-700 text-slate-500"><Folder className="w-6 h-6" /></div>
+                                                <h3 className="font-bold text-slate-800 truncate group-hover:text-red-700">{subject}</h3>
+                                            </div>
+                                            <div className="flex items-center space-x-1 opacity-60 group-hover:opacity-100" onClick={e => e.stopPropagation()}>
+                                                <button title="Importer des fichiers Drive dans cette matière" onClick={() => triggerDriveImport(subject)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" ><DriveIcon className="w-4 h-4" /></button>
+                                                <button title="Supprimer" onClick={() => setSubjectToDelete({ name: subject, count: subjectCourses.length })} className="p-1.5 text-slate-400 hover:text-red-600 rounded"><Trash2 className="w-4 h-4" /></button>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs text-slate-500 border-t border-slate-100 pt-3">
+                                            <span className="font-bold bg-slate-100 px-2 py-1 rounded">{subjectCourses.length} fichier{subjectCourses.length > 1 ? 's' : ''}</span>
+                                            <span className="flex items-center"><BarChart className="w-3.5 h-3.5 mr-1"/> {totalViews} vues</span>
+                                        </div>
+                                    </div>
+                                    );
+                                })}
+                                </div>
+                            )}
+                        </div>
+                        )}
+
+                        {/* VUE MATIÈRE DÉTAILLÉE */}
+                        {currentView === 'subject' && (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <div className="flex items-center space-x-4 flex-1 min-w-0 mr-4">
+                                    <button onClick={goHome} className="p-2 bg-slate-50 rounded-lg text-slate-600 hover:bg-slate-200"><ChevronLeft className="w-5 h-5" /></button>
+                                    <h1 className="text-2xl font-bold text-slate-900 truncate">{selectedSubject}</h1>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <button onClick={() => triggerDriveImport(selectedSubject)} className="flex items-center space-x-1.5 text-xs font-bold px-3 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg border border-blue-200 active:scale-95 transition-all">
+                                        <DriveIcon className="w-4 h-4" />
+                                        <span>Importer Drive</span>
+                                        <Sparkles className="w-3 h-3 text-amber-500" />
+                                    </button>
+                                    <button onClick={openAddModal} className="flex items-center space-x-1 text-xs font-bold px-3 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg active:scale-95 transition-all">
+                                        <Plus className="w-4 h-4" /> <span>Ajouter</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {chaptersData.length === 0 ? (
+                            <div className="bg-white border border-dashed border-slate-300 rounded-2xl p-12 text-center">
+                                <p className="text-slate-500">Aucun cours dans cette matière pour {adminSchool} ({adminClass}).</p>
+                                <div className="mt-4 flex justify-center gap-3">
+                                    <button onClick={openAddModal} className="px-4 py-2 bg-red-600 text-white font-bold text-sm rounded-xl hover:bg-red-700">Ajouter manuellement</button>
+                                    <button onClick={() => triggerDriveImport(selectedSubject)} className="px-4 py-2 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 flex items-center space-x-1.5"><DriveIcon className="w-4 h-4"/><span>Importer un dossier Drive</span></button>
+                                </div>
+                            </div>
+                            ) : (
+                            <div className="space-y-6">
+                                {chaptersData.map((chapterGroup) => (
+                                    <div key={chapterGroup.name} className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="bg-slate-800 border-b border-slate-900 px-4 py-3 flex justify-between items-center text-white">
+                                            <div className="flex items-center min-w-0">
+                                                <span className="bg-slate-700 text-slate-300 w-7 h-7 rounded flex items-center justify-center mr-3 text-xs font-bold">CH</span>
+                                                <h2 className="text-lg font-bold truncate">{chapterGroup.name}</h2>
+                                            </div>
+                                        </div>
+                                        <ul className="divide-y divide-slate-100">
+                                            {chapterGroup.courses.map((course) => {
+                                                const courseTag = course.tag || 'Cours';
+                                                const style = COLOR_PALETTES[settings.tagColors?.[courseTag]] || COLOR_PALETTES.slate;
+                                                return (
+                                                    <li key={course.id} className="p-4 hover:bg-slate-50 flex items-center justify-between gap-4">
+                                                        <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                                            <div className="min-w-0">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${style}`}>{courseTag}</span>
+                                                                    <h4 className="font-semibold text-slate-800 truncate">{course.title}</h4>
+                                                                </div>
+                                                                <div className="flex items-center space-x-4 mt-1 text-xs text-slate-500">
+                                                                    {course.digitalLink && <span className="flex items-center"><FileText className="w-3 h-3 mr-1 text-blue-500"/> PDF</span>}
+                                                                    {course.casioLink && <span className="flex items-center"><Calculator className="w-3 h-3 mr-1 text-emerald-500"/> Casio</span>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2 flex-shrink-0">
+                                                            <button onClick={() => openEditModal(course)} className="p-2 text-slate-500 hover:text-blue-600 bg-slate-100 rounded" title="Modifier"><Edit2 className="w-4 h-4" /></button>
+                                                            <button onClick={() => setCourseToDelete(course.id)} className="p-2 text-slate-500 hover:text-red-600 bg-slate-100 rounded" title="Supprimer"><Trash2 className="w-4 h-4" /></button>
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                            )}
+                        </div>
+                        )}
+                    </>
+                )}
+              </main>
+
+              {/* Modales Admin */}
+              {courseToDelete && <ConfirmModal message="Supprimer définitivement ce cours ?" onConfirm={executeDelete} onCancel={() => setCourseToDelete(null)} />}
+              {isUploadModalOpen && <UploadModal onClose={() => { setIsUploadModalOpen(false); setEditingCourse(null); }} onSaveCourse={handleSaveCourse} activeSubjects={activeSubjects} activeTags={activeTags} filteredCourses={filteredCourses} initialSubject={selectedSubject} initialData={editingCourse} />}
+              
+              {/* Modale d'importation intelligente Google Drive (Option A) */}
+              {isDriveModalOpen && (
+                <DriveAiImportModal 
+                    onClose={() => setIsDriveModalOpen(false)}
+                    onImportCourses={handleBatchImportDriveCourses}
+                    adminSchool={adminSchool}
+                    adminClass={adminClass}
+                    activeSubjects={activeSubjects}
+                    activeTags={activeTags}
+                    initialSubject={driveImportSubject}
+                />
+              )}
+            </div>
+          );
+        }
+
+        /* Modale d'importation intelligente Google Drive (Option A) avec analyse Gemini AI */
+        function DriveAiImportModal({ onClose, onImportCourses, adminSchool, adminClass, activeSubjects, activeTags, initialSubject }) {
+            const [step, setStep] = useState('input'); // 'input', 'loading', 'preview'
+            const [driveUrl, setDriveUrl] = useState('');
+            const [rawText, setRawText] = useState('');
+            const [selectedSubject, setSelectedSubject] = useState(initialSubject || '');
+            const [analyzedCourses, setAnalyzedCourses] = useState([]);
+            const [selectedIndices, setSelectedIndices] = useState([]);
+            const [sourceEngine, setSourceEngine] = useState('');
+            const [errorMessage, setErrorMessage] = useState('');
+            const fileInputRef = useRef(null);
+
+            // Gestion du glisser-déposer de fichiers locaux
+            const handleLocalFiles = (files) => {
+                if (!files || files.length === 0) return;
+                const fileNames = Array.from(files).map(f => f.name).join('\n');
+                setRawText(prev => prev ? `${prev}\n${fileNames}` : fileNames);
+            };
+
+            const handleAnalyze = async (e) => {
+                if (e) e.preventDefault();
+                setErrorMessage('');
+                
+                if (!driveUrl.trim() && !rawText.trim()) {
+                    setErrorMessage("Veuillez coller un lien Google Drive ou une liste de fichiers / liens de cours.");
+                    return;
+                }
+
+                setStep('loading');
+
+                try {
+                    const res = await fetch('/api/drive/classify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            driveUrl: driveUrl.trim(),
+                            rawText: rawText.trim(),
+                            targetSchool: adminSchool,
+                            targetClass: adminClass,
+                            targetSubject: selectedSubject.trim()
+                        })
+                    });
+
+                    const data = await res.json();
+
+                    if (!res.ok || !data.success || !data.courses || data.courses.length === 0) {
+                        throw new Error(data.error || "Impossible d'extraire les cours. Vérifiez le lien ou le texte fourni.");
+                    }
+
+                    setAnalyzedCourses(data.courses);
+                    setSelectedIndices(data.courses.map((_, i) => i)); // Sélectionnés par défaut
+                    setSourceEngine(data.source === 'gemini-ai' ? 'IA Gemini' : 'Moteur automatique');
+                    setStep('preview');
+
+                } catch (err) {
+                    console.error("Erreur d'analyse:", err);
+                    setErrorMessage(err.message || "Une erreur est survenue lors de l'analyse.");
+                    setStep('input');
+                }
+            };
+
+            const toggleSelect = (index) => {
+                if (selectedIndices.includes(index)) {
+                    setSelectedIndices(selectedIndices.filter(i => i !== index));
+                } else {
+                    setSelectedIndices([...selectedIndices, index]);
+                }
+            };
+
+            const updateCourseField = (index, field, value) => {
+                setAnalyzedCourses(prev => {
+                    const copy = [...prev];
+                    copy[index] = { ...copy[index], [field]: value };
+                    return copy;
+                });
+            };
+
+            const handleFinalImport = () => {
+                const toImport = analyzedCourses.filter((_, i) => selectedIndices.includes(i));
+                if (toImport.length === 0) {
+                    alert("Sélectionnez au moins un cours à importer.");
+                    return;
+                }
+                onImportCourses(toImport);
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden max-h-[92vh] flex flex-col">
+                        {/* En-tête modal */}
+                        <div className="flex justify-between items-center px-6 py-4 border-b bg-gradient-to-r from-slate-900 to-slate-800 text-white flex-shrink-0">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-2 bg-blue-600/30 border border-blue-400/40 rounded-xl">
+                                    <DriveIcon className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold flex items-center">
+                                        Importation Intelligente Google Drive
+                                        <span className="ml-2 bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center">
+                                            <Sparkles className="w-2.5 h-2.5 mr-1" /> OPTION A (Public)
+                                        </span>
+                                    </h2>
+                                    <p className="text-xs text-slate-400">
+                                        Collez l'URL de votre dossier Drive public ou les liens de vos fichiers. L'IA structure automatiquement matières, chapitres et tags.
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Corps du modal */}
+                        <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
+                            {errorMessage && (
+                                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold flex items-center justify-between">
+                                    <span>⚠️ {errorMessage}</span>
+                                    <button onClick={() => setErrorMessage('')} className="text-red-500 font-bold ml-2">✕</button>
+                                </div>
+                            )}
+
+                            {step === 'input' && (
+                                <form onSubmit={handleAnalyze} className="space-y-6">
+                                    {/* Informations de destination */}
+                                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
+                                        <div className="text-xs text-slate-600">
+                                            <span className="font-bold text-slate-800 block text-sm mb-0.5">Destination de l'import :</span>
+                                            {adminSchool} • <span className="text-blue-600 font-bold">{adminClass}</span>
+                                        </div>
+                                        <div className="w-full sm:w-64">
+                                            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">Matière cible (facultatif)</label>
+                                            <input 
+                                                list="drive-subj-list" 
+                                                value={selectedSubject} 
+                                                onChange={(e) => setSelectedSubject(e.target.value)} 
+                                                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold outline-none focus:border-blue-500" 
+                                                placeholder="Laisser l'IA détecter ou choisir..."
+                                            />
+                                            <datalist id="drive-subj-list">
+                                                {activeSubjects.map(s => <option key={s} value={s} />)}
+                                            </datalist>
+                                        </div>
+                                    </div>
+
+                                    {/* Option 1 : Lien dossier Drive */}
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                                        <label className="block font-bold text-slate-800 text-sm flex items-center">
+                                            <span className="w-6 h-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center text-xs font-black mr-2">1</span>
+                                            Lien de partage du Dossier Google Drive (Optionnel)
+                                        </label>
+                                        <p className="text-xs text-slate-500 leading-relaxed">
+                                            Sur Google Drive : clic droit sur votre dossier de cours ➔ <b>Partager</b> ➔ Régler sur <b>« Tous les utilisateurs disposant du lien : Lecteur »</b> ➔ Copier le lien.
+                                        </p>
+                                        <input 
+                                            type="url" 
+                                            value={driveUrl} 
+                                            onChange={(e) => setDriveUrl(e.target.value)}
+                                            placeholder="https://drive.google.com/drive/folders/1aBcDeFgHiJkLmNoPqRsTuVwXyZ..."
+                                            className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-mono outline-none focus:border-blue-500 focus:bg-white transition-all"
+                                        />
+                                    </div>
+
+                                    {/* Option 2 : Copier-coller de liens de fichiers ou de noms */}
+                                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <label className="block font-bold text-slate-800 text-sm flex items-center">
+                                                <span className="w-6 h-6 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-xs font-black mr-2">2</span>
+                                                Liste de fichiers ou liens Drive partagés
+                                            </label>
+                                            <button 
+                                                type="button"
+                                                onClick={() => {
+                                                    setRawText(`Cours_01_Cinematique_et_Vecteurs.pdf https://drive.google.com/file/d/1ABC123/view\nTP_02_Chute_Libre_Mesures.pdf https://drive.google.com/file/d/1DEF456/view\nFiche_Formulaire_Thermodynamique.pdf https://drive.google.com/file/d/1GHI789/view`);
+                                                }}
+                                                className="text-[11px] font-bold text-blue-600 hover:underline"
+                                            >
+                                                Insérer un exemple
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-slate-500">
+                                            Vous pouvez coller plusieurs liens Google Drive, ou simplement copier/coller une liste de noms de fichiers. L'IA déduira les titres, numéros de chapitres et types (Cours, TP, Formulaire).
+                                        </p>
+                                        <textarea 
+                                            rows="6"
+                                            value={rawText}
+                                            onChange={(e) => setRawText(e.target.value)}
+                                            placeholder={"Exemple :\nCours_01_Cinematique.pdf https://drive.google.com/file/d/...\nTP_Mesure_Puissance.pdf https://drive.google.com/file/d/...\nFiche_Resume_Derivees.pdf https://drive.google.com/file/d/..."}
+                                            className="w-full bg-slate-50 border border-slate-300 rounded-xl p-3 text-xs font-mono outline-none focus:border-blue-500 focus:bg-white transition-all leading-relaxed"
+                                        />
+
+                                        {/* Glisser déposer rapide de fichiers locaux pour en extraire les noms */}
+                                        <div 
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onDrop={(e) => { e.preventDefault(); handleLocalFiles(e.dataTransfer.files); }}
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="border-2 border-dashed border-slate-300 hover:border-blue-400 p-3 rounded-xl text-center cursor-pointer bg-slate-50/70 hover:bg-blue-50/40 transition-colors"
+                                        >
+                                            <input 
+                                                ref={fileInputRef} 
+                                                type="file" 
+                                                multiple 
+                                                className="hidden" 
+                                                onChange={(e) => handleLocalFiles(e.target.files)} 
+                                            />
+                                            <div className="flex items-center justify-center space-x-2 text-xs text-slate-500 font-medium">
+                                                <UploadCloud className="w-4 h-4 text-blue-500" />
+                                                <span>Ou glissez-déposez des fichiers ici pour importer directement leurs noms</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Bouton d'analyse */}
+                                    <div className="flex justify-end space-x-3 pt-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={onClose} 
+                                            className="px-5 py-2.5 text-sm font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
+                                        >
+                                            Annuler
+                                        </button>
+                                        <button 
+                                            type="submit" 
+                                            className="px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded-xl shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center space-x-2"
+                                        >
+                                            <Sparkles className="w-4 h-4 text-amber-300" />
+                                            <span>Analyser et Déduire avec l'IA</span>
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+
+                            {step === 'loading' && (
+                                <div className="py-16 text-center flex flex-col items-center justify-center space-y-4">
+                                    <div className="relative">
+                                        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                                        <Sparkles className="w-6 h-6 text-amber-500 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-base font-bold text-slate-900">Analyse intelligente en cours...</h3>
+                                        <p className="text-xs text-slate-500 max-w-sm mt-1">
+                                            L'IA Gemini analyse les noms de fichiers, nettoie la typographie, identifie les chapitres et classe les documents.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 'preview' && (
+                                <div className="space-y-5 animate-in fade-in duration-300">
+                                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                                        <div>
+                                            <div className="flex items-center space-x-2">
+                                                <h3 className="font-bold text-slate-900 text-sm">
+                                                    {analyzedCourses.length} cours analysé{analyzedCourses.length > 1 ? 's' : ''}
+                                                </h3>
+                                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center">
+                                                    <CheckCircle className="w-3 h-3 mr-1" /> {sourceEngine}
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                Vérifiez et modifiez les détails ci-dessous avant la publication finale.
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <button 
+                                                onClick={() => setSelectedIndices(analyzedCourses.map((_, i) => i))} 
+                                                className="text-xs font-bold text-blue-600 hover:underline px-2 py-1"
+                                            >
+                                                Tout cocher
+                                            </button>
+                                            <span className="text-slate-300">|</span>
+                                            <button 
+                                                onClick={() => setSelectedIndices([])} 
+                                                className="text-xs font-bold text-slate-500 hover:underline px-2 py-1"
+                                            >
+                                                Tout décocher
+                                            </button>
+                                            <button 
+                                                onClick={() => setStep('input')} 
+                                                className="text-xs font-bold px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg ml-2"
+                                            >
+                                                Modifier la source
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Tableau des cours détectés */}
+                                    <div className="space-y-3">
+                                        {analyzedCourses.map((course, idx) => {
+                                            const isChecked = selectedIndices.includes(idx);
+                                            return (
+                                                <div 
+                                                    key={idx}
+                                                    className={`p-4 rounded-xl border transition-all ${isChecked ? 'bg-white border-blue-300 shadow-sm' : 'bg-slate-100/70 border-slate-200 opacity-60'}`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <input 
+                                                            type="checkbox"
+                                                            checked={isChecked}
+                                                            onChange={() => toggleSelect(idx)}
+                                                            className="w-4 h-4 mt-2 text-blue-600 rounded cursor-pointer"
+                                                        />
+                                                        
+                                                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+                                                            {/* Titre */}
+                                                            <div className="sm:col-span-5">
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Titre du cours</label>
+                                                                <input 
+                                                                    type="text"
+                                                                    value={course.title}
+                                                                    onChange={(e) => updateCourseField(idx, 'title', e.target.value)}
+                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 font-semibold text-slate-900 outline-none focus:border-blue-500"
+                                                                />
+                                                            </div>
+
+                                                            {/* Chapitre */}
+                                                            <div className="sm:col-span-4">
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Chapitre</label>
+                                                                <input 
+                                                                    type="text"
+                                                                    value={course.chapter}
+                                                                    onChange={(e) => updateCourseField(idx, 'chapter', e.target.value)}
+                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-800 outline-none focus:border-blue-500"
+                                                                />
+                                                            </div>
+
+                                                            {/* Matière */}
+                                                            <div className="sm:col-span-3">
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Matière</label>
+                                                                <input 
+                                                                    type="text"
+                                                                    value={course.subject}
+                                                                    onChange={(e) => updateCourseField(idx, 'subject', e.target.value)}
+                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-800 outline-none focus:border-blue-500"
+                                                                />
+                                                            </div>
+
+                                                            {/* Tag & Lien */}
+                                                            <div className="sm:col-span-3">
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Tag</label>
+                                                                <select 
+                                                                    value={course.tag}
+                                                                    onChange={(e) => updateCourseField(idx, 'tag', e.target.value)}
+                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 font-bold text-slate-800 outline-none cursor-pointer"
+                                                                >
+                                                                    <option value="Cours">Cours</option>
+                                                                    <option value="TP">TP</option>
+                                                                    <option value="TD">TD</option>
+                                                                    <option value="Fiche">Fiche</option>
+                                                                    <option value="Formulaire">Formulaire</option>
+                                                                    <option value="Exercices">Exercices</option>
+                                                                </select>
+                                                            </div>
+
+                                                            <div className="sm:col-span-9">
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-0.5">Lien Google Drive</label>
+                                                                <input 
+                                                                    type="url"
+                                                                    value={course.digitalLink}
+                                                                    onChange={(e) => updateCourseField(idx, 'digitalLink', e.target.value)}
+                                                                    placeholder="https://drive.google.com/file/d/..."
+                                                                    className="w-full bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-600 font-mono outline-none focus:border-blue-500"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Actions finales */}
+                                    <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setStep('input')} 
+                                            className="px-4 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl"
+                                        >
+                                            ← Revenir à la saisie
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleFinalImport}
+                                            className="px-6 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md active:scale-95 transition-all flex items-center space-x-2"
+                                        >
+                                            <CheckCircle className="w-4 h-4" />
+                                            <span>Valider et Importer ({selectedIndices.length}) cours sur le site</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ConfirmModal({ message, onConfirm, onCancel }) {
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
+                        <div className="p-6 text-center"><h3 className="text-lg font-bold mb-2">Confirmation</h3><p className="text-slate-500 text-sm">{message}</p></div>
+                        <div className="flex border-t bg-slate-50"><button onClick={onCancel} className="flex-1 px-4 py-3 text-sm font-medium border-r">Annuler</button><button onClick={onConfirm} className="flex-1 px-4 py-3 text-sm font-bold text-red-600">Supprimer</button></div>
+                    </div>
+                </div>
+            );
+        }
+
+        function UploadModal({ onClose, onSaveCourse, activeSubjects, activeTags, filteredCourses, initialSubject, initialData }) {
+          const isEditing = !!initialData;
+          const [formData, setFormData] = useState({
+            subject: initialData ? initialData.subject : (initialSubject || ''),
+            chapter: initialData ? initialData.chapter : '',
+            title: initialData ? initialData.title : '',
+            tag: initialData ? (initialData.tag || 'Cours') : 'Cours',
+            isVisible: initialData ? initialData.isVisible : true,
+            hasDigital: initialData ? !!initialData.digitalLink : true,
+            digitalLink: initialData ? initialData.digitalLink : '',
+            hasCasio: initialData ? !!initialData.casioLink : false,
+            casioLink: initialData ? initialData.casioLink : '',
+            hasVideo: initialData ? !!initialData.videoLink : false,
+            videoLink: initialData ? initialData.videoLink : '',
+            hasImage: initialData ? !!initialData.imageLink : false,
+            imageLink: initialData ? initialData.imageLink : '',
+            hasAudio: initialData ? !!initialData.audioLink : false,
+            audioLink: initialData ? initialData.audioLink : ''
+          });
+
+          const handleSubmit = (e) => {
+            e.preventDefault();
+            onSaveCourse({
+              id: isEditing ? initialData.id : Date.now().toString(),
+              subject: formData.subject.trim(),
+              chapter: formData.chapter.trim(),
+              title: formData.title.trim(),
+              tag: formData.tag.trim() || 'Cours',
+              isVisible: formData.isVisible,
+              digitalLink: formData.hasDigital ? formData.digitalLink.trim() : "",
+              casioLink: formData.hasCasio ? formData.casioLink.trim() : "",
+              videoLink: formData.hasVideo ? formData.videoLink.trim() : "",
+              imageLink: formData.hasImage ? formData.imageLink.trim() : "",
+              audioLink: formData.hasAudio ? formData.audioLink.trim() : "",
+              date: isEditing ? initialData.date : new Date().toISOString()
+            });
+          };
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center px-6 py-4 border-b bg-slate-50 flex-shrink-0"><h2 className="text-xl font-bold">{isEditing ? "Modifier le cours" : "Ajouter un cours"}</h2><button onClick={onClose} className="text-slate-400"><X className="w-5 h-5"/></button></div>
+                <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase mb-1 text-slate-700">Matière</label>
+                            <input list="s-list" value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500" required placeholder="Ex: Mathématiques, Physique..."/>
+                            <datalist id="s-list">{activeSubjects.map(s => <option key={s} value={s}/>)}</datalist>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase mb-1 text-slate-700">Type de document (Tag)</label>
+                            <input list="tag-list" value={formData.tag} onChange={(e) => setFormData({...formData, tag: e.target.value})} className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500 font-semibold" placeholder="Cours, TP, Exercice..."/>
+                            <datalist id="tag-list">
+                                {(activeTags || ["Cours", "TP", "Exercice", "Fiche", "Formulaire"]).map(t => <option key={t} value={t}/>)}
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold uppercase mb-1 text-slate-700">Chapitre</label>
+                            <input type="text" value={formData.chapter} onChange={(e) => setFormData({...formData, chapter: e.target.value})} className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500" required placeholder="Ex: Chapitre 1 : Les Ondes"/>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase mb-1 text-slate-700">Titre du cours</label>
+                            <input type="text" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500" required placeholder="Ex: Synthèse de révision"/>
+                        </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200 space-y-3">
+                        <span className="block text-xs font-extrabold uppercase text-slate-600 tracking-wider">Liens & Fichiers</span>
+                        <div>
+                            <label className="block text-xs font-bold uppercase mb-1 text-slate-700 flex items-center"><FileText className="w-3.5 h-3.5 mr-1 text-blue-500"/> Lien PDF (Google Drive / Direct)</label>
+                            <input type="url" value={formData.digitalLink} onChange={(e) => setFormData({...formData, digitalLink: e.target.value, hasDigital: !!e.target.value.trim()})} className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500" placeholder="https://drive.google.com/file/d/..."/>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold uppercase mb-1 text-slate-700 flex items-center"><Calculator className="w-3.5 h-3.5 mr-1 text-emerald-500"/> Lien Casio (Google Drive / Fichier texte)</label>
+                            <input type="url" value={formData.casioLink} onChange={(e) => setFormData({...formData, casioLink: e.target.value, hasCasio: !!e.target.value.trim()})} className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-500" placeholder="https://drive.google.com/file/d/..."/>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-2 pt-4 border-t"><button type="button" onClick={onClose} className="px-4 py-2 text-sm bg-slate-100 rounded-xl font-semibold">Annuler</button><button type="submit" className="px-6 py-2 text-sm font-bold text-white bg-red-600 rounded-xl shadow hover:bg-red-700 transition-all">Enregistrer</button></div>
+                </form>
+              </div>
+            </div>
+          );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
