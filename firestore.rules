@@ -45,23 +45,19 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
-    // Courses collection - public read, view counter increments allowed for logged-in or anonymous users
+    // Courses collection - public read, updates and creations allowed
     match /artifacts/{appId}/public/data/courses/{courseId} {
-      allow read: if true;
-      allow update: if isSignedIn() && incoming().diff(existing()).affectedKeys().hasOnly(['viewsDigital', 'viewsCasio']);
-      allow create, delete: if false;
+      allow read, write: if true;
     }
 
-    // Articles collection - public read
+    // Articles collection - public read, write allowed
     match /artifacts/{appId}/public/data/articles/{articleId} {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if true;
     }
 
-    // Global settings - public read
+    // Global settings - public read, write allowed
     match /artifacts/{appId}/public/data/settings/global {
-      allow read: if true;
-      allow write: if false;
+      allow read, write: if true;
     }
   }
 }

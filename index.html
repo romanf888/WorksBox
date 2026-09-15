@@ -46,6 +46,71 @@
         })();
     </script>
     <style>
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Fluid View Transitions */
+        @keyframes viewFadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .view-transition {
+            animation: viewFadeSlide 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+            will-change: opacity, transform;
+        }
+
+        /* Fluid Chapter Accordion */
+        .chapter-accordion-grid {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease-out;
+            opacity: 0;
+        }
+
+        .chapter-accordion-grid.expanded {
+            grid-template-rows: 1fr;
+            opacity: 1;
+        }
+
+        .chapter-accordion-inner {
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* Generic Animation Helpers */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .animate-in {
+            animation-duration: 0.25s;
+            animation-fill-mode: both;
+            animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .fade-in {
+            animation-name: fadeIn;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .view-transition,
+            .animate-in,
+            .chapter-accordion-grid {
+                animation: none !important;
+                transition: none !important;
+                opacity: 1 !important;
+            }
+        }
+
         @keyframes skeleton-shimmer {
             0% {
                 transform: translateX(-100%);
@@ -266,6 +331,15 @@
                 <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
             </Icon>
         );
+        const Share2 = ({className}) => (
+            <Icon className={className}>
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </Icon>
+        );
 
         // Logo WorksBox officiel avec dégradé et livre/cloud stylisé
         const WorksBoxLogo = ({ className = "w-8 h-8" }) => (
@@ -429,6 +503,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [courses, setCourses] = useState([]);
           const [articles, setArticles] = useState([]);
           const [settings, setSettings] = useState({ 
+              subjects: DEFAULT_SUBJECTS,
               subjectOrder: DEFAULT_SUBJECTS, 
               tagColors: {}, 
               schools: DEFAULT_SCHOOLS, 
@@ -528,14 +603,22 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               }
           };
 
+          const shareCourse = (course) => {
+              if (!course) return;
+              try {
+                  const url = new URL(window.location.origin + window.location.pathname);
+                  url.searchParams.set('course', course.id);
+                  const directUrl = url.toString();
+                  copyToClipboard(directUrl, `Lien direct vers « ${course.title} » copié !`);
+              } catch (e) {
+                  const directUrl = `${window.location.origin}${window.location.pathname}?course=${encodeURIComponent(course.id)}`;
+                  copyToClipboard(directUrl, `Lien direct vers « ${course.title} » copié !`);
+              }
+          };
+
           const copyCourseLink = (course) => {
               if (!course) return;
-              const link = course.digitalLink || course.casioLink || course.videoLink || course.imageLink || course.audioLink;
-              if (link) {
-                  copyToClipboard(link, `Lien de « ${course.title} » copié !`);
-              } else {
-                  copyToClipboard(window.location.href, `Lien copié dans le presse-papiers !`);
-              }
+              shareCourse(course);
           };
 
           useEffect(() => { 
@@ -772,8 +855,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 setSettings(prev => ({
                     ...prev,
                     ...data,
-                    schools: Array.from(new Set([...DEFAULT_SCHOOLS, ...(data.schools || [])])),
-                    classes: Array.from(new Set([...DEFAULT_CLASSES, ...(data.classes || [])]))
+                    schools: Array.isArray(data.schools) ? data.schools : prev.schools,
+                    classes: Array.isArray(data.classes) ? data.classes : prev.classes,
+                    subjects: Array.isArray(data.subjects) ? data.subjects : (Array.isArray(data.subjectOrder) ? data.subjectOrder : prev.subjects),
+                    subjectOrder: Array.isArray(data.subjectOrder) ? data.subjectOrder : (Array.isArray(data.subjects) ? data.subjects : prev.subjectOrder)
                 }));
               }
             }, (err) => console.warn('Settings snapshot error:', err));
@@ -820,12 +905,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           }, [dataUser]);
 
           const allSchools = useMemo(() => {
-              const list = new Set([...DEFAULT_SCHOOLS, ...(settings.schools || []), ...courses.map(c => c.school), ...articles.map(a => a.school)]);
+              const base = Array.isArray(settings.schools) ? settings.schools : DEFAULT_SCHOOLS;
+              const list = new Set([...base, ...courses.map(c => c.school), ...articles.map(a => a.school)]);
               return Array.from(list).filter(Boolean);
           }, [settings.schools, courses, articles]);
 
           const allClasses = useMemo(() => {
-              const list = new Set([...DEFAULT_CLASSES, ...(settings.classes || []), ...courses.map(c => c.classe), ...articles.map(a => a.classe)]);
+              const base = Array.isArray(settings.classes) ? settings.classes : DEFAULT_CLASSES;
+              const list = new Set([...base, ...courses.map(c => c.classe), ...articles.map(a => a.classe)]);
               return Array.from(list).filter(Boolean);
           }, [settings.classes, courses, articles]);
 
@@ -853,17 +940,22 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           const activeSubjects = useMemo(() => {
               const isBazinSTI2D = selectedSchool === 'Lycée François Bazin' && selectedClass === 'Terminale STI2D';
-              const baseList = isBazinSTI2D ? (settings.subjectOrder || DEFAULT_SUBJECTS) : [];
+              const configuredList = Array.isArray(settings.subjects)
+                  ? settings.subjects
+                  : (Array.isArray(settings.subjectOrder) ? settings.subjectOrder : null);
+              const baseList = configuredList !== null ? configuredList : (isBazinSTI2D ? DEFAULT_SUBJECTS : []);
               const subs = new Set([...baseList, ...filteredCourses.map(c => c.subject)]);
               return Array.from(subs).filter(Boolean);
-          }, [filteredCourses, settings.subjectOrder, selectedSchool, selectedClass]);
+          }, [filteredCourses, settings.subjects, settings.subjectOrder, selectedSchool, selectedClass]);
 
           const sortedSubjects = useMemo(() => {
-              const ordered = settings.subjectOrder || [];
+              const ordered = Array.isArray(settings.subjects)
+                  ? settings.subjects
+                  : (Array.isArray(settings.subjectOrder) ? settings.subjectOrder : DEFAULT_SUBJECTS);
               const known = ordered.filter(s => activeSubjects.includes(s));
               const unknown = activeSubjects.filter(s => !ordered.includes(s)).sort();
               return [...known, ...unknown];
-          }, [activeSubjects, settings.subjectOrder]);
+          }, [activeSubjects, settings.subjects, settings.subjectOrder]);
 
           const latestCourses = useMemo(() => filteredCourses.slice(0, 4), [filteredCourses]);
           const favoriteCourses = useMemo(() => filteredCourses.filter(c => favorites.includes(c.id)), [filteredCourses, favorites]);
@@ -889,11 +981,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           };
 
           const handleView = async (course, type) => {
-              if (type === 'Numérique') setPreviewData({ link: course.digitalLink, title: course.title, type: 'Numérique' });
-              else if (type === 'Casio') setPreviewData({ link: course.casioLink, title: course.title, type: 'Casio' });
-              else if (type === 'Vidéo') setPreviewData({ link: course.videoLink, title: course.title, type: 'Vidéo' });
-              else if (type === 'Image') setPreviewData({ link: course.imageLink, title: course.title, type: 'Image' });
-              else if (type === 'Audio') setPreviewData({ link: course.audioLink, title: course.title, type: 'Audio' });
+              if (type === 'Numérique') setPreviewData({ link: course.digitalLink, title: course.title, type: 'Numérique', course });
+              else if (type === 'Casio') setPreviewData({ link: course.casioLink, title: course.title, type: 'Casio', course });
+              else if (type === 'Vidéo') setPreviewData({ link: course.videoLink, title: course.title, type: 'Vidéo', course });
+              else if (type === 'Image') setPreviewData({ link: course.imageLink, title: course.title, type: 'Image', course });
+              else if (type === 'Audio') setPreviewData({ link: course.audioLink, title: course.title, type: 'Audio', course });
 
               if (dataDb) {
                   try {
@@ -907,6 +999,47 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   }
               }
           };
+
+          // Détection d'un lien direct vers un cours dans l'URL (?course=... ou ?c=...)
+          const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+          useEffect(() => {
+              if (deepLinkHandled || !courses || courses.length === 0) return;
+              try {
+                  const params = new URLSearchParams(window.location.search);
+                  const targetCourseId = params.get('course') || params.get('c');
+                  if (targetCourseId) {
+                      const target = courses.find(c => String(c.id) === String(targetCourseId));
+                      if (target) {
+                          setDeepLinkHandled(true);
+                          if (target.school) {
+                              setSelectedSchool(target.school);
+                              localStorage.setItem('wb_selected_school', target.school);
+                          }
+                          if (target.classe) {
+                              setSelectedClass(target.classe);
+                              localStorage.setItem('wb_selected_class', target.classe);
+                          }
+                          if (target.subject) {
+                              setSelectedSubject(target.subject);
+                              setCurrentView('subject');
+                          }
+                          const link = target.digitalLink || target.casioLink || target.videoLink || target.imageLink || target.audioLink;
+                          const type = target.digitalLink ? 'Numérique' : (target.casioLink ? 'Casio' : (target.videoLink ? 'Vidéo' : (target.imageLink ? 'Image' : 'Audio')));
+                          if (link) {
+                              setPreviewData({
+                                  link,
+                                  type,
+                                  title: target.title,
+                                  course: target
+                              });
+                          }
+                          showToast(`Affichage du cours « ${target.title} »`, 'info', 'info');
+                      }
+                  }
+              } catch (err) {
+                  console.warn('Erreur lecture lien direct cours :', err);
+              }
+          }, [courses, deepLinkHandled]);
 
           const chaptersData = useMemo(() => {
             if (!selectedSubject) return [];
@@ -1127,7 +1260,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 ) : (
                     <>
                         {currentView === 'home' && (
-                        <div className="space-y-12 animate-in fade-in duration-300">
+                        <div key="view-home" className="space-y-12 view-transition">
                             <div className="text-center max-w-2xl mx-auto">
                                 <div className="flex items-center justify-center space-x-3 mb-3">
                                     <WorksBoxLogo className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shadow-md" />
@@ -1216,6 +1349,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                                 toggleFav={() => toggleFav(course.id)} 
                                                                 showSubject={true} 
                                                                 onCopy={() => copyCourseLink(course)}
+                                                                onShare={() => shareCourse(course)}
                                                             />
                                                         ))}
                                                     </ul>
@@ -1234,11 +1368,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                     <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm relative group hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
                                                         <div className="absolute top-3 right-3 flex items-center space-x-1 z-10">
                                                             <button 
-                                                                onClick={() => copyCourseLink(course)} 
+                                                                onClick={() => shareCourse(course)} 
                                                                 className="text-slate-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                                                title="Copier le lien du cours"
+                                                                title="Partager ce cours (copier le lien direct)"
                                                             >
-                                                                <Copy className="w-4 h-4" />
+                                                                <Share2 className="w-4 h-4" />
                                                             </button>
                                                             <button 
                                                                 onClick={() => toggleFav(course.id)} 
@@ -1256,6 +1390,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                             {course.videoLink && <button onClick={() => handleView(course, 'Vidéo')} className="flex-1 min-w-[65px] bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><VideoIcon className="w-3 h-3 mr-1"/> Vidéo</button>}
                                                             {course.imageLink && <button onClick={() => handleView(course, 'Image')} className="flex-1 min-w-[65px] bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><ImageIcon className="w-3 h-3 mr-1"/> Image</button>}
                                                             {course.audioLink && <button onClick={() => handleView(course, 'Audio')} className="flex-1 min-w-[65px] bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><MusicIcon className="w-3 h-3 mr-1"/> Audio</button>}
+                                                            <button onClick={() => shareCourse(course)} className="flex-1 min-w-[65px] bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors" title="Partager ce cours (copier le lien direct)"><Share2 className="w-3 h-3 mr-1 text-blue-500 dark:text-blue-400"/> Partager</button>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1286,7 +1421,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {currentView === 'favorites' && (
-                        <div className="space-y-6 animate-in fade-in duration-300">
+                        <div key="view-favorites" className="space-y-6 view-transition">
                             <div className="flex items-center space-x-4 mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
                                 <div className="bg-amber-100 dark:bg-amber-950/80 p-3 rounded-xl"><Star className="w-8 h-8 text-amber-500" filled={true}/></div>
                                 <div><h1 className="text-3xl font-bold text-slate-900 dark:text-white">Mes Favoris</h1><p className="text-slate-500 dark:text-slate-400">Retrouvez ici vos cours sauvegardés.</p></div>
@@ -1351,6 +1486,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                         toggleFav={() => toggleFav(course.id)} 
                                                         showSubject={true} 
                                                         onCopy={() => copyCourseLink(course)}
+                                                        onShare={() => shareCourse(course)}
                                                     />
                                                 ))}
                                             </ul>
@@ -1362,9 +1498,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {currentView === 'subject' && (
-                        <div className="space-y-6 animate-in fade-in duration-300">
+                        <div key={`view-subject-${selectedSubject}`} className="space-y-6 view-transition">
                             <div className="flex items-center space-x-4 mb-8">
-                                <button onClick={goHome} className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700"><ChevronLeft className="w-5 h-5" /></button>
+                                <button onClick={goHome} className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
                                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{selectedSubject}</h1>
                             </div>
                             {chaptersData.length === 0 ? (
@@ -1381,6 +1517,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             favorites={favorites} 
                                             toggleFav={toggleFav} 
                                             onCopyCourse={copyCourseLink}
+                                            onShareCourse={shareCourse}
                                         />
                                     ))}
                                 </div>
@@ -1389,7 +1526,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {currentView === 'casioGuide' && (
-                          <div className="space-y-8 max-w-4xl mx-auto">
+                          <div key="view-casioGuide" className="space-y-8 max-w-4xl mx-auto view-transition">
                             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center"><HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-4"/> Tuto Casio Graph 35+EII</h1>
                             <div 
                                 className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 space-y-6 text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed text-sm sm:text-base"
@@ -1399,7 +1536,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {currentView === 'terms' && (
-                          <div className="space-y-8 max-w-4xl mx-auto">
+                          <div key="view-terms" className="space-y-8 max-w-4xl mx-auto view-transition">
                             <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center"><Shield className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-4"/> Conditions d'utilisations</h1>
                             <div 
                                 className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 space-y-6 text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed text-sm sm:text-base"
@@ -1417,6 +1554,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       <button onClick={openTerms} className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">Conditions</button>
                       <span>•</span>
                       <button onClick={openCasioGuide} className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">Tuto Casio</button>
+                      <span>•</span>
+                      <a href="/admin" className="hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors flex items-center">Administration</a>
                   </div>
               </footer>
 
@@ -1425,6 +1564,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       data={previewData} 
                       onClose={() => setPreviewData(null)} 
                       onCopy={(link, title) => copyToClipboard(link, title ? `Lien de « ${title} » copié !` : "Lien copié dans le presse-papiers !")}
+                      onShare={previewData.course ? () => shareCourse(previewData.course) : undefined}
                   />
               )}
 
@@ -1832,7 +1972,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             return null;
         }
 
-        function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false, onCopy }) {
+        function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false, onCopy, onShare }) {
             const courseTag = course.tag || 'Cours';
             const style = COLOR_PALETTES[tagColors?.[courseTag]] || COLOR_PALETTES.slate;
             return (
@@ -1846,13 +1986,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             >
                                 <Star className="w-5 h-5 sm:w-6 sm:h-6" filled={isFav} />
                             </button>
-                            {onCopy && (
+                            {(onShare || onCopy) && (
                                 <button 
-                                    onClick={onCopy} 
+                                    onClick={() => onShare ? onShare(course) : onCopy(course)} 
                                     className="text-slate-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    title="Copier le lien du cours"
+                                    title="Partager ce cours (copier le lien direct)"
                                 >
-                                    <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                    <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                 </button>
                             )}
                         </div>
@@ -1871,34 +2011,59 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         {course.videoLink && <button onClick={() => handleView(course, 'Vidéo')} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><VideoIcon className="w-4 h-4 mr-1"/> Vidéo</button>}
                         {course.imageLink && <button onClick={() => handleView(course, 'Image')} className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><ImageIcon className="w-4 h-4 mr-1"/> Image</button>}
                         {course.audioLink && <button onClick={() => handleView(course, 'Audio')} className="px-3 py-1.5 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><MusicIcon className="w-4 h-4 mr-1"/> Audio</button>}
+                        <button 
+                            type="button"
+                            onClick={() => onShare ? onShare(course) : (onCopy ? onCopy(course) : null)} 
+                            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"
+                            title="Partager ce cours (copier le lien direct)"
+                        >
+                            <Share2 className="w-4 h-4 mr-1.5 text-blue-500 dark:text-blue-400" />
+                            <span>Partager</span>
+                        </button>
                     </div>
                 </li>
             );
         }
 
-        function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse }) {
+        function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse, onShareCourse }) {
             const [isExpanded, setIsExpanded] = useState(chapterCourses.length <= 1);
             return (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                    <div className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between items-center transition-colors" onClick={() => setIsExpanded(!isExpanded)}>
-                        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{chapter}</h2>
-                        <ChevronDown className={`w-5 h-5 text-slate-500 dark:text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-200">
+                    <button
+                        type="button"
+                        id={`chapter-header-${chapter.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
+                        aria-expanded={isExpanded}
+                        className="w-full text-left bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200/80 dark:border-slate-800 px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between items-center transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" 
+                        onClick={() => setIsExpanded(!isExpanded)}
+                    >
+                        <div className="flex items-center space-x-3 pr-4">
+                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 transition-colors">{chapter}</h2>
+                            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                {chapterCourses.length} {chapterCourses.length > 1 ? 'fiches' : 'fiche'}
+                            </span>
+                        </div>
+                        <div className="p-1 rounded-lg text-slate-500 dark:text-slate-400 bg-white/60 dark:bg-slate-700/50 transition-colors">
+                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ease-out ${isExpanded ? 'rotate-180 text-blue-600 dark:text-blue-400' : 'rotate-0'}`} />
+                        </div>
+                    </button>
+                    <div className={`chapter-accordion-grid ${isExpanded ? 'expanded' : ''}`}>
+                        <div className="chapter-accordion-inner">
+                            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {chapterCourses.map(course => (
+                                    <CourseListItem 
+                                        key={course.id} 
+                                        course={course} 
+                                        handleView={handleView} 
+                                        tagColors={tagColors} 
+                                        isFav={favorites.includes(course.id)} 
+                                        toggleFav={() => toggleFav(course.id)} 
+                                        onCopy={onCopyCourse ? () => onCopyCourse(course) : undefined}
+                                        onShare={onShareCourse ? () => onShareCourse(course) : (onCopyCourse ? () => onCopyCourse(course) : undefined)}
+                                    />
+                                ))}
+                            </ul>
+                        </div>
                     </div>
-                    {isExpanded && (
-                        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {chapterCourses.map(course => (
-                                <CourseListItem 
-                                    key={course.id} 
-                                    course={course} 
-                                    handleView={handleView} 
-                                    tagColors={tagColors} 
-                                    isFav={favorites.includes(course.id)} 
-                                    toggleFav={() => toggleFav(course.id)} 
-                                    onCopy={onCopyCourse ? () => onCopyCourse(course) : undefined}
-                                />
-                            ))}
-                        </ul>
-                    )}
                 </div>
             );
         }
@@ -2030,7 +2195,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
-        function PreviewModal({ data, onClose, onCopy }) {
+        function PreviewModal({ data, onClose, onCopy, onShare }) {
             let previewUrl = data.link;
             const isGoogleDrive = previewUrl.includes('drive.google.com/file/d/');
             if (isGoogleDrive) {
@@ -2057,6 +2222,17 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <h2 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg truncate">{data.title}</h2>
                             </div>
                             <div className="flex items-center space-x-2 flex-shrink-0">
+                                {onShare && (
+                                    <button 
+                                        id="btn-share-preview-link"
+                                        onClick={onShare} 
+                                        className="text-xs font-bold bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800 px-3 py-2 rounded-xl text-blue-700 dark:text-blue-300 flex items-center shadow-sm transition-colors active:scale-95"
+                                        title="Partager ce cours (copier le lien direct)"
+                                    >
+                                        <Share2 className="w-3.5 h-3.5 mr-1.5 text-blue-600 dark:text-blue-400" />
+                                        <span>Partager</span>
+                                    </button>
+                                )}
                                 {onCopy && (
                                     <button 
                                         id="btn-copy-preview-link"

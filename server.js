@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 
@@ -604,7 +605,11 @@ app.use(express.static(__dirname));
 
 // Admin Dashboard route
 app.get(['/admin', '/admin.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  const adminFile = path.join(__dirname, 'admin.html');
+  if (fs.existsSync(adminFile)) {
+    return res.sendFile(adminFile);
+  }
+  return res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Fallback to index.html for all routes

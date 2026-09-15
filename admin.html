@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorksBox — Administration & Gestion des Cours</title>
+    <meta name="description" content="Panneau d'administration de WorksBox pour gérer les cours, lycées, actualités et imports Google Drive avec l'IA.">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="theme-color" content="#2563eb">
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#172033',
+                            950: '#0b0f19'
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <script>
+        (function() {
+            try {
+                const savedTheme = localStorage.getItem('worksbox_theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200 selection:bg-blue-200 selection:text-blue-900">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            onAuthStateChanged 
+        } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { 
+            getFirestore, 
+            collection, 
+            onSnapshot, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc 
+        } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        const { useState, useEffect, useMemo } = React;
+
+        const lyceeShareAppId = 'lycee-share';
+        const firebaseConfig = {
+          apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
+          authDomain: "lycee-share.firebaseapp.com",
+          projectId: "lycee-share",
+          storageBucket: "lycee-share.firebasestorage.app",
+          messagingSenderId: "578872424130",
+          appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
+          measurementId: "G-3Q6998C0JH"
+        };
+
+        let dataDb = null;
+        let dataAuth = null;
+        try {
+            const dataApp = initializeApp(firebaseConfig, 'adminLyceeShareData');
+            dataAuth = getAuth(dataApp);
+            dataDb = getFirestore(dataApp);
+            signInAnonymously(dataAuth).catch(err => console.warn('Connexion anonyme admin :', err));
+        } catch (e) {
+            console.error('Erreur initialisation Firebase Admin :', e);
+        }
+
+        const DEFAULT_SCHOOLS = ['Lycée François Bazin', 'Lycée Gaspard Monge'];
+        const DEFAULT_CLASSES = ['Terminale STI2D', 'BTS SIO 1', 'Première STI2D', 'Seconde Générale'];
+        const DEFAULT_SUBJECTS = [
+            "Allemand", "Anglais", "Enseignement technologique en anglais", 
+            "Histoire Géographie", "Ingénierie et développement durable", 
+            "Mathématiques", "Philosophie", "Physique Chimie", "SIN"
+        ];
+        const SUBJECTS = DEFAULT_SUBJECTS;
+        const TAGS = ['Cours', 'TP', 'TD', 'Fiche', 'Formulaire', 'Exercices', 'Vidéo', 'Audio', 'Diaporama', 'Casio'];
+
+        const DEFAULT_TERMS_FALLBACK = `Bienvenue sur WorksBox, la plateforme pour récupérer ses cours ou revevoir une version calculatrice. En utilisant ce site, vous acceptez les conditions suivantes :
+
+1. Utilisation des cours sur calculatrice Casio Graph 35+EII
+L'utilisation des cours sur calculatrice est autorisée lors de simples exercices en classe ou d'évaluations (seulement si l'enseignant n'exige pas le "MODE EXAMEN"), lors d'épreuves nationales comme le BAC par exemple, l'utilisation des logiciels seront interdits et le "MODE EXAMEN" est obligatoire, pour tout utilisation de programmes sur calculatrice lors d'épreuves, le site WorksBox ne sera pas tenu responsable des conséquences arrivés lors de ces épreuves.
+
+2. Contenu des cours sur WorksBox
+WorksBox ne peut pas garantir la possession de l'entièreté des cours fournis par le lycée François Bazin. Dans ce genre de cas, l'utilisation de vos cours personnelles est recommandée.
+
+3. Demande d'hébergement d'un fichier
+Il est possible que vous possédiez un fichier comme un cours ou un autre type de document que WorksBox ne possède pas, si vous souhaiteriez son hébergement sur la plateforme, veuillez nous contacter via par mail : roman.ferriere4@gmail.com
+
+4. Utilisation de l'Intelligence Artificielle (IA)
+La version des cours sur calculatrice Casio Graph 35+EII à été adaptée par l'IA Gemini 3 pro pour une compatibilité optimale des cours en mode calculatrice.`;
+
+        const DEFAULT_CASIO_FALLBACK = `Comment mettre des cours sur calculatrice Casio Graph 35+EII ?
+
+1. Le matériel pré-requis pour démarrer
+Vous aurez besoin d'une calculatrice Casio Graph 35+EII, d'un câble Mini USB (Souvent fourni avec la calculatrice) et d'un ordinateur avec un port USB 2.0 ou supérieur.
+
+2. Télécharger les fichiers adaptés pour calculatrice
+Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant sur "Version Casio"). Ces fichiers ont déjà été formatés spécifiquement pour être parfaitement lisibles sur le petit écran de votre calculatrice, sans couper les mots.
+
+3. Mettre le fichier dans sa calculatrice
+• Branchez votre calculatrice à votre ordinateur via le câble USB.
+• Sur l'écran de la calculatrice, un menu apparaît. Choisissez Mode connexion : Clé USB (appuyer sur F1 pour sélectionner).
+• La calculatrice va apparaître sur votre ordinateur comme une clé USB classique.
+• Ouvrez ce lecteur depuis votre ordinateur, et allez dans le dossier @MainMem, une fois dedans, vous devriez voir un dossier PROGRAM (si vous ne le voyez pas, créé le vous même).
+• Une fois dans le dossier PROGRAM, copiez-collez les fichiers téléchargés depuis WorksBox. Attendez que le transfert soit terminé avant de déconnecter la calculatrice.
+• Une fois terminé, déconnectez proprement le câble. Sur la calculatrice, allez dans le menu et sélectionnez "PROGR" et appuyez sur F2 pour lire vos cours.`;
+
+        const DEFAULT_SAMPLE_COURSES = [
+          {
+            id: "sample-math-1",
+            title: "Suites géométriques, arithmétiques et limites",
+            subject: "Mathématiques",
+            chapter: "Chapitre 1 : Les Suites numériques",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 42,
+            viewsCasio: 28,
+            isVisible: true
+          },
+          {
+            id: "sample-math-2",
+            title: "Formulaire complet dérivées, primitives et intégrales",
+            subject: "Mathématiques",
+            chapter: "Chapitre 2 : Analyse et Dérivation",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Fiche",
+            chapterOrder: 2,
+            courseOrder: 1,
+            viewsDigital: 115,
+            viewsCasio: 89,
+            isVisible: true
+          },
+          {
+            id: "sample-pc-1",
+            title: "Premier principe de la thermodynamique et transferts thermiques",
+            subject: "Physique Chimie",
+            chapter: "Chapitre 1 : Énergie et Matière",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 64,
+            viewsCasio: 37,
+            isVisible: true
+          },
+          {
+            id: "sample-sin-1",
+            title: "Architecture réseau, adressage IPv4 et trames CAN",
+            subject: "SIN",
+            chapter: "Chapitre 1 : Réseaux & Protocoles",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "TP",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 53,
+            viewsCasio: 19,
+            isVisible: true
+          },
+          {
+            id: "sample-philo-1",
+            title: "La technique, la liberté et la responsabilité humaine",
+            subject: "Philosophie",
+            chapter: "Notions du BAC : La Liberté & La Technique",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Fiche",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 88,
+            viewsCasio: 45,
+            isVisible: true
+          }
+        ];
+
+        const DEFAULT_SAMPLE_ARTICLES = [
+          {
+            id: "article-1",
+            title: "Bienvenue sur WorksBox — Votre plateforme de révision",
+            content: "Retrouvez tous vos cours numériques et versions optimisées pour votre calculatrice Casio Graph 35+EII. Pensez à vérifier le mode examen lors de vos épreuves !",
+            date: "2025-09-01T08:00:00.000Z",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            pinned: true,
+            imageUrl: "",
+            videoUrl: ""
+          }
+        ];
+
+        function AdminApp() {
+            const [activeTab, setActiveTab] = useState('courses'); // courses | import | news | schools | texts | stats
+            const [courses, setCourses] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('worksbox_courses');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                    }
+                } catch(e) {}
+                return DEFAULT_SAMPLE_COURSES;
+            });
+            const [articles, setArticles] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('worksbox_articles');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                    }
+                } catch(e) {}
+                return DEFAULT_SAMPLE_ARTICLES;
+            });
+            const [settings, setSettings] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('worksbox_settings');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        return {
+                            schools: parsed.schools || DEFAULT_SCHOOLS,
+                            classes: parsed.classes || DEFAULT_CLASSES,
+                            subjectOrder: parsed.subjectOrder || DEFAULT_SUBJECTS,
+                            announcement: parsed.announcement || '',
+                            termsContent: parsed.termsContent || DEFAULT_TERMS_FALLBACK,
+                            casioGuideContent: parsed.casioGuideContent || DEFAULT_CASIO_FALLBACK
+                        };
+                    }
+                } catch(e) {}
+                return {
+                    schools: DEFAULT_SCHOOLS,
+                    classes: DEFAULT_CLASSES,
+                    subjects: DEFAULT_SUBJECTS,
+                    subjectOrder: DEFAULT_SUBJECTS,
+                    announcement: '',
+                    termsContent: DEFAULT_TERMS_FALLBACK,
+                    casioGuideContent: DEFAULT_CASIO_FALLBACK
+                };
+            });
+            const [loading, setLoading] = useState(false);
+            const [toast, setToast] = useState(null);
+            const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+            // Course filter & form states
+            const [filterSchool, setFilterSchool] = useState('');
+            const [filterClass, setFilterClass] = useState('');
+            const [filterSubject, setFilterSubject] = useState('');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [editingCourse, setEditingCourse] = useState(null);
+            const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+
+            // Article form states
+            const [editingArticle, setEditingArticle] = useState(null);
+            const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
+
+            // Drive AI Import states
+            const [driveInput, setDriveInput] = useState('');
+            const [importSchool, setImportSchool] = useState('Lycée François Bazin');
+            const [importClass, setImportClass] = useState('Terminale STI2D');
+            const [importSubject, setImportSubject] = useState('');
+            const [isClassifying, setIsClassifying] = useState(false);
+            const [classifiedResults, setClassifiedResults] = useState([]);
+            const [isSavingBatch, setIsSavingBatch] = useState(false);
+
+            const activeSubjectsList = useMemo(() => {
+                if (Array.isArray(settings.subjects)) return settings.subjects;
+                if (Array.isArray(settings.subjectOrder)) return settings.subjectOrder;
+                return DEFAULT_SUBJECTS;
+            }, [settings.subjects, settings.subjectOrder]);
+
+            const showToast = (message, type = 'success') => {
+                setToast({ message, type });
+                setTimeout(() => setToast(null), 3500);
+            };
+
+            const toggleTheme = () => {
+                if (isDark) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('worksbox_theme', 'light');
+                    setIsDark(false);
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('worksbox_theme', 'dark');
+                    setIsDark(true);
+                }
+            };
+
+            // Firestore real-time listeners
+            useEffect(() => {
+                if (!dataDb) return;
+
+                const settingsRef = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'settings', 'global');
+                const unsubSettings = onSnapshot(settingsRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        setSettings(prev => ({
+                            ...prev,
+                            ...data,
+                            schools: Array.isArray(data.schools) ? data.schools : prev.schools,
+                            classes: Array.isArray(data.classes) ? data.classes : prev.classes,
+                            subjects: Array.isArray(data.subjects) ? data.subjects : (Array.isArray(data.subjectOrder) ? data.subjectOrder : prev.subjects),
+                            subjectOrder: Array.isArray(data.subjectOrder) ? data.subjectOrder : (Array.isArray(data.subjects) ? data.subjects : prev.subjectOrder)
+                        }));
+                    }
+                }, err => console.warn('Settings err:', err));
+
+                const coursesRef = collection(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses');
+                const unsubCourses = onSnapshot(coursesRef, (snapshot) => {
+                    const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setCourses(list);
+                    setLoading(false);
+                }, err => {
+                    console.warn('Courses err:', err);
+                    setLoading(false);
+                });
+
+                const articlesRef = collection(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'articles');
+                const unsubArticles = onSnapshot(articlesRef, (snapshot) => {
+                    const list = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    setArticles(list);
+                }, err => console.warn('Articles err:', err));
+
+                return () => {
+                    unsubSettings();
+                    unsubCourses();
+                    unsubArticles();
+                };
+            }, []);
+
+            // Course deletion
+            const handleDeleteCourse = async (id, title) => {
+                if (!confirm(`Supprimer définitivement le cours « ${title} » ?`)) return;
+                try {
+                    await deleteDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses', id));
+                    showToast('Cours supprimé avec succès !');
+                } catch (e) {
+                    showToast('Erreur suppression : ' + e.message, 'error');
+                }
+            };
+
+            // Toggle visibility
+            const handleToggleVisibility = async (course) => {
+                try {
+                    const newVis = course.isVisible === false ? true : false;
+                    await updateDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses', course.id), {
+                        isVisible: newVis
+                    });
+                    showToast(newVis ? 'Cours rendu visible' : 'Cours masqué aux élèves');
+                } catch (e) {
+                    showToast('Erreur mise à jour : ' + e.message, 'error');
+                }
+            };
+
+            // Save course (Add or Edit)
+            const handleSaveCourse = async (courseData) => {
+                try {
+                    const cleanData = {
+                        title: (courseData.title || '').trim(),
+                        subject: courseData.subject || 'Mathématiques',
+                        chapter: (courseData.chapter || '').trim() || 'Chapitre 1',
+                        chapterOrder: Number(courseData.chapterOrder) || 1,
+                        courseOrder: Number(courseData.courseOrder) || 1,
+                        school: courseData.school || 'Lycée François Bazin',
+                        classe: courseData.classe || 'Terminale STI2D',
+                        tag: courseData.tag || 'Cours',
+                        digitalLink: (courseData.digitalLink || '').trim(),
+                        casioLink: (courseData.casioLink || '').trim(),
+                        videoLink: (courseData.videoLink || '').trim(),
+                        audioLink: (courseData.audioLink || '').trim(),
+                        imageLink: (courseData.imageLink || '').trim(),
+                        fileType: courseData.fileType || 'pdf',
+                        mediaType: courseData.mediaType || 'document',
+                        isVisible: courseData.isVisible !== false,
+                        viewsDigital: courseData.viewsDigital || 0,
+                        viewsCasio: courseData.viewsCasio || 0,
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    if (editingCourse && editingCourse.id) {
+                        await updateDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses', editingCourse.id), cleanData);
+                        showToast('Cours mis à jour !');
+                    } else {
+                        cleanData.createdAt = new Date().toISOString();
+                        await addDoc(collection(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses'), cleanData);
+                        showToast('Nouveau cours ajouté !');
+                    }
+                    setIsCourseModalOpen(false);
+                    setEditingCourse(null);
+                } catch (e) {
+                    showToast('Erreur enregistrement : ' + e.message, 'error');
+                }
+            };
+
+            // Article Save & Delete
+            const handleDeleteArticle = async (id, title) => {
+                if (!confirm(`Supprimer l'article « ${title} » ?`)) return;
+                try {
+                    await deleteDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'articles', id));
+                    showToast('Article supprimé !');
+                } catch (e) {
+                    showToast('Erreur : ' + e.message, 'error');
+                }
+            };
+
+            const handleSaveArticle = async (articleData) => {
+                try {
+                    const cleanData = {
+                        title: (articleData.title || '').trim(),
+                        content: (articleData.content || '').trim(),
+                        date: articleData.date || new Date().toISOString().split('T')[0],
+                        school: articleData.school || 'Lycée François Bazin',
+                        classe: articleData.classe || 'Terminale STI2D',
+                        imageUrl: (articleData.imageUrl || '').trim(),
+                        videoUrl: (articleData.videoUrl || '').trim(),
+                        pinned: !!articleData.pinned
+                    };
+
+                    if (editingArticle && editingArticle.id) {
+                        await updateDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'articles', editingArticle.id), cleanData);
+                        showToast('Article mis à jour !');
+                    } else {
+                        await addDoc(collection(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'articles'), cleanData);
+                        showToast('Nouvel article publié !');
+                    }
+                    setIsArticleModalOpen(false);
+                    setEditingArticle(null);
+                } catch (e) {
+                    showToast('Erreur : ' + e.message, 'error');
+                }
+            };
+
+            // Update Global Settings (schools, classes, subjects, banner, texts)
+            const handleUpdateSettings = async (keyOrObj, maybeVal) => {
+                try {
+                    const updates = typeof keyOrObj === 'string' ? { [keyOrObj]: maybeVal } : keyOrObj;
+                    setSettings(prev => ({ ...prev, ...updates }));
+                    try {
+                        const savedLocal = JSON.parse(localStorage.getItem('worksbox_settings') || '{}');
+                        Object.assign(savedLocal, updates);
+                        localStorage.setItem('worksbox_settings', JSON.stringify(savedLocal));
+                    } catch(e) {}
+
+                    if (dataDb) {
+                        const ref = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'settings', 'global');
+                        await setDoc(ref, updates, { merge: true });
+                    }
+                    showToast('Paramètres mis à jour !');
+                } catch (e) {
+                    showToast('Erreur : ' + e.message, 'error');
+                }
+            };
+
+            // Subjects Management Handlers
+            const handleAddSubject = async (rawName) => {
+                const cleanName = (rawName || '').trim();
+                if (!cleanName) return;
+                if (activeSubjectsList.some(s => s.toLowerCase() === cleanName.toLowerCase())) {
+                    showToast(`La matière « ${cleanName} » existe déjà !`, 'warning');
+                    return;
+                }
+                const updated = [...activeSubjectsList, cleanName];
+                await handleUpdateSettings({
+                    subjects: updated,
+                    subjectOrder: updated
+                });
+                showToast(`Matière « ${cleanName} » ajoutée avec succès !`);
+            };
+
+            const handleDeleteSubject = async (subjectToDelete) => {
+                const attachedCourses = courses.filter(c => c.subject === subjectToDelete);
+                if (attachedCourses.length > 0) {
+                    const confirmDeleteAll = confirm(
+                        `⚠️ Attention : La matière « ${subjectToDelete} » contient actuellement ${attachedCourses.length} cours rattaché(s).\n\n` +
+                        `Si vous confirmez, la matière sera retirée et ces ${attachedCourses.length} cours associés seront DÉFINITIVEMENT SUPPRIMÉS de la plateforme.\n\n` +
+                        `Voulez-vous vraiment continuer ?`
+                    );
+                    if (!confirmDeleteAll) return;
+
+                    // Delete associated courses from Firestore
+                    try {
+                        for (const c of attachedCourses) {
+                            if (dataDb) {
+                                await deleteDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses', c.id));
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Erreur suppression cours associés :', e);
+                        showToast('Erreur lors de la suppression des cours rattachés : ' + e.message, 'error');
+                        return;
+                    }
+                } else {
+                    if (!confirm(`Supprimer définitivement la matière « ${subjectToDelete} » ?`)) return;
+                }
+
+                const updated = activeSubjectsList.filter(s => s !== subjectToDelete);
+                await handleUpdateSettings({
+                    subjects: updated,
+                    subjectOrder: updated
+                });
+                showToast(`Matière « ${subjectToDelete} » supprimée avec succès !`);
+            };
+
+            const handleRenameSubject = async (oldName) => {
+                const newName = prompt(`Renommer la matière « ${oldName} » en :`, oldName);
+                if (!newName || !newName.trim() || newName.trim() === oldName) return;
+                const cleanNewName = newName.trim();
+
+                if (activeSubjectsList.some(s => s.toLowerCase() === cleanNewName.toLowerCase() && s.toLowerCase() !== oldName.toLowerCase())) {
+                    showToast(`La matière « ${cleanNewName} » existe déjà !`, 'warning');
+                    return;
+                }
+
+                const updated = activeSubjectsList.map(s => s === oldName ? cleanNewName : s);
+                await handleUpdateSettings({
+                    subjects: updated,
+                    subjectOrder: updated
+                });
+
+                // Rename in attached courses
+                const attachedCourses = courses.filter(c => c.subject === oldName);
+                if (attachedCourses.length > 0) {
+                    try {
+                        for (const c of attachedCourses) {
+                            if (dataDb) {
+                                await updateDoc(doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses', c.id), {
+                                    subject: cleanNewName
+                                });
+                            }
+                        }
+                        showToast(`Matière renommée et ${attachedCourses.length} cours mis à jour !`);
+                    } catch(e) {
+                        showToast(`Matière renommée, mais erreur sur les cours : ${e.message}`, 'warning');
+                    }
+                } else {
+                    showToast(`Matière renommée en « ${cleanNewName} » !`);
+                }
+            };
+
+            const handleMoveSubject = async (index, direction) => {
+                const current = [...activeSubjectsList];
+                const target = index + direction;
+                if (target < 0 || target >= current.length) return;
+                const temp = current[index];
+                current[index] = current[target];
+                current[target] = temp;
+                await handleUpdateSettings({
+                    subjects: current,
+                    subjectOrder: current
+                });
+            };
+
+            // AI Drive Import with /api/drive/classify
+            const handleClassifyDrive = async () => {
+                if (!driveInput.trim()) {
+                    showToast('Veuillez coller un lien Google Drive ou une liste de fichiers.', 'error');
+                    return;
+                }
+                setIsClassifying(true);
+                try {
+                    const res = await fetch('/api/drive/classify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            driveUrl: driveInput,
+                            rawText: driveInput,
+                            targetSchool: importSchool,
+                            targetClass: importClass,
+                            targetSubject: importSubject
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success && Array.isArray(data.courses)) {
+                        setClassifiedResults(data.courses);
+                        showToast(`${data.courses.length} cours analysés avec succès (${data.source || 'IA'}) !`);
+                    } else {
+                        throw new Error(data.error || 'Aucun cours détecté');
+                    }
+                } catch (err) {
+                    showToast('Erreur classification : ' + err.message, 'error');
+                } finally {
+                    setIsClassifying(false);
+                }
+            };
+
+            // Bulk Save AI Classified Courses
+            const handleBulkSaveCourses = async () => {
+                if (classifiedResults.length === 0) return;
+                setIsSavingBatch(true);
+                try {
+                    const col = collection(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'courses');
+                    let count = 0;
+                    for (const item of classifiedResults) {
+                        const { id, ...cleanItem } = item;
+                        await addDoc(col, {
+                            ...cleanItem,
+                            school: importSchool,
+                            classe: importClass,
+                            isVisible: true,
+                            viewsDigital: 0,
+                            viewsCasio: 0,
+                            createdAt: new Date().toISOString()
+                        });
+                        count++;
+                    }
+                    showToast(`${count} cours importés avec succès dans la base de données !`);
+                    setClassifiedResults([]);
+                    setDriveInput('');
+                    setActiveTab('courses');
+                } catch (err) {
+                    showToast('Erreur enregistrement par lot : ' + err.message, 'error');
+                } finally {
+                    setIsSavingBatch(false);
+                }
+            };
+
+            // Filtered courses for management table
+            const filteredCourses = useMemo(() => {
+                return courses.filter(c => {
+                    const matchesSchool = !filterSchool || c.school === filterSchool;
+                    const matchesClass = !filterClass || c.classe === filterClass;
+                    const matchesSubject = !filterSubject || c.subject === filterSubject;
+                    const matchesSearch = !searchQuery || (
+                        (c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (c.chapter || '').toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+                    return matchesSchool && matchesClass && matchesSubject && matchesSearch;
+                });
+            }, [courses, filterSchool, filterClass, filterSubject, searchQuery]);
+
+            // Total stats
+            const totalStats = useMemo(() => {
+                const totalDigitalViews = courses.reduce((acc, c) => acc + (c.viewsDigital || 0), 0);
+                const totalCasioViews = courses.reduce((acc, c) => acc + (c.viewsCasio || 0), 0);
+                const uniqueSubjects = new Set(courses.map(c => c.subject)).size;
+                return {
+                    totalCourses: courses.length,
+                    totalDigitalViews,
+                    totalCasioViews,
+                    totalArticles: articles.length,
+                    uniqueSubjects
+                };
+            }, [courses, articles]);
+
+            return (
+                <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+                    {/* Header */}
+                    <header className="bg-slate-900 dark:bg-slate-950 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <a href="/" className="flex items-center space-x-2.5 hover:opacity-90 transition-opacity">
+                                    <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-md font-extrabold text-white text-lg">
+                                        W
+                                    </div>
+                                    <div>
+                                        <span className="font-extrabold text-lg tracking-tight">WorksBox</span>
+                                        <span className="ml-2 text-xs bg-blue-500/20 text-blue-300 font-bold px-2 py-0.5 rounded-full border border-blue-400/30">
+                                            Admin
+                                        </span>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <div className="flex items-center space-x-3">
+                                <button
+                                    onClick={toggleTheme}
+                                    className="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold flex items-center space-x-1"
+                                    title={isDark ? "Mode clair" : "Mode sombre"}
+                                >
+                                    <span>{isDark ? "☀️ Clair" : "🌙 Sombre"}</span>
+                                </button>
+                                <a
+                                    href="/"
+                                    className="flex items-center space-x-1.5 text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3.5 py-2 rounded-xl border border-slate-700 transition-all shadow-sm"
+                                >
+                                    <span>← Retour au site</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Subnav Tabs */}
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-2 sm:space-x-4 overflow-x-auto text-xs sm:text-sm font-semibold border-t border-slate-800/80 scrollbar-none py-1">
+                            <button
+                                onClick={() => setActiveTab('courses')}
+                                className={`py-2 px-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'courses' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                📚 Cours ({courses.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('import')}
+                                className={`py-2 px-3 rounded-lg transition-colors whitespace-nowrap flex items-center space-x-1.5 ${activeTab === 'import' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                <span>⚡ Import Drive & IA</span>
+                                <span className="bg-emerald-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">Gemini</span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('news')}
+                                className={`py-2 px-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'news' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                📢 Actualités ({articles.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('schools')}
+                                className={`py-2 px-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'schools' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                🏫 Lycées, Classes & Matières
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('texts')}
+                                className={`py-2 px-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'texts' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                📝 Tuto Casio & Conditions
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('stats')}
+                                className={`py-2 px-3 rounded-lg transition-colors whitespace-nowrap ${activeTab === 'stats' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                            >
+                                📊 Statistiques
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Toast Notification */}
+                    {toast && (
+                        <div className="fixed bottom-5 right-5 z-50 animate-bounce">
+                            <div className={`px-4 py-2.5 rounded-xl shadow-xl text-sm font-semibold border ${toast.type === 'error' ? 'bg-red-600 text-white border-red-500' : 'bg-emerald-600 text-white border-emerald-500'}`}>
+                                {toast.message}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Main Content */}
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+                                <p className="text-slate-500 text-sm font-medium">Chargement des données administratives...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* TAB 1: GESTION DES COURS */}
+                                {activeTab === 'courses' && (
+                                    <div className="space-y-6">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div>
+                                                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Gestion des Cours</h1>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">Ajoutez, modifiez ou organisez les cours visibles par les élèves.</p>
+                                            </div>
+                                            <button
+                                                onClick={() => { setEditingCourse(null); setIsCourseModalOpen(true); }}
+                                                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm flex items-center justify-center space-x-2 transition-all active:scale-95"
+                                            >
+                                                <span>+ Ajouter un cours</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Filters bar */}
+                                        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Recherche</label>
+                                                <input
+                                                    type="text"
+                                                    value={searchQuery}
+                                                    onChange={e => setSearchQuery(e.target.value)}
+                                                    placeholder="Titre, chapitre..."
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-blue-500 text-slate-800 dark:text-slate-100"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Établissement</label>
+                                                <select
+                                                    value={filterSchool}
+                                                    onChange={e => setFilterSchool(e.target.value)}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-blue-500 text-slate-800 dark:text-slate-100"
+                                                >
+                                                    <option value="">Tous les lycées</option>
+                                                    {settings.schools?.map(s => <option key={s} value={s}>{s}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Classe</label>
+                                                <select
+                                                    value={filterClass}
+                                                    onChange={e => setFilterClass(e.target.value)}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-blue-500 text-slate-800 dark:text-slate-100"
+                                                >
+                                                    <option value="">Toutes les classes</option>
+                                                    {settings.classes?.map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 uppercase mb-1 block">Matière</label>
+                                                <select
+                                                    value={filterSubject}
+                                                    onChange={e => setFilterSubject(e.target.value)}
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:outline-blue-500 text-slate-800 dark:text-slate-100"
+                                                >
+                                                    <option value="">Toutes les matières</option>
+                                                    {activeSubjectsList.map(s => <option key={s} value={s}>{s}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        {/* Table of courses */}
+                                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-sm">
+                                                    <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-xs uppercase text-slate-500 dark:text-slate-400 font-bold">
+                                                        <tr>
+                                                            <th className="px-4 py-3">Statut</th>
+                                                            <th className="px-4 py-3">Titre & Chapitre</th>
+                                                            <th className="px-4 py-3">Matière & Tag</th>
+                                                            <th className="px-4 py-3">Établissement & Classe</th>
+                                                            <th className="px-4 py-3">Vues</th>
+                                                            <th className="px-4 py-3 text-right">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                        {filteredCourses.length === 0 ? (
+                                                            <tr>
+                                                                <td colSpan="6" className="text-center py-12 text-slate-400">
+                                                                    Aucun cours correspondant aux critères.
+                                                                </td>
+                                                            </tr>
+                                                        ) : (
+                                                            filteredCourses.map(course => (
+                                                                <tr key={course.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                                        <button
+                                                                            onClick={() => handleToggleVisibility(course)}
+                                                                            className={`px-2.5 py-1 rounded-full text-xs font-bold border transition-colors ${course.isVisible !== false ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'}`}
+                                                                            title="Cliquer pour basculer la visibilité"
+                                                                        >
+                                                                            {course.isVisible !== false ? '● En ligne' : '○ Masqué'}
+                                                                        </button>
+                                                                    </td>
+                                                                    <td className="px-4 py-3">
+                                                                        <div className="font-bold text-slate-900 dark:text-white">{course.title}</div>
+                                                                        <div className="text-xs text-slate-500">{course.chapter}</div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 whitespace-nowrap">
+                                                                        <span className="font-semibold text-slate-800 dark:text-slate-200 block">{course.subject}</span>
+                                                                        <span className="inline-block mt-0.5 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
+                                                                            {course.tag || 'Cours'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
+                                                                        <div>{course.school}</div>
+                                                                        <div className="font-medium text-slate-500">{course.classe}</div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 whitespace-nowrap text-xs text-slate-500">
+                                                                        <div>📄 {course.viewsDigital || 0}</div>
+                                                                        <div>📟 {course.viewsCasio || 0}</div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3 whitespace-nowrap text-right space-x-2">
+                                                                        <button
+                                                                            onClick={() => { setEditingCourse(course); setIsCourseModalOpen(true); }}
+                                                                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                                                        >
+                                                                            Modifier
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => handleDeleteCourse(course.id, course.title)}
+                                                                            className="px-2.5 py-1 text-xs font-bold rounded-lg bg-red-50 hover:bg-red-100 dark:bg-red-950/50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 transition-colors"
+                                                                        >
+                                                                            Suppr.
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* TAB 2: IMPORT DRIVE & IA (GEMINI) */}
+                                {activeTab === 'import' && (
+                                    <div className="space-y-8 max-w-4xl mx-auto">
+                                        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl">
+                                            <div className="inline-flex items-center space-x-2 bg-white/20 px-3 py-1 rounded-full text-xs font-bold mb-3">
+                                                <span>✨ Moteur d'Import Automatisé avec Gemini</span>
+                                            </div>
+                                            <h2 className="text-2xl sm:text-3xl font-extrabold mb-2">Importez vos cours Google Drive en un clic</h2>
+                                            <p className="text-blue-100 text-sm leading-relaxed max-w-2xl">
+                                                Collez le lien d'un dossier Google Drive partagé ou une liste de fichiers. Notre IA analyse les titres, détecte les extensions (.pdf, .g1m Casio, .mp4), découpe les chapitres et classe automatiquement les ressources.
+                                            </p>
+                                        </div>
+
+                                        {/* Import Form */}
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-1.5 block">Lycée de destination</label>
+                                                    <select
+                                                        value={importSchool}
+                                                        onChange={e => setImportSchool(e.target.value)}
+                                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                    >
+                                                        {settings.schools?.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-1.5 block">Classe</label>
+                                                    <select
+                                                        value={importClass}
+                                                        onChange={e => setImportClass(e.target.value)}
+                                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                    >
+                                                        {settings.classes?.map(c => <option key={c} value={c}>{c}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-1.5 block">Matière (facultatif)</label>
+                                                    <select
+                                                        value={importSubject}
+                                                        onChange={e => setImportSubject(e.target.value)}
+                                                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                    >
+                                                        <option value="">Détection automatique par l'IA</option>
+                                                        {activeSubjectsList.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase mb-1.5 block">
+                                                    Lien du dossier Google Drive ou liste de liens / noms
+                                                </label>
+                                                <textarea
+                                                    rows="5"
+                                                    value={driveInput}
+                                                    onChange={e => setDriveInput(e.target.value)}
+                                                    placeholder="Exemple : https://drive.google.com/drive/folders/1aBcDeFgHiJkLmNoPqRsTuVwXyZ ou collez 10 liens de cours Google Drive..."
+                                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:outline-blue-500 font-mono text-slate-800 dark:text-slate-100"
+                                                />
+                                            </div>
+
+                                            <button
+                                                onClick={handleClassifyDrive}
+                                                disabled={isClassifying}
+                                                className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-400 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center space-x-2"
+                                            >
+                                                {isClassifying ? (
+                                                    <>
+                                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                        <span>Analyse pédagogique en cours par Gemini...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span>🚀 Analyser et classifier avec Gemini</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        {/* Results preview & Bulk Save */}
+                                        {classifiedResults.length > 0 && (
+                                            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                                            Résultats de l'analyse ({classifiedResults.length} cours détectés)
+                                                        </h3>
+                                                        <p className="text-xs text-slate-500">Vérifiez les cours ci-dessous avant l'enregistrement définitif.</p>
+                                                    </div>
+                                                    <button
+                                                        onClick={handleBulkSaveCourses}
+                                                        disabled={isSavingBatch}
+                                                        className="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl shadow-md transition-all active:scale-95 flex items-center space-x-1.5"
+                                                    >
+                                                        {isSavingBatch ? 'Enregistrement...' : `Valider et importer (${classifiedResults.length})`}
+                                                    </button>
+                                                </div>
+
+                                                <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-96 overflow-y-auto pr-2">
+                                                    {classifiedResults.map((item, idx) => (
+                                                        <div key={idx} className="py-3 flex items-center justify-between gap-4 text-xs">
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="font-bold text-slate-900 dark:text-white truncate">{item.title}</div>
+                                                                <div className="text-slate-500 flex items-center space-x-2 mt-0.5">
+                                                                    <span className="font-semibold text-blue-600 dark:text-blue-400">{item.subject}</span>
+                                                                    <span>•</span>
+                                                                    <span>{item.chapter}</span>
+                                                                    <span>•</span>
+                                                                    <span className="uppercase font-bold">{item.tag}</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">
+                                                                .{item.fileType || 'pdf'}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* TAB 3: ACTUALITÉS & ANNONCES */}
+                                {activeTab === 'news' && (
+                                    <div className="space-y-6">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div>
+                                                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Actualités & Annonces</h1>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">Publiez des messages urgents, articles et vidéos pour les élèves.</p>
+                                            </div>
+                                            <button
+                                                onClick={() => { setEditingArticle(null); setIsArticleModalOpen(true); }}
+                                                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow-sm flex items-center justify-center space-x-2 transition-all active:scale-95"
+                                            >
+                                                <span>+ Publier une actualité</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Global Announcement Banner */}
+                                        <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-2xl p-4 space-y-2">
+                                            <label className="text-xs font-bold text-amber-800 dark:text-amber-300 uppercase block">
+                                                Bannière d'alerte défilante (affichée tout en haut du site pour tous les élèves)
+                                            </label>
+                                            <div className="flex gap-3">
+                                                <input
+                                                    type="text"
+                                                    defaultValue={settings.announcement || ''}
+                                                    id="announcement-input"
+                                                    placeholder="Ex: Attention, cours de physique déplacé en salle 204 ce jeudi !"
+                                                    className="flex-1 bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        const val = document.getElementById('announcement-input').value;
+                                                        handleUpdateSettings('announcement', val);
+                                                    }}
+                                                    className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all"
+                                                >
+                                                    Enregistrer la bannière
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Articles list */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {articles.map(art => (
+                                                <div key={art.id} className={`bg-white dark:bg-slate-900 p-5 rounded-2xl border shadow-sm flex flex-col justify-between ${art.pinned ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-slate-200 dark:border-slate-800'}`}>
+                                                    <div>
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <span className="text-xs text-slate-400 font-medium">{art.date}</span>
+                                                            {art.pinned && <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Épinglé</span>}
+                                                        </div>
+                                                        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{art.title}</h3>
+                                                        <p className="text-slate-600 dark:text-slate-300 text-xs line-clamp-3 mb-3">{art.content}</p>
+                                                    </div>
+                                                    <div className="flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800">
+                                                        <span className="text-[11px] text-slate-400">{art.school} • {art.classe}</span>
+                                                        <div className="space-x-2">
+                                                            <button
+                                                                onClick={() => { setEditingArticle(art); setIsArticleModalOpen(true); }}
+                                                                className="text-xs text-blue-600 hover:underline font-bold"
+                                                            >
+                                                                Modifier
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteArticle(art.id, art.title)}
+                                                                className="text-xs text-red-600 hover:underline font-bold"
+                                                            >
+                                                                Supprimer
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* TAB 4: LYCÉES, CLASSES & MATIÈRES */}
+                                {activeTab === 'schools' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+                                        {/* Schools Management */}
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+                                            <div>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Lycées partenaires</h3>
+                                                    <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                                        {settings.schools?.length || 0}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Établissements scolaires disponibles sur le portail</p>
+                                                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                                    {settings.schools?.map(s => {
+                                                        const attached = courses.filter(c => c.school === s).length;
+                                                        return (
+                                                            <div key={s} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm border border-slate-100 dark:border-slate-700/50">
+                                                                <div className="flex items-center space-x-2 truncate">
+                                                                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate">{s}</span>
+                                                                    <span className="text-[10px] text-slate-400 bg-slate-200/60 dark:bg-slate-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        {attached} cours
+                                                                    </span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (attached > 0 && !confirm(`Ce lycée contient ${attached} cours. Confirmez-vous le retrait de la liste ?`)) return;
+                                                                        const updated = settings.schools.filter(item => item !== s);
+                                                                        handleUpdateSettings('schools', updated);
+                                                                    }}
+                                                                    className="text-xs text-red-500 hover:text-red-700 font-bold ml-2 shrink-0"
+                                                                >
+                                                                    Retirer
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                <input
+                                                    type="text"
+                                                    id="new-school-input"
+                                                    placeholder="Nouveau lycée..."
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const el = document.getElementById('new-school-input');
+                                                             const val = el.value.trim();
+                                                             if (val && !settings.schools.includes(val)) {
+                                                                 handleUpdateSettings('schools', [...settings.schools, val]);
+                                                                 el.value = '';
+                                                             }
+                                                        }
+                                                    }}
+                                                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        const el = document.getElementById('new-school-input');
+                                                        const val = el.value.trim();
+                                                        if (val && !settings.schools.includes(val)) {
+                                                            handleUpdateSettings('schools', [...settings.schools, val]);
+                                                            el.value = '';
+                                                        }
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2 rounded-xl"
+                                                >
+                                                    Ajouter
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Classes Management */}
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+                                            <div>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Classes & Niveaux</h3>
+                                                    <span className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                                        {settings.classes?.length || 0}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Filières et niveaux d'enseignement</p>
+                                                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                                    {settings.classes?.map(c => {
+                                                        const attached = courses.filter(item => item.classe === c).length;
+                                                        return (
+                                                            <div key={c} className="flex justify-between items-center p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm border border-slate-100 dark:border-slate-700/50">
+                                                                <div className="flex items-center space-x-2 truncate">
+                                                                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate">{c}</span>
+                                                                    <span className="text-[10px] text-slate-400 bg-slate-200/60 dark:bg-slate-700 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                                                        {attached} cours
+                                                                    </span>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        if (attached > 0 && !confirm(`Cette classe contient ${attached} cours. Confirmez-vous le retrait de la liste ?`)) return;
+                                                                        const updated = settings.classes.filter(item => item !== c);
+                                                                        handleUpdateSettings('classes', updated);
+                                                                    }}
+                                                                    className="text-xs text-red-500 hover:text-red-700 font-bold ml-2 shrink-0"
+                                                                >
+                                                                    Retirer
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                <input
+                                                    type="text"
+                                                    id="new-class-input"
+                                                    placeholder="Nouvelle classe (ex: BTS SIO)..."
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const el = document.getElementById('new-class-input');
+                                                            const val = el.value.trim();
+                                                            if (val && !settings.classes.includes(val)) {
+                                                                handleUpdateSettings('classes', [...settings.classes, val]);
+                                                                el.value = '';
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        const el = document.getElementById('new-class-input');
+                                                        const val = el.value.trim();
+                                                        if (val && !settings.classes.includes(val)) {
+                                                            handleUpdateSettings('classes', [...settings.classes, val]);
+                                                            el.value = '';
+                                                        }
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-4 py-2 rounded-xl"
+                                                >
+                                                    Ajouter
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Subjects Management */}
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4">
+                                            <div>
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Matières & Disciplines</h3>
+                                                    <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                                                        {activeSubjectsList.length}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                                    Supprimez, renommez ou réorganisez l'ordre des matières affichées
+                                                </p>
+                                                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                                                    {activeSubjectsList.map((subject, idx) => {
+                                                        const courseCount = courses.filter(c => c.subject === subject).length;
+                                                        return (
+                                                            <div key={subject} className="flex justify-between items-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm border border-slate-100 dark:border-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                                                                <div className="flex items-center space-x-1.5 min-w-0 pr-2">
+                                                                    <div className="flex flex-col space-y-0.5 shrink-0">
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={idx === 0}
+                                                                            onClick={() => handleMoveSubject(idx, -1)}
+                                                                            className={`text-[9px] leading-none px-1 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${idx === 0 ? 'opacity-20 cursor-not-allowed' : 'text-slate-500 hover:text-blue-600'}`}
+                                                                            title="Monter d'un cran"
+                                                                        >
+                                                                            ▲
+                                                                        </button>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={idx === activeSubjectsList.length - 1}
+                                                                            onClick={() => handleMoveSubject(idx, 1)}
+                                                                            className={`text-[9px] leading-none px-1 py-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${idx === activeSubjectsList.length - 1 ? 'opacity-20 cursor-not-allowed' : 'text-slate-500 hover:text-blue-600'}`}
+                                                                            title="Descendre d'un cran"
+                                                                        >
+                                                                            ▼
+                                                                        </button>
+                                                                    </div>
+                                                                    <span className="font-semibold text-slate-800 dark:text-slate-200 truncate" title={subject}>
+                                                                        {subject}
+                                                                    </span>
+                                                                    {courseCount > 0 ? (
+                                                                        <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold px-1.5 py-0.2 rounded-full whitespace-nowrap">
+                                                                            {courseCount} cours
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap">
+                                                                            0 cours
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="flex items-center space-x-1.5 shrink-0">
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleRenameSubject(subject)}
+                                                                        className="text-xs text-slate-600 dark:text-slate-400 hover:text-blue-600 font-medium px-2 py-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                                                        title="Renommer la matière et ses cours"
+                                                                    >
+                                                                        Renommer
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDeleteSubject(subject)}
+                                                                        className="text-xs text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/50 transition-colors"
+                                                                        title="Supprimer la matière"
+                                                                    >
+                                                                        Supprimer
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {activeSubjectsList.length === 0 && (
+                                                         <p className="text-xs text-slate-400 italic text-center py-6">
+                                                             Aucune matière enregistrée. Ajoutez-en une ci-dessous.
+                                                         </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                                <input
+                                                    type="text"
+                                                    id="new-subject-input"
+                                                    placeholder="Nouvelle matière (ex: NSI, SVT...)..."
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            const el = document.getElementById('new-subject-input');
+                                                            handleAddSubject(el.value);
+                                                            el.value = '';
+                                                        }
+                                                    }}
+                                                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-800 dark:text-slate-100"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const el = document.getElementById('new-subject-input');
+                                                        handleAddSubject(el.value);
+                                                        el.value = '';
+                                                    }}
+                                                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2 rounded-xl shrink-0"
+                                                >
+                                                    Ajouter
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* TAB 5: TEXTES RÉGLEMENTAIRES (CASIO & CONDITIONS) */}
+                                {activeTab === 'texts' && (
+                                    <div className="space-y-6 max-w-4xl mx-auto">
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tutoriel Casio Graph 35+EII (HTML / Texte)</h3>
+                                                <button
+                                                    onClick={() => {
+                                                        const val = document.getElementById('casio-guide-input').value;
+                                                        handleUpdateSettings('casioGuideContent', val);
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl"
+                                                >
+                                                    Enregistrer le guide Casio
+                                                </button>
+                                            </div>
+                                            <textarea
+                                                id="casio-guide-input"
+                                                rows="8"
+                                                defaultValue={settings.casioGuideContent || ''}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-mono text-slate-800 dark:text-slate-100"
+                                            />
+                                        </div>
+
+                                        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Conditions Générales d'Utilisation (HTML / Texte)</h3>
+                                                <button
+                                                    onClick={() => {
+                                                        const val = document.getElementById('terms-input').value;
+                                                        handleUpdateSettings('termsContent', val);
+                                                    }}
+                                                    className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-xl"
+                                                >
+                                                    Enregistrer les conditions
+                                                </button>
+                                            </div>
+                                            <textarea
+                                                id="terms-input"
+                                                rows="8"
+                                                defaultValue={settings.termsContent || ''}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-sm font-mono text-slate-800 dark:text-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* TAB 6: STATISTIQUES */}
+                                {activeTab === 'stats' && (
+                                    <div className="space-y-6 max-w-5xl mx-auto">
+                                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Tableau de bord & Statistiques</h2>
+                                        
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                <span className="text-xs font-bold text-slate-400 uppercase">Total des Cours</span>
+                                                <div className="text-3xl font-extrabold text-blue-600 mt-2">{totalStats.totalCourses}</div>
+                                            </div>
+                                            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                <span className="text-xs font-bold text-slate-400 uppercase">Consultations Drive / PDF</span>
+                                                <div className="text-3xl font-extrabold text-indigo-600 mt-2">{totalStats.totalDigitalViews}</div>
+                                            </div>
+                                            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                <span className="text-xs font-bold text-slate-400 uppercase">Téléchargements Casio</span>
+                                                <div className="text-3xl font-extrabold text-emerald-600 mt-2">{totalStats.totalCasioViews}</div>
+                                            </div>
+                                            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                                                <span className="text-xs font-bold text-slate-400 uppercase">Matières actives</span>
+                                                <div className="text-3xl font-extrabold text-purple-600 mt-2">{totalStats.uniqueSubjects}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </main>
+
+                    {/* Modal: Add/Edit Course */}
+                    {isCourseModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full p-6 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                                    {editingCourse ? 'Modifier le cours' : 'Ajouter un nouveau cours'}
+                                </h3>
+
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    handleSaveCourse(Object.fromEntries(fd.entries()));
+                                }} className="space-y-4 text-sm">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Titre du cours *</label>
+                                        <input
+                                            name="title"
+                                            required
+                                            defaultValue={editingCourse?.title || ''}
+                                            placeholder="Ex: Théorème des valeurs intermédiaires"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Matière *</label>
+                                            <select
+                                                name="subject"
+                                                defaultValue={editingCourse?.subject || activeSubjectsList[0] || 'Mathématiques'}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            >
+                                                {activeSubjectsList.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Tag pédagogique</label>
+                                            <select
+                                                name="tag"
+                                                defaultValue={editingCourse?.tag || 'Cours'}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            >
+                                                {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <div className="sm:col-span-2">
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Nom du Chapitre *</label>
+                                            <input
+                                                name="chapter"
+                                                required
+                                                defaultValue={editingCourse?.chapter || 'Chapitre 1'}
+                                                placeholder="Ex: Chapitre 1 : Continuité et Dérivation"
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Numéro Chapitre</label>
+                                            <input
+                                                name="chapterOrder"
+                                                type="number"
+                                                defaultValue={editingCourse?.chapterOrder || 1}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Lycée *</label>
+                                            <select
+                                                name="school"
+                                                defaultValue={editingCourse?.school || settings.schools[0]}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            >
+                                                {settings.schools?.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Classe *</label>
+                                            <select
+                                                name="classe"
+                                                defaultValue={editingCourse?.classe || settings.classes[0]}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            >
+                                                {settings.classes?.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Lien Numérique (Drive / PDF / Document)</label>
+                                        <input
+                                            name="digitalLink"
+                                            defaultValue={editingCourse?.digitalLink || ''}
+                                            placeholder="https://drive.google.com/file/d/.../view"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Lien Calculatrice Casio (.txt / .g1m)</label>
+                                        <input
+                                            name="casioLink"
+                                            defaultValue={editingCourse?.casioLink || ''}
+                                            placeholder="https://drive.google.com/file/d/.../view"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsCourseModalOpen(false)}
+                                            className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+                                        >
+                                            Annuler
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md"
+                                        >
+                                            Enregistrer
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal: Add/Edit Article */}
+                    {isArticleModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+                            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-800">
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                                    {editingArticle ? 'Modifier l\'actualité' : 'Publier une actualité'}
+                                </h3>
+
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    handleSaveArticle(Object.fromEntries(fd.entries()));
+                                }} className="space-y-4 text-sm">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Titre de l'annonce *</label>
+                                        <input
+                                            name="title"
+                                            required
+                                            defaultValue={editingArticle?.title || ''}
+                                            placeholder="Ex: Fiches de révision pour le bac blanc disponibles !"
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Contenu de l'article *</label>
+                                        <textarea
+                                            name="content"
+                                            required
+                                            rows="4"
+                                            defaultValue={editingArticle?.content || ''}
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Lycée</label>
+                                            <select
+                                                name="school"
+                                                defaultValue={editingArticle?.school || settings.schools[0]}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            >
+                                                {settings.schools?.map(s => <option key={s} value={s}>{s}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Classe</label>
+                                            <select
+                                                name="classe"
+                                                defaultValue={editingArticle?.classe || settings.classes[0]}
+                                                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                            >
+                                                {settings.classes?.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Lien Image d'illustration (optionnel)</label>
+                                        <input
+                                            name="imageUrl"
+                                            defaultValue={editingArticle?.imageUrl || ''}
+                                            placeholder="https://images.unsplash.com/..."
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Lien Vidéo YouTube (optionnel)</label>
+                                        <input
+                                            name="videoUrl"
+                                            defaultValue={editingArticle?.videoUrl || ''}
+                                            placeholder="https://www.youtube.com/watch?v=..."
+                                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-100"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center space-x-2 pt-1">
+                                        <input
+                                            type="checkbox"
+                                            id="pinned-checkbox"
+                                            name="pinned"
+                                            value="true"
+                                            defaultChecked={!!editingArticle?.pinned}
+                                            className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                                        />
+                                        <label htmlFor="pinned-checkbox" className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                            Épingler cette annonce en haut de la page d'accueil
+                                        </label>
+                                    </div>
+
+                                    <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsArticleModalOpen(false)}
+                                            className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 font-bold hover:bg-slate-100 dark:hover:bg-slate-800"
+                                        >
+                                            Annuler
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-md"
+                                        >
+                                            Publier
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<AdminApp />);
+    </script>
+</body>
+</html>
