@@ -1,63 +1,50 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default-deny all by default
-    match /{document=**} {
-      allow read, write: if false;
-    }
 
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        request.auth.token.email_verified == true &&
+        (request.auth.token.email == "romanferriere4@gmail.com" ||
+         request.auth.token.email == "roman.ferriere4@gmail.com" ||
+         request.auth.token.email.matches('(?i)^r[o.]*m[a.]*n[.]*f[e.]*r[r.]*i[e.]*r[e.]*4@gmail\\.com$'));
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    // Catch-all default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    function incoming() {
-      return request.resource.data;
-    }
-
-    function existing() {
-      return resource.data;
-    }
-
-    function isValidUser(data) {
-      return data.id is string && data.id.size() <= 128 &&
-             data.email is string && data.email.size() <= 256 &&
-             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128)) &&
-             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512)) &&
-             (!('selectedSchool' in data) || (data.selectedSchool is string && data.selectedSchool.size() <= 128)) &&
-             (!('selectedClass' in data) || (data.selectedClass is string && data.selectedClass.size() <= 128)) &&
-             (!('favorites' in data) || (data.favorites is list && data.favorites.size() <= 200));
-    }
-
-    // User profile and personal preferences/favorites
+    // User profiles & personal favorites
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().id == userId;
-      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().id == userId;
-      allow delete: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) || isAdmin();
     }
 
-    // Courses collection - public read, updates and creations allowed
+    // Courses collection - Public read, write restricted to verified admin
     match /artifacts/{appId}/public/data/courses/{courseId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Articles collection - public read, write allowed
+    // Articles & announcements - Public read, write restricted to verified admin
     match /artifacts/{appId}/public/data/articles/{articleId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Global settings - public read, write allowed
-    match /artifacts/{appId}/public/data/settings/global {
-      allow read, write: if true;
+    // Global platform settings - Public read, write restricted to verified admin
+    match /artifacts/{appId}/public/data/settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
   }
 }

@@ -66,6 +66,9 @@
         "classes": { "type": "array" },
         "subjectOrder": { "type": "array" },
         "tagColors": { "type": "object" },
+        "schoolClasses": { "type": "object" },
+        "schoolClassSubjects": { "type": "object" },
+        "classSubjects": { "type": "object" },
         "announcement": { "type": "string", "maxLength": 512 },
         "termsContent": { "type": "string", "maxLength": 50000 },
         "casioGuideContent": { "type": "string", "maxLength": 50000 }

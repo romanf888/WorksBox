@@ -255,7 +255,7 @@
             path
           };
           console.error('Firestore Error: ', JSON.stringify(errInfo));
-          return errInfo;
+          throw new Error(JSON.stringify(errInfo));
         }
 
         async function testConnection() {
@@ -410,11 +410,81 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             slate: 'bg-slate-100 text-slate-700 border-slate-200'
         };
 
-        const DEFAULT_SUBJECTS = ["Allemand", "Anglais", "Enseignement technologique en anglais", "Histoire Géographie", "Ingénierie et développement durable", "Mathématiques", "Philosophie", "Physique Chimie", "SIN"];
+        const DEFAULT_SUBJECTS = [
+            "Allemand", "Anglais", "Enseignement technologique en anglais", 
+            "Histoire Géographie", "Ingénierie et développement durable", 
+            "Mathématiques", "Philosophie", "Physique Chimie", "SIN",
+            "Français", "SVT", "Sciences Numériques et Technologiques", "Histoire-Géographie et EMC",
+            "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG"
+        ];
         const DEFAULT_SCHOOLS = ["Lycée François Bazin", "Lycée Gaspard Monge"];
-        const DEFAULT_CLASSES = ["Terminale STI2D", "BTS SIO 1", "Première STI2D", "Seconde Générale"];
+        const DEFAULT_CLASSES = ["Terminale STI2D", "Première STI2D", "BTS SIO 1", "BTS CPRP", "Seconde Générale/Technologique"];
+
+        const DEFAULT_SCHOOL_CLASSES = {
+            "Lycée François Bazin": ["Terminale STI2D", "Première STI2D", "BTS CPRP", "Seconde Générale/Technologique"],
+            "Lycée Gaspard Monge": ["BTS SIO 1"]
+        };
+
+        const DEFAULT_SCHOOL_CLASS_SUBJECTS = {
+            "Lycée François Bazin__Terminale STI2D": [
+                "Mathématiques", "Physique Chimie", "Ingénierie et développement durable", 
+                "Philosophie", "Anglais", "Enseignement technologique en anglais", "SIN", "Allemand"
+            ],
+            "Lycée François Bazin__Première STI2D": [
+                "Mathématiques", "Physique Chimie", "Ingénierie et développement durable", 
+                "Français", "Histoire Géographie", "Anglais", "Allemand"
+            ],
+            "Lycée François Bazin__BTS CPRP": [
+                "Anglais", "Mathématiques", "Conception et Industrialisation", "Usinage et FAO"
+            ],
+            "Lycée François Bazin__Seconde Générale/Technologique": [
+                "Mathématiques", "Français", "Histoire-Géographie et EMC", "SVT", 
+                "Physique Chimie", "Sciences Numériques et Technologiques", "Anglais", "Allemand"
+            ],
+            "Lycée Gaspard Monge__BTS SIO 1": [
+                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques", "Anglais"
+            ]
+        };
+
+        const DEFAULT_CLASS_SUBJECTS = {
+            "Terminale STI2D": [
+                "Mathématiques", "Physique Chimie", "Ingénierie et développement durable", 
+                "Philosophie", "Anglais", "Enseignement technologique en anglais", "SIN", "Allemand"
+            ],
+            "Première STI2D": [
+                "Mathématiques", "Physique Chimie", "Ingénierie et développement durable", 
+                "Français", "Histoire Géographie", "Anglais", "Allemand"
+            ],
+            "BTS CPRP": [
+                "Anglais", "Mathématiques", "Conception et Industrialisation", "Usinage et FAO"
+            ],
+            "BTS SIO 1": [
+                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques", "Anglais"
+            ],
+            "Seconde Générale/Technologique": [
+                "Mathématiques", "Français", "Histoire-Géographie et EMC", "SVT", 
+                "Physique Chimie", "Sciences Numériques et Technologiques", "Anglais", "Allemand"
+            ]
+        };
 
         const DEFAULT_SAMPLE_COURSES = [
+          // ==================== TERMINALE STI2D ====================
+          {
+            id: "sample-term-anglais-1",
+            title: "Technical English: Sustainable Technologies & Eco-Design",
+            subject: "Anglais",
+            chapter: "Unit 1: Eco-Design & Smart Technologies",
+            school: "Lycée François Bazin",
+            classe: "Terminale STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 68,
+            viewsCasio: 34,
+            isVisible: true
+          },
           {
             id: "sample-math-1",
             title: "Suites géométriques, arithmétiques et limites",
@@ -493,6 +563,121 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             viewsDigital: 63,
             viewsCasio: 45,
             isVisible: true
+          },
+
+          // ==================== PREMIÈRE STI2D ====================
+          {
+            id: "sample-prem-anglais-1",
+            title: "General & Technical English B1: Workshop Safety & Tools",
+            subject: "Anglais",
+            chapter: "Unit 1: In the Lab & Safety First",
+            school: "Lycée François Bazin",
+            classe: "Première STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 51,
+            viewsCasio: 22,
+            isVisible: true
+          },
+          {
+            id: "sample-prem-math-1",
+            title: "Polynômes du second degré, discriminant et racines",
+            subject: "Mathématiques",
+            chapter: "Chapitre 1 : Le Second Degré",
+            school: "Lycée François Bazin",
+            classe: "Première STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 44,
+            viewsCasio: 30,
+            isVisible: true
+          },
+          {
+            id: "sample-prem-francais-1",
+            title: "La littérature d'idées et le combat des Lumières",
+            subject: "Français",
+            chapter: "Objet d'étude EAF : La Littérature d'Idées",
+            school: "Lycée François Bazin",
+            classe: "Première STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Fiche",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 39,
+            viewsCasio: 14,
+            isVisible: true
+          },
+
+          // ==================== BTS SIO 1 ====================
+          {
+            id: "sample-bts-anglais-1",
+            title: "Professional English: IT Support, Cybersecurity & Tech Reporting",
+            subject: "Anglais",
+            chapter: "Unit 1: IT Infrastructures & Helpdesk",
+            school: "Lycée Gaspard Monge",
+            classe: "BTS SIO 1",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 40,
+            viewsCasio: 18,
+            isVisible: true
+          },
+          {
+            id: "sample-bts-cyber-1",
+            title: "Sécurisation des accès, cryptographie et analyse de vulnérabilités",
+            subject: "BLOC 3 CYBER (DALLA-ROSA)",
+            chapter: "Chapitre 1 : Sécurité des Systèmes d'Information",
+            school: "Lycée Gaspard Monge",
+            classe: "BTS SIO 1",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "TP",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 62,
+            viewsCasio: 15,
+            isVisible: true
+          },
+          {
+            id: "sample-bts-cejm-1",
+            title: "L'intégration de l'entreprise dans son environnement numérique",
+            subject: "CULTURE ECO JUR MANAG",
+            chapter: "Thème 1 : L'entreprise et son écosystème",
+            school: "Lycée Gaspard Monge",
+            classe: "BTS SIO 1",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 33,
+            viewsCasio: 10,
+            isVisible: true
+          },
+
+          // ==================== BTS CPRP ====================
+          {
+            id: "sample-bts-cprp-anglais-1",
+            title: "Technical English: Machining Operations, Safety & Quality Standards",
+            subject: "Anglais",
+            chapter: "Unit 1: Industrial Machining & Safety Standards",
+            school: "Lycée François Bazin",
+            classe: "BTS CPRP",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 1,
+            viewsDigital: 29,
+            viewsCasio: 14,
+            isVisible: true
           }
         ];
 
@@ -508,6 +693,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               tagColors: {}, 
               schools: DEFAULT_SCHOOLS, 
               classes: DEFAULT_CLASSES,
+              schoolClasses: DEFAULT_SCHOOL_CLASSES,
+              schoolClassSubjects: DEFAULT_SCHOOL_CLASS_SUBJECTS,
+              classSubjects: DEFAULT_CLASS_SUBJECTS,
               termsContent: DEFAULT_TERMS_FALLBACK,
               casioGuideContent: DEFAULT_CASIO_FALLBACK
           });
@@ -550,7 +738,25 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               setIsDark(prev => !prev);
           };
 
+          const AUTHORIZED_ADMIN_EMAILS = [
+              'roman.ferriere4@gmail.com',
+              'romanferriere4@gmail.com'
+          ];
+
+          const checkIsAdmin = (u) => {
+              if (!u || u.isAnonymous) return false;
+              const email = (u.email || '').toLowerCase().trim();
+              if (!email) return false;
+              const [localPart, domain] = email.split('@');
+              if (domain === 'gmail.com') {
+                  const cleanLocal = localPart.replace(/\./g, '');
+                  if (cleanLocal === 'romanferriere4') return true;
+              }
+              return AUTHORIZED_ADMIN_EMAILS.includes(email);
+          };
+
           const activeUser = user || localUser;
+          const isUserAdmin = checkIsAdmin(user);
 
           // Nettoyage de tout compte élève implicite hérité pour s'assurer que le visiteur commence sans compte
           useEffect(() => {
@@ -733,32 +939,39 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   setLocalUser(null);
                   setShowAuthModal(false);
               } catch (err) {
-                  console.error('Google Sign In Error:', err);
-                  if (err.code === 'auth/unauthorized-domain' || err.message?.includes('unauthorized-domain')) {
+                  const errorCode = err?.code || '';
+                  const errorMessage = err?.message || '';
+
+                  if (errorCode === 'auth/unauthorized-domain' || errorMessage.includes('unauthorized-domain')) {
+                      console.warn('Firebase Auth (auth/unauthorized-domain): Le domaine actuel n\'est pas encore dans les Domaines autorisés de la console Firebase (projet lycee-share) :', window.location.hostname);
                       setAuthError({
                           code: 'auth/unauthorized-domain',
                           domain: window.location.hostname,
                           message: `Le domaine "${window.location.hostname}" n'est pas encore autorisé dans Firebase pour la connexion Google OAuth.`
                       });
-                  } else if (err.code === 'auth/operation-not-allowed' || err.message?.includes('operation-not-allowed')) {
+                  } else if (errorCode === 'auth/operation-not-allowed' || errorMessage.includes('operation-not-allowed')) {
+                      console.warn('Firebase Auth (auth/operation-not-allowed): Le fournisseur Google n\'est pas activé dans le projet Firebase lycee-share.');
                       setAuthError({
                           code: 'auth/operation-not-allowed',
                           message: 'La connexion avec Google n\'est pas encore activée dans la console Firebase pour le projet lycee-share.'
                       });
-                  } else if (err.code === 'auth/popup-closed-by-user') {
+                  } else if (errorCode === 'auth/popup-closed-by-user') {
+                      console.warn('Firebase Auth: La fenêtre de connexion Google a été fermée.');
                       setAuthError({
-                          code: err.code,
+                          code: errorCode,
                           message: 'La fenêtre de connexion Google a été fermée avant la fin.'
                       });
-                  } else if (err.code === 'auth/popup-blocked') {
+                  } else if (errorCode === 'auth/popup-blocked') {
+                      console.warn('Firebase Auth: La popup a été bloquée par le navigateur.');
                       setAuthError({
-                          code: err.code,
+                          code: errorCode,
                           message: 'La popup de connexion a été bloquée par votre navigateur. Autorisez les popups ou ouvrez dans un nouvel onglet.'
                       });
                   } else {
+                      console.warn('Firebase Auth: Erreur lors de la tentative de connexion Google :', err);
                       setAuthError({
-                          code: err.code || 'unknown',
-                          message: err.message || 'Impossible de se connecter avec Google.'
+                          code: errorCode || 'unknown',
+                          message: errorMessage || 'Impossible de se connecter avec Google.'
                       });
                   }
               } finally {
@@ -844,7 +1057,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           }, []);
 
           useEffect(() => {
-            if (!dataDb || !dataUser) {
+            if (!dataDb) {
               return;
             }
             
@@ -858,7 +1071,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                     schools: Array.isArray(data.schools) ? data.schools : prev.schools,
                     classes: Array.isArray(data.classes) ? data.classes : prev.classes,
                     subjects: Array.isArray(data.subjects) ? data.subjects : (Array.isArray(data.subjectOrder) ? data.subjectOrder : prev.subjects),
-                    subjectOrder: Array.isArray(data.subjectOrder) ? data.subjectOrder : (Array.isArray(data.subjects) ? data.subjects : prev.subjectOrder)
+                    subjectOrder: Array.isArray(data.subjectOrder) ? data.subjectOrder : (Array.isArray(data.subjects) ? data.subjects : prev.subjectOrder),
+                    schoolClasses: (data.schoolClasses && typeof data.schoolClasses === 'object') ? data.schoolClasses : prev.schoolClasses,
+                    schoolClassSubjects: (data.schoolClassSubjects && typeof data.schoolClassSubjects === 'object') ? data.schoolClassSubjects : prev.schoolClassSubjects,
+                    classSubjects: (data.classSubjects && typeof data.classSubjects === 'object') ? data.classSubjects : prev.classSubjects
                 }));
               }
             }, (err) => console.warn('Settings snapshot error:', err));
@@ -867,16 +1083,26 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             const unsubCourses = onSnapshot(coursesRef, (snapshot) => {
               const loadedCourses = snapshot.docs.map(docSnap => {
                   const data = docSnap.data();
+                  // Résolution intelligente de l'établissement pour les anciens cours
+                  let resolvedSchool = data.school;
+                  if (!resolvedSchool || resolvedSchool === 'Lycée François Bazin') {
+                      if (data.classe === 'BTS SIO 1' || data.classe === 'BTS SIO 2') {
+                          resolvedSchool = 'Lycée Gaspard Monge';
+                      } else if (!resolvedSchool) {
+                          resolvedSchool = 'Lycée François Bazin';
+                      }
+                  }
                   return {
                       id: docSnap.id,
-                      school: data.school || 'Lycée François Bazin',
+                      school: resolvedSchool,
                       classe: data.classe || 'Terminale STI2D',
                       chapterOrder: typeof data.chapterOrder === 'number' ? data.chapterOrder : -new Date(data.date).getTime(),
                       courseOrder: typeof data.courseOrder === 'number' ? data.courseOrder : -new Date(data.date).getTime(),
                       viewsDigital: data.viewsDigital || 0,
                       viewsCasio: data.viewsCasio || 0,
                       isVisible: data.isVisible !== false,
-                      ...data
+                      ...data,
+                      school: resolvedSchool
                   };
               });
               setCourses(loadedCourses.filter(c => c.isVisible !== false));
@@ -902,7 +1128,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             }, (err) => console.warn('Articles snapshot error:', err));
 
             return () => { unsubSettings(); unsubCourses(); unsubArticles(); };
-          }, [dataUser]);
+          }, []);
 
           const allSchools = useMemo(() => {
               const base = Array.isArray(settings.schools) ? settings.schools : DEFAULT_SCHOOLS;
@@ -916,43 +1142,112 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               return Array.from(list).filter(Boolean);
           }, [settings.classes, courses, articles]);
 
+          const getClassesForSchool = (schoolName) => {
+              if (!schoolName) return allClasses;
+              if (settings.schoolClasses && Array.isArray(settings.schoolClasses[schoolName]) && settings.schoolClasses[schoolName].length > 0) {
+                  return settings.schoolClasses[schoolName];
+              }
+              if (DEFAULT_SCHOOL_CLASSES[schoolName]) {
+                  return DEFAULT_SCHOOL_CLASSES[schoolName];
+              }
+              const inCourses = Array.from(new Set(courses.filter(c => c.school === schoolName).map(c => c.classe).filter(Boolean)));
+              if (inCourses.length > 0) return inCourses;
+              return allClasses;
+          };
+
+          const availableClassesForSchool = useMemo(() => {
+              return getClassesForSchool(selectedSchool);
+          }, [selectedSchool, settings.schoolClasses, courses, allClasses]);
+
           useEffect(() => {
               if (allSchools.length > 0 && (!selectedSchool || !allSchools.includes(selectedSchool))) {
                   const defSchool = allSchools.includes('Lycée François Bazin') ? 'Lycée François Bazin' : allSchools[0];
                   setSelectedSchool(defSchool);
                   localStorage.setItem('wb_selected_school', defSchool);
               }
-              if (allClasses.length > 0 && (!selectedClass || !allClasses.includes(selectedClass))) {
-                  const defClass = allClasses.includes('Terminale STI2D') ? 'Terminale STI2D' : allClasses[0];
+              const validClasses = getClassesForSchool(selectedSchool);
+              if (validClasses.length > 0 && (!selectedClass || !validClasses.includes(selectedClass))) {
+                  const defClass = validClasses.includes('Terminale STI2D') ? 'Terminale STI2D' : validClasses[0];
                   setSelectedClass(defClass);
                   localStorage.setItem('wb_selected_class', defClass);
               }
-          }, [allSchools, allClasses, selectedSchool, selectedClass]);
+          }, [allSchools, selectedSchool, settings.schoolClasses]);
 
-          // Filtrage par établissement et classe sélectionnés
+          const getSubjectsForClass = (schoolName, className) => {
+              if (!className) return [];
+              const pairKey = `${schoolName}__${className}`;
+              // 1. Spécifique Lycée + Classe défini dans les réglages
+              if (settings.schoolClassSubjects && settings.schoolClassSubjects[pairKey] !== undefined && Array.isArray(settings.schoolClassSubjects[pairKey])) {
+                  return settings.schoolClassSubjects[pairKey];
+              }
+              // 2. Spécifique Lycée + Classe par défaut
+              if (DEFAULT_SCHOOL_CLASS_SUBJECTS && DEFAULT_SCHOOL_CLASS_SUBJECTS[pairKey]) {
+                  return DEFAULT_SCHOOL_CLASS_SUBJECTS[pairKey];
+              }
+              // 3. Spécifique Classe défini dans les réglages
+              if (settings.classSubjects && settings.classSubjects[className] !== undefined && Array.isArray(settings.classSubjects[className])) {
+                  return settings.classSubjects[className];
+              }
+              // 4. Spécifique Classe par défaut
+              if (DEFAULT_CLASS_SUBJECTS && DEFAULT_CLASS_SUBJECTS[className]) {
+                  return DEFAULT_CLASS_SUBJECTS[className];
+              }
+              // 5. Aucune matière associée à cette classe : on ne renvoie rien (seules les matières associées s'affichent)
+              return [];
+          };
+
+          const activeSubjects = useMemo(() => {
+              const configured = getSubjectsForClass(selectedSchool, selectedClass);
+              // Détection automatique des matières des cours existants pour cette classe et cet établissement
+              const fromCourses = courses
+                  .filter(c => {
+                      const cSchool = (c.school || (c.classe === 'BTS SIO 1' ? 'Lycée Gaspard Monge' : 'Lycée François Bazin')).trim();
+                      const cClass = (c.classe || 'Terminale STI2D').trim();
+                      return cSchool.toLowerCase() === (selectedSchool || '').trim().toLowerCase() &&
+                             cClass.toLowerCase() === (selectedClass || '').trim().toLowerCase() &&
+                             c.subject;
+                  })
+                  .map(c => c.subject.trim())
+                  .filter(Boolean);
+              
+              const combined = Array.from(new Set([...configured, ...fromCourses]));
+              return combined;
+          }, [selectedSchool, selectedClass, settings.schoolClassSubjects, settings.classSubjects, courses]);
+
+          // Filtrage par établissement et classe sélectionnés avec restriction stricte aux matières associées
           const filteredCourses = useMemo(() => {
-              return courses.filter(c => (c.school || 'Lycée François Bazin') === selectedSchool && (c.classe || 'Terminale STI2D') === selectedClass);
-          }, [courses, selectedSchool, selectedClass]);
+              const assocSet = new Set(activeSubjects.map(s => s.toLowerCase().trim()));
+              return courses.filter(c => {
+                  const cSchool = (c.school || (c.classe === 'BTS SIO 1' ? 'Lycée Gaspard Monge' : 'Lycée François Bazin')).trim();
+                  const cClass = (c.classe || 'Terminale STI2D').trim();
+                  const matchSchool = cSchool.toLowerCase() === (selectedSchool || '').trim().toLowerCase();
+                  const matchClass = cClass.toLowerCase() === (selectedClass || '').trim().toLowerCase();
+                  const cSubject = (c.subject || '').trim().toLowerCase();
+                  const matchAssociated = cSubject ? assocSet.has(cSubject) : false;
+                  return matchSchool && matchClass && matchAssociated;
+              });
+          }, [courses, selectedSchool, selectedClass, activeSubjects]);
 
           const filteredArticles = useMemo(() => {
               return articles.filter(a => (a.school || 'Lycée François Bazin') === selectedSchool && (a.classe || 'Terminale STI2D') === selectedClass);
           }, [articles, selectedSchool, selectedClass]);
 
-          const activeSubjects = useMemo(() => {
-              const isBazinSTI2D = selectedSchool === 'Lycée François Bazin' && selectedClass === 'Terminale STI2D';
-              const configuredList = Array.isArray(settings.subjects)
-                  ? settings.subjects
-                  : (Array.isArray(settings.subjectOrder) ? settings.subjectOrder : null);
-              const baseList = configuredList !== null ? configuredList : (isBazinSTI2D ? DEFAULT_SUBJECTS : []);
-              const subs = new Set([...baseList, ...filteredCourses.map(c => c.subject)]);
-              return Array.from(subs).filter(Boolean);
-          }, [filteredCourses, settings.subjects, settings.subjectOrder, selectedSchool, selectedClass]);
+          // Réinitialiser la matière sélectionnée si elle n'est plus associée à la classe courante
+          useEffect(() => {
+              if (selectedSubject && !activeSubjects.includes(selectedSubject)) {
+                  setSelectedSubject(null);
+                  if (currentView === 'subject') {
+                      setCurrentView('home');
+                  }
+              }
+          }, [selectedSubject, activeSubjects, currentView]);
 
           const sortedSubjects = useMemo(() => {
               const ordered = Array.isArray(settings.subjects)
                   ? settings.subjects
                   : (Array.isArray(settings.subjectOrder) ? settings.subjectOrder : DEFAULT_SUBJECTS);
-              const known = ordered.filter(s => activeSubjects.includes(s));
+              const assocSet = new Set(activeSubjects);
+              const known = ordered.filter(s => assocSet.has(s));
               const unknown = activeSubjects.filter(s => !ordered.includes(s)).sort();
               return [...known, ...unknown];
           }, [activeSubjects, settings.subjects, settings.subjectOrder]);
@@ -1043,7 +1338,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           const chaptersData = useMemo(() => {
             if (!selectedSubject) return [];
-            const filtered = filteredCourses.filter(c => c.subject === selectedSubject);
+            const targetSubjLower = selectedSubject.trim().toLowerCase();
+            const filtered = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === targetSubjLower);
             const groups = {};
             filtered.forEach(course => {
                 if (!groups[course.chapter]) groups[course.chapter] = { name: course.chapter, courses: [] };
@@ -1160,16 +1456,33 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           <form onSubmit={handleSaveOnboarding} className="space-y-6">
                               <div>
                                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">Sélectionnez votre Lycée</label>
-                                  <select value={selectedSchool} onChange={(e) => setSelectedSchool(e.target.value)} required className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer">
+                                  <select 
+                                      value={selectedSchool} 
+                                      onChange={(e) => {
+                                          const sch = e.target.value;
+                                          setSelectedSchool(sch);
+                                          const avail = getClassesForSchool(sch);
+                                          if (avail && avail.length > 0 && !avail.includes(selectedClass)) {
+                                              setSelectedClass(avail[0]);
+                                          }
+                                      }} 
+                                      required 
+                                      className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer"
+                                  >
                                       <option value="" disabled>-- Choisir un lycée --</option>
                                       {allSchools.map(s => <option key={s} value={s}>{s}</option>)}
                                   </select>
                               </div>
                               <div>
                                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">Sélectionnez votre Classe</label>
-                                  <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} required className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer">
+                                  <select 
+                                      value={selectedClass} 
+                                      onChange={(e) => setSelectedClass(e.target.value)} 
+                                      required 
+                                      className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer"
+                                  >
                                       <option value="" disabled>-- Choisir une classe --</option>
-                                      {allClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                                      {availableClassesForSchool.map(c => <option key={c} value={c}>{c}</option>)}
                                   </select>
                               </div>
                               <button type="submit" disabled={!selectedSchool || !selectedClass} className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all">Accéder aux cours</button>
@@ -1219,6 +1532,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             <SchoolIcon className="w-4 h-4 text-blue-400" />
                             <span className="hidden sm:inline truncate max-w-[130px]">{selectedSchool} • {selectedClass}</span>
                         </button>
+
+                        {isUserAdmin && (
+                            <a 
+                                id="nav-btn-admin-panel"
+                                href="/admin"
+                                className="flex items-center space-x-1.5 text-xs font-black bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-3 py-2 rounded-xl border border-red-400/40 shadow-md shadow-red-900/30 transition-all active:scale-95"
+                                title="Accéder au panneau d'administration WorksBox"
+                            >
+                                <Shield className="w-3.5 h-3.5 text-white" />
+                                <span className="hidden sm:inline">Panel Admin</span>
+                                <span className="sm:hidden">Admin</span>
+                            </a>
+                        )}
 
                         {activeUser ? (
                             <button 
@@ -1399,16 +1725,29 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     )}
 
                                     <div>
-                                        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center"><Folder className="w-5 h-5 mr-2 text-blue-500"/> Explorer par matière</h3>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center"><Folder className="w-5 h-5 mr-2 text-blue-500"/> Explorer par matière</h3>
+                                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                                                {sortedSubjects.length} matières pour {selectedClass}
+                                            </span>
+                                        </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                             {sortedSubjects.map((subject, index) => {
-                                                const courseCount = filteredCourses.filter(c => c.subject === subject).length;
+                                                const sLower = (subject || '').trim().toLowerCase();
+                                                const courseCount = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === sLower).length;
                                                 return (
-                                                <div key={index} onClick={() => openSubject(subject)} className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-all flex items-start space-x-4">
-                                                    <div className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 p-3 rounded-lg"><Folder className="w-8 h-8" /></div>
-                                                    <div>
-                                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{subject}</h3>
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{courseCount} document{courseCount !== 1 ? 's' : ''}</p>
+                                                <div key={index} onClick={() => openSubject(subject)} className="bg-white dark:bg-slate-900 rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200 dark:border-slate-800 hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-all flex items-start space-x-4 group">
+                                                    <div className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 p-3 rounded-xl group-hover:scale-105 transition-transform"><Folder className="w-7 h-7 sm:w-8 sm:h-8" /></div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center justify-between gap-1 mb-1">
+                                                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{subject}</h3>
+                                                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-900 shrink-0">
+                                                                {selectedClass}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                            {courseCount} cours spécifique{courseCount !== 1 ? 's' : ''}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 );
@@ -1499,12 +1838,39 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                         {currentView === 'subject' && (
                         <div key={`view-subject-${selectedSubject}`} className="space-y-6 view-transition">
-                            <div className="flex items-center space-x-4 mb-8">
-                                <button onClick={goHome} className="p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full text-slate-600 dark:text-slate-300 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"><ChevronLeft className="w-5 h-5" /></button>
-                                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{selectedSubject}</h1>
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs mb-6">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <div className="flex items-center space-x-3.5">
+                                        <button 
+                                            onClick={goHome} 
+                                            className="p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 shadow-2xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer"
+                                            title="Retour à l'accueil"
+                                        >
+                                            <ChevronLeft className="w-5 h-5" />
+                                        </button>
+                                        <div>
+                                            <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                                                <span>{selectedSchool}</span>
+                                                <span className="text-slate-300 dark:text-slate-600">•</span>
+                                                <span className="bg-blue-100 dark:bg-blue-950/90 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900 font-extrabold">{selectedClass}</span>
+                                            </div>
+                                            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{selectedSubject}</h1>
+                                        </div>
+                                    </div>
+                                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        {chaptersData.reduce((acc, chap) => acc + chap.courses.length, 0)} cours spécifiques à <span className="font-bold text-blue-600 dark:text-blue-400">{selectedClass}</span>
+                                    </div>
+                                </div>
                             </div>
                             {chaptersData.length === 0 ? (
-                                <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">Aucun cours dans cette matière pour ce lycée et cette classe.</div>
+                                <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">
+                                    <Folder className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                                    <p className="font-bold text-slate-700 dark:text-slate-300 text-base">Aucun cours d'« {selectedSubject} » pour {selectedClass}.</p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">Chaque classe possède son propre programme et ses propres cours indépendants.</p>
+                                    <button onClick={goHome} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs">
+                                        ← Retourner à l'accueil
+                                    </button>
+                                </div>
                             ) : (
                                 <div className="space-y-6">
                                     {chaptersData.map((chap) => (
@@ -1583,6 +1949,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   <AccountModal 
                       user={activeUser}
                       profile={userProfile}
+                      isAdmin={isUserAdmin}
                       selectedSchool={selectedSchool}
                       selectedClass={selectedClass}
                       favoritesCount={favorites.length}
@@ -1678,28 +2045,54 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <div className="flex items-start space-x-2.5">
                                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                                     <div>
-                                        <p className="font-bold text-slate-900 dark:text-white text-sm">Domaine non autorisé dans Firebase</p>
+                                        <p className="font-bold text-slate-900 dark:text-white text-sm">Domaine à autoriser dans Firebase</p>
                                         <p className="mt-1 text-slate-600 dark:text-slate-300 leading-relaxed">
-                                            Pour que Google OAuth fonctionne, ce domaine doit être ajouté dans les <strong>Domaines autorisés</strong> de Firebase Console (projet <code>lycee-share</code>).
+                                            Pour activer la connexion Google, ce domaine doit être ajouté aux <strong>Domaines autorisés</strong> de Firebase (projet <code>lycee-share</code>).
                                         </p>
                                     </div>
                                 </div>
                                 
-                                <div className="bg-white/90 dark:bg-slate-800/90 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center justify-between">
-                                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate mr-2">{currentHost}</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                             navigator.clipboard.writeText(currentHost);
-                                             setCopiedDomain(true);
-                                             setTimeout(() => setCopiedDomain(false), 2000);
-                                             if (onToast) onToast("Domaine copié dans le presse-papiers !", "success", "copy");
-                                        }}
-                                        className="flex items-center space-x-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900 hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-800 dark:text-amber-200 font-bold rounded-lg text-[10px] transition-colors"
-                                    >
-                                        <span>{copiedDomain ? '✓ Copié !' : 'Copier'}</span>
-                                    </button>
+                                <div className="bg-white/95 dark:bg-slate-800/95 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate mr-2">{currentHost}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                 navigator.clipboard.writeText(currentHost);
+                                                 setCopiedDomain(true);
+                                                 setTimeout(() => setCopiedDomain(false), 2000);
+                                                 if (onToast) onToast("Domaine copié dans le presse-papiers !", "success", "copy");
+                                            }}
+                                            className="flex items-center space-x-1 px-2.5 py-1 bg-amber-100 dark:bg-amber-900 hover:bg-amber-200 dark:hover:bg-amber-800 text-amber-800 dark:text-amber-200 font-bold rounded-lg text-[10px] transition-colors whitespace-nowrap"
+                                        >
+                                            <span>{copiedDomain ? '✓ Copié !' : 'Copier le domaine'}</span>
+                                        </button>
+                                    </div>
+                                    {currentHost.includes('-dev-') && (
+                                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-750">
+                                            <span className="font-mono text-slate-500 dark:text-slate-400 text-[10px] truncate mr-2">
+                                                {currentHost.replace('-dev-', '-pre-')} (domaine partagé)
+                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                     const preDomain = currentHost.replace('-dev-', '-pre-');
+                                                     navigator.clipboard.writeText(preDomain);
+                                                     if (onToast) onToast("Domaine partagé (-pre-) copié !", "success", "copy");
+                                                }}
+                                                className="text-[10px] font-bold text-amber-700 dark:text-amber-300 hover:underline"
+                                            >
+                                                Copier
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
+
+                                <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-600 dark:text-slate-300 bg-white/60 dark:bg-slate-900/50 p-2.5 rounded-xl border border-amber-200/50 dark:border-amber-800/50">
+                                    <li>Copiez le domaine ci-dessus.</li>
+                                    <li>Cliquez sur <strong>Ouvrir la Console Firebase</strong> ci-dessous.</li>
+                                    <li>Dans <em>Paramètres</em> &gt; <em>Domaines autorisés</em>, cliquez sur <strong>Ajouter un domaine</strong> et collez l'adresse.</li>
+                                </ol>
 
                                 <div className="pt-1 flex flex-col sm:flex-row gap-2">
                                     <a 
@@ -1722,6 +2115,22 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             <ExternalLink className="w-3.5 h-3.5 ml-1" />
                                         </a>
                                     )}
+                                </div>
+
+                                {/* Option immédiate sans blocage */}
+                                <div className="pt-2 border-t border-amber-200/70 dark:border-amber-800/70">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const name = studentName.trim() || 'Élève';
+                                            localStorage.setItem('wb_student_name', name);
+                                            onLocalSignIn(name);
+                                        }}
+                                        className="w-full flex items-center justify-center space-x-2 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all"
+                                    >
+                                        <Check className="w-3.5 h-3.5 mr-1" />
+                                        <span>Activer le Profil Élève immédiatement (sans attente)</span>
+                                    </button>
                                 </div>
                             </div>
                         ) : error && (
@@ -1813,7 +2222,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
-        function AccountModal({ user, profile, selectedSchool, selectedClass, favoritesCount, onOpenFavorites, onChangeSchoolClass, onUpgradeToGoogle, onSignOut, onClose }) {
+        function AccountModal({ user, profile, isAdmin, selectedSchool, selectedClass, favoritesCount, onOpenFavorites, onChangeSchoolClass, onUpgradeToGoogle, onSignOut, onClose }) {
             const isLocal = user?.isLocal;
 
             return (
@@ -1831,16 +2240,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             {user.photoURL ? (
                                 <img src={user.photoURL} alt="Avatar" className="w-14 h-14 rounded-2xl object-cover border-2 border-blue-500 shadow-sm" />
                             ) : (
-                                <div className={`w-14 h-14 rounded-2xl ${isLocal ? 'bg-emerald-600' : 'bg-blue-600'} text-white flex items-center justify-center text-xl font-bold shadow-sm`}>
+                                <div className={`w-14 h-14 rounded-2xl ${isLocal ? 'bg-emerald-600' : (isAdmin ? 'bg-red-600' : 'bg-blue-600')} text-white flex items-center justify-center text-xl font-bold shadow-sm`}>
                                     {(user.displayName || user.email || 'E')[0].toUpperCase()}
                                 </div>
                             )}
                             <div className="min-w-0 flex-1">
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">{user.displayName || 'Élève'}</h2>
+                                <h2 className="text-lg font-bold text-slate-900 dark:text-white truncate">{user.displayName || (isAdmin ? 'Roman Ferrière' : 'Élève')}</h2>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
                                 {isLocal ? (
                                     <span className="inline-flex items-center mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                                         <UserIcon className="w-3 h-3 mr-1" /> Profil Élève (Local)
+                                    </span>
+                                ) : isAdmin ? (
+                                    <span className="inline-flex items-center mt-1 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800">
+                                        <Shield className="w-3 h-3 mr-1" /> Administrateur Officiel
                                     </span>
                                 ) : (
                                     <span className="inline-flex items-center mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
@@ -1851,6 +2264,24 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         </div>
 
                         <div className="space-y-4 mb-6">
+                            {isAdmin && (
+                                <div className="p-4 bg-gradient-to-r from-red-950/60 to-slate-900 border border-red-500/50 rounded-2xl flex items-center justify-between shadow-sm">
+                                    <div className="text-xs text-slate-200 mr-2">
+                                        <span className="font-extrabold flex items-center text-red-400 mb-0.5">
+                                            <Shield className="w-4 h-4 mr-1.5 inline" /> Accès Administrateur
+                                        </span>
+                                        <span className="text-[11px] text-slate-400">Gérer les cours, matières et établissements.</span>
+                                    </div>
+                                    <a
+                                        href="/admin"
+                                        className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm flex items-center space-x-1"
+                                    >
+                                        <span>Ouvrir</span>
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                </div>
+                            )}
+
                             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Établissement & Classe</span>
