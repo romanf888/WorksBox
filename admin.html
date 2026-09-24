@@ -1418,43 +1418,43 @@
 
             return (
                 <div className="min-h-screen flex flex-col bg-gray-50 text-gray-900">
-                    {/* RED HEADER (Comme avant) */}
+                    {/* RED HEADER */}
                     <header className="bg-red-900 text-white shadow-md sticky top-0 z-20">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex items-center justify-between h-16">
-                                <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setActiveTab('home'); setSelectedSubject(null); }}>
-                                    <div className="p-2 bg-red-700 rounded-lg shadow-sm">
+                        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between min-h-[4rem] py-2 gap-3 flex-wrap lg:flex-nowrap">
+                                <div className="flex items-center space-x-3 cursor-pointer shrink-0" onClick={() => { setActiveTab('home'); setSelectedSubject(null); }}>
+                                    <div className="p-2 bg-red-800 border border-red-700 rounded-xl shadow-xs">
                                         <SettingsIcon className="w-5 h-5 text-white" />
                                     </div>
-                                    <div>
-                                        <h1 className="text-xl font-bold tracking-tight leading-tight">Dashboard Admin</h1>
-                                        <span className="text-[11px] text-red-200">WorksBox • Gestion pédagogique</span>
+                                    <div className="flex flex-col">
+                                        <h1 className="text-base font-black tracking-tight text-white leading-tight">Dashboard Admin</h1>
+                                        <span className="text-[11px] text-red-200/90 leading-tight">WorksBox • Gestion pédagogique</span>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center space-x-3">
-                                    <nav className="flex space-x-1">
+                                <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap sm:flex-nowrap gap-y-2">
+                                    <nav className="flex items-center space-x-1 bg-red-950/40 p-1 rounded-xl border border-red-800/60 shrink-0">
                                         <button
                                             onClick={() => { setActiveTab('home'); setSelectedSubject(null); }}
-                                            className={`px-3 py-2 rounded-md text-sm font-medium transition ${activeTab === 'home' ? 'bg-red-800 text-white' : 'text-red-100 hover:bg-red-800/50'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'home' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
                                         >
                                             Cours
                                         </button>
                                         <button
                                             onClick={() => setActiveTab('articles')}
-                                            className={`px-3 py-2 rounded-md text-sm font-medium transition ${activeTab === 'articles' ? 'bg-red-800 text-white' : 'text-red-100 hover:bg-red-800/50'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'articles' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
                                         >
                                             Articles
                                         </button>
                                         <button
                                             onClick={() => setActiveTab('pages')}
-                                            className={`px-3 py-2 rounded-md text-sm font-medium transition ${activeTab === 'pages' ? 'bg-red-800 text-white' : 'text-red-100 hover:bg-red-800/50'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'pages' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
                                         >
                                             CGU & Tuto
                                         </button>
                                         <button
                                             onClick={() => setActiveTab('stats')}
-                                            className={`px-3 py-2 rounded-md text-sm font-medium transition ${activeTab === 'stats' ? 'bg-red-800 text-white' : 'text-red-100 hover:bg-red-800/50'}`}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'stats' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
                                         >
                                             Stats
                                         </button>
@@ -1462,63 +1462,64 @@
 
                                     <button
                                         onClick={() => setIsDriveImportOpen(true)}
-                                        className="flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm transition"
+                                        className="flex items-center space-x-1.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
                                         title="Importer des cours depuis Google Drive avec Gemini AI"
                                     >
-                                        <SparklesIcon className="w-4 h-4 text-white animate-pulse" />
+                                        <SparklesIcon className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
                                         <span>Import Drive (IA)</span>
                                     </button>
 
                                     <button
                                         onClick={() => setIsSettingsOpen(true)}
-                                        className="flex items-center space-x-1.5 bg-red-800 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition shadow-sm border border-red-700"
+                                        className="flex items-center space-x-1.5 bg-red-800/90 hover:bg-red-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs border border-red-700/80 active:scale-95 shrink-0 cursor-pointer"
                                     >
-                                        <SettingsIcon className="w-4 h-4" />
-                                        <span>Paramètres & Lycées</span>
+                                        <SettingsIcon className="w-3.5 h-3.5" />
+                                        <span className="hidden xl:inline">Paramètres & Lycées</span>
+                                        <span className="xl:hidden">Paramètres</span>
                                     </button>
 
                                     {activeTab === 'articles' ? (
                                         <button
                                             onClick={() => { setEditingArticle(null); setIsArticleModalOpen(true); }}
-                                            className="flex items-center space-x-1.5 bg-white text-red-900 hover:bg-red-50 px-4 py-2 rounded-lg font-bold shadow-sm transition text-sm"
+                                            className="flex items-center space-x-1.5 bg-white hover:bg-red-50 text-red-900 px-3 py-1.5 rounded-xl font-bold shadow-xs transition text-xs active:scale-95 shrink-0 cursor-pointer"
                                         >
-                                            <PlusIcon className="w-4 h-4" />
+                                            <PlusIcon className="w-3.5 h-3.5 text-red-900" />
                                             <span>Nouvel article</span>
                                         </button>
                                     ) : (
                                         <button
                                             onClick={() => { setEditingCourse(null); setIsUploadOpen(true); }}
-                                            className="flex items-center space-x-1.5 bg-white text-red-900 hover:bg-red-50 px-4 py-2 rounded-lg font-bold shadow-sm transition text-sm"
+                                            className="flex items-center space-x-1.5 bg-white hover:bg-red-50 text-red-900 px-3 py-1.5 rounded-xl font-bold shadow-xs transition text-xs active:scale-95 shrink-0 cursor-pointer"
                                         >
-                                            <PlusIcon className="w-4 h-4" />
+                                            <PlusIcon className="w-3.5 h-3.5 text-red-900" />
                                             <span>Nouveau cours</span>
                                         </button>
                                     )}
 
                                     {/* Profil Admin et Déconnexion */}
-                                    <div className="flex items-center space-x-2 pl-2 border-l border-red-800/80">
+                                    <div className="flex items-center space-x-1.5 pl-2 border-l border-red-800/80 shrink-0">
                                         {currentUser?.photoURL ? (
-                                            <img src={currentUser.photoURL} alt="Admin" className="w-7 h-7 rounded-full border border-amber-300 object-cover" />
+                                            <img src={currentUser.photoURL} alt="Admin" className="w-6 h-6 rounded-full border border-amber-300 object-cover" />
                                         ) : (
-                                            <div className="w-7 h-7 rounded-full bg-amber-500 text-slate-900 font-extrabold flex items-center justify-center text-xs">
+                                            <div className="w-6 h-6 rounded-full bg-amber-500 text-slate-900 font-extrabold flex items-center justify-center text-[11px]">
                                                 R
                                             </div>
                                         )}
-                                        <span className="text-xs font-bold text-amber-200 hidden lg:inline max-w-[120px] truncate" title={currentUser?.email}>
-                                            {currentUser?.displayName || 'Roman'} (Admin)
+                                        <span className="text-xs font-bold text-amber-200 hidden 2xl:inline max-w-[120px] truncate" title={currentUser?.email}>
+                                            {currentUser?.displayName || 'Roman'}
                                         </span>
                                         <button
                                             onClick={handleAdminLogout}
-                                            className="p-1.5 bg-red-950/70 hover:bg-red-950 text-red-200 hover:text-white rounded-lg transition"
+                                            className="p-1.5 bg-red-950/70 hover:bg-red-950 text-red-200 hover:text-white rounded-lg transition cursor-pointer"
                                             title="Se déconnecter de l'administration"
                                         >
-                                            <LogOutIcon className="w-4 h-4" />
+                                            <LogOutIcon className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
 
                                     <a
                                         href="index.html"
-                                        className="text-xs text-red-200 hover:text-white underline pl-1"
+                                        className="text-xs text-red-200 hover:text-white underline pl-1 shrink-0 font-medium"
                                         title="Ouvrir le site public"
                                     >
                                         Voir le site →
@@ -1530,7 +1531,7 @@
 
                     {/* SUBHEADER BAR (Espace géré Lycée / Classe + Actions rapides) */}
                     <div className="bg-white border-b border-gray-200 shadow-xs">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+                        <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
                             <div className="flex items-center space-x-3">
                                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
                                     <SchoolIcon className="w-4 h-4 text-red-800" />
@@ -1626,7 +1627,7 @@
                     )}
 
                     {/* MAIN CONTENT AREA */}
-                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+                    <main className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
                         {/* TAB: COURS */}
                         {activeTab === 'home' && (
                             <div>
