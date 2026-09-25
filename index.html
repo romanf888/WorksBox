@@ -193,7 +193,7 @@
 
         // Configuration Firebase du projet lycee-share (cours, articles, réglages et authentification)
         const lyceeShareAppId = 'lycee-share'; 
-        const firebaseConfig = {
+        const lyceeShareConfig = {
           apiKey: "AIzaSyByfCCHmBsbxhXszVA7Rhoe3VBgBNeKgK8",
           authDomain: "lycee-share.firebaseapp.com",
           projectId: "lycee-share",
@@ -202,12 +202,21 @@
           appId: "1:578872424130:web:670f646b295dd4fe2dad5b",
           measurementId: "G-3Q6998C0JH"
         };
+
+        const appletFirebaseConfig = {
+          apiKey: "AIzaSyBpWKftClA4EUhs-pIjUzf1iSV3EvJW6w0",
+          authDomain: "loyal-science-0szp9.firebaseapp.com",
+          projectId: "loyal-science-0szp9",
+          storageBucket: "loyal-science-0szp9.firebasestorage.app",
+          messagingSenderId: "589770041043",
+          appId: "1:589770041043:web:771f73fc30668054349626"
+        };
         
         let dataDb = null;
         let dataAuth = null;
 
         try {
-            const dataApp = initializeApp(firebaseConfig, 'lyceeShareData');
+            const dataApp = initializeApp(lyceeShareConfig, 'lyceeShareData');
             dataAuth = getAuth(dataApp);
             dataDb = getFirestore(dataApp);
             signInAnonymously(dataAuth).catch(err => {
@@ -218,14 +227,15 @@
         }
 
         let auth = null;
-        let userDb = null;
+        let userDb = dataDb;
 
         try {
-            const accountApp = initializeApp(firebaseConfig);
+            const accountApp = initializeApp(appletFirebaseConfig);
             auth = getAuth(accountApp);
-            userDb = getFirestore(accountApp);
+            userDb = dataDb || getFirestore(accountApp);
         } catch (e) {
             console.error('Erreur Firebase Auth WorksBox :', e);
+            userDb = dataDb;
         }
 
         const OperationType = {
@@ -259,9 +269,10 @@
         }
 
         async function testConnection() {
-          if (!userDb) return;
+          const dbToTest = dataDb || userDb;
+          if (!dbToTest) return;
           try {
-            await getDocFromServer(doc(userDb, 'test', 'connection'));
+            await getDocFromServer(doc(dbToTest, 'artifacts', lyceeShareAppId, 'public', 'data', 'settings', 'global'));
           } catch (error) {
             if (error instanceof Error && error.message && error.message.includes('the client is offline')) {
               console.error("Please check your Firebase configuration.");
@@ -340,6 +351,12 @@
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
             </Icon>
         );
+        const Cloud = ({className}) => <Icon className={className}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></Icon>;
+        const HardDrive = ({className}) => <Icon className={className}><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></Icon>;
+        const UploadCloud = ({className}) => <Icon className={className}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></Icon>;
+        const DownloadCloud = ({className}) => <Icon className={className}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></Icon>;
+        const Trash2 = ({className}) => <Icon className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
+        const RefreshCw = ({className}) => <Icon className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></Icon>;
 
         // Logo WorksBox officiel avec dégradé et livre/cloud stylisé
         const WorksBoxLogo = ({ className = "w-8 h-8" }) => (
@@ -711,6 +728,260 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [authError, setAuthError] = useState(null);
           const [previewData, setPreviewData] = useState(null);
 
+          // Espace Cloud Google Drive Personnel (1 Go max par élève)
+          const MAX_CLOUD_QUOTA_BYTES = 1024 * 1024 * 1024; // 1 Go (1,073,741,824 octets)
+          const [driveToken, setDriveToken] = useState(null);
+          const [cloudFolderId, setCloudFolderId] = useState(null);
+          const [cloudFiles, setCloudFiles] = useState([]);
+          const [cloudStorageUsed, setCloudStorageUsed] = useState(0);
+          const [cloudLoading, setCloudLoading] = useState(false);
+          const [cloudUploading, setCloudUploading] = useState(false);
+          const [cloudSearchQuery, setCloudSearchQuery] = useState('');
+          const [favoritesSearchQuery, setFavoritesSearchQuery] = useState('');
+
+          // Onglet actif dans la page Profil dédiée ('favorites' | 'cloud' | 'account')
+          const [profileTab, setProfileTab] = useState('favorites');
+
+          // Envoi direct et robuste d'un fichier binaire/texte à Google Drive v3 (format multipart/related)
+          const uploadFileToGoogleDrive = async (file, token, targetFolderId = null) => {
+              const boundary = '-------314159265358979323846' + Date.now();
+              const metadata = {
+                  name: file.name,
+                  mimeType: file.type || 'application/octet-stream'
+              };
+              if (targetFolderId) {
+                  metadata.parents = [targetFolderId];
+              }
+
+              const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
+              const mediaHeaderPart = `--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`;
+              const closingPart = `\r\n--${boundary}--`;
+
+              const multipartBlob = new Blob([
+                  metadataPart,
+                  mediaHeaderPart,
+                  file,
+                  closingPart
+              ], { type: `multipart/related; boundary=${boundary}` });
+
+              const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,mimeType,webContentLink,webViewLink,createdTime,modifiedTime', {
+                  method: 'POST',
+                  headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': `multipart/related; boundary=${boundary}`
+                  },
+                  body: multipartBlob
+              });
+
+              if (!response.ok) {
+                  if (response.status === 401) {
+                      setDriveToken(null);
+                      throw new Error("Session Google expirée. Veuillez reconnecter votre Google Drive.");
+                  }
+                  const errData = await response.json().catch(() => ({}));
+                  const msg = errData?.error?.message || `Erreur serveur Google Drive (${response.status})`;
+                  throw new Error(msg);
+              }
+
+              return await response.json();
+          };
+
+          // Découverte / création du dossier personnel WorksBox Cloud sur Google Drive
+          const getOrCreateWorksBoxFolder = async (token) => {
+              if (!token) return null;
+              try {
+                  const query = encodeURIComponent("name='WorksBox Cloud' and mimeType='application/vnd.google-apps.folder' and trashed=false");
+                  const searchRes = await fetch(
+                      `https://www.googleapis.com/drive/v3/files?q=${query}&fields=files(id,name)&spaces=drive`,
+                      { headers: { Authorization: `Bearer ${token}` } }
+                  );
+                  if (searchRes.ok) {
+                      const searchData = await searchRes.json();
+                      if (searchData.files && searchData.files.length > 0) {
+                          return searchData.files[0].id;
+                      }
+                  } else if (searchRes.status === 401) {
+                      setDriveToken(null);
+                      return null;
+                  }
+
+                  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+                      method: 'POST',
+                      headers: {
+                          Authorization: `Bearer ${token}`,
+                          'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify({
+                          name: 'WorksBox Cloud',
+                          mimeType: 'application/vnd.google-apps.folder',
+                          description: 'Dossier personnel WorksBox pour vos cours et fiches (quota 1 Go)'
+                      })
+                  });
+                  if (createRes.ok) {
+                      const createData = await createRes.json();
+                      return createData.id;
+                  }
+              } catch (e) {
+                  console.warn("Erreur dossier WorksBox Cloud :", e);
+              }
+              return null;
+          };
+
+          // Chargement des fichiers du dossier personnel et calcul du quota utilisé
+          const loadWorksBoxCloudFiles = async (token = driveToken) => {
+              if (!token) return;
+              setCloudLoading(true);
+              try {
+                  const folderId = await getOrCreateWorksBoxFolder(token);
+                  if (folderId) {
+                      setCloudFolderId(folderId);
+                  }
+                  const q = folderId 
+                      ? encodeURIComponent(`'${folderId}' in parents and trashed=false`)
+                      : encodeURIComponent("trashed=false");
+
+                  const filesRes = await fetch(
+                      `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,size,mimeType,webContentLink,webViewLink,createdTime,modifiedTime,thumbnailLink,iconLink)&orderBy=modifiedTime desc&pageSize=100`,
+                      { headers: { Authorization: `Bearer ${token}` } }
+                  );
+                  
+                  if (!filesRes.ok) {
+                      if (filesRes.status === 401) {
+                          setDriveToken(null);
+                          throw new Error("Session Google expirée. Veuillez reconnecter votre Google Drive.");
+                      }
+                      const errData = await filesRes.json().catch(() => ({}));
+                      throw new Error(errData?.error?.message || `Erreur chargement Drive (${filesRes.status})`);
+                  }
+
+                  const filesData = await filesRes.json();
+                  const filesList = filesData.files || [];
+                  setCloudFiles(filesList);
+
+                  const totalUsed = filesList.reduce((acc, f) => acc + (parseInt(f.size, 10) || 0), 0);
+                  setCloudStorageUsed(totalUsed);
+              } catch (e) {
+                  console.warn("Erreur chargement fichiers Drive :", e);
+                  showToast(e.message || "Erreur de synchronisation Google Drive", "warning", "warning");
+              } finally {
+                  setCloudLoading(false);
+              }
+          };
+
+          // Connexion explicite Google Drive avec permission
+          const connectGoogleDrive = async () => {
+              if (!auth) {
+                  showToast("Service d'authentification non disponible", "warning", "warning");
+                  return;
+              }
+              setCloudLoading(true);
+              try {
+                  const provider = new GoogleAuthProvider();
+                  provider.addScope('https://www.googleapis.com/auth/drive.file');
+                  provider.setCustomParameters({ prompt: 'select_account' });
+                  const cred = await signInWithPopup(auth, provider);
+                  const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
+                  if (token) {
+                      setDriveToken(token);
+                      showToast("Google Drive connecté ! Espace 1 Go activé.", "success", "check");
+                      await loadWorksBoxCloudFiles(token);
+                  } else {
+                      showToast("Compte Google connecté mais jeton Drive non fourni.", "warning", "warning");
+                  }
+              } catch (err) {
+                  showToast("Erreur connexion Drive : " + (err.message || err), "warning", "warning");
+              } finally {
+                  setCloudLoading(false);
+              }
+          };
+
+          // Téléversement d'un fichier avec contrôle strict du quota 1 Go
+          const uploadFileToCloud = async (file) => {
+              if (!driveToken) {
+                  showToast("Veuillez d'abord connecter votre Google Drive", "warning", "warning");
+                  connectGoogleDrive();
+                  return;
+              }
+              if (!file) return;
+
+              // Vérification du quota 1 Go
+              if (cloudStorageUsed + file.size > MAX_CLOUD_QUOTA_BYTES) {
+                  const remainingMb = Math.max(0, ((MAX_CLOUD_QUOTA_BYTES - cloudStorageUsed) / (1024 * 1024))).toFixed(1);
+                  showToast(`Quota de 1 Go dépassé ! Espace restant : ${remainingMb} Mo.`, "warning", "warning");
+                  return;
+              }
+
+              setCloudUploading(true);
+              try {
+                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
+                  await uploadFileToGoogleDrive(file, driveToken, folderId);
+
+                  showToast(`« ${file.name} » ajouté avec succès à votre Cloud !`, "success", "check");
+                  await loadWorksBoxCloudFiles(driveToken);
+              } catch (e) {
+                  showToast("Erreur d'envoi : " + e.message, "warning", "warning");
+                  if (e.message && e.message.includes('reconnecter')) {
+                      connectGoogleDrive();
+                  }
+              } finally {
+                  setCloudUploading(false);
+              }
+          };
+
+          // Sauvegarde en 1 clic d'un cours de WorksBox vers le Drive personnel de l'élève
+          const saveCourseToCloudDrive = async (course) => {
+              if (!driveToken) {
+                  showToast("Veuillez connecter votre compte Google Drive", "warning", "warning");
+                  connectGoogleDrive();
+                  return;
+              }
+              if (!course) return;
+
+              setCloudUploading(true);
+              try {
+                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
+                  const cleanTitle = (course.title || 'Cours').replace(/[\\/:*?"<>|]/g, '_');
+                  const fileName = `[WorksBox] ${course.subject || 'Cours'} - ${cleanTitle}.txt`;
+                  const fileContent = `========================================\nWORKSBOX • RESSOURCE PÉDAGOGIQUE\n========================================\n\nTitre : ${course.title}\nMatière : ${course.subject}\nChapitre : ${course.chapter || 'Général'}\nLycée : ${course.school || selectedSchool}\nClasse : ${course.classe || selectedClass}\n\nLiens d'accès direct :\n- Document PDF : ${course.digitalLink || 'Non disponible'}\n- Calculatrice Casio : ${course.casioLink || 'Non disponible'}\n- Vidéo : ${course.videoLink || 'Non disponible'}\n- Audio : ${course.audioLink || 'Non disponible'}\n\nEnregistré dans votre espace WorksBox Cloud le ${new Date().toLocaleDateString('fr-FR')}.\nRetrouvez tous vos cours sur WorksBox !\n`;
+
+                  const textBlob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+                  const textFile = new File([textBlob], fileName, { type: 'text/plain;charset=utf-8' });
+                  
+                  await uploadFileToGoogleDrive(textFile, driveToken, folderId);
+
+                  showToast(`« ${course.title} » sauvegardé dans votre Drive !`, "success", "check");
+                  await loadWorksBoxCloudFiles(driveToken);
+              } catch (e) {
+                  showToast("Erreur sauvegarde : " + e.message, "warning", "warning");
+                  if (e.message && e.message.includes('reconnecter')) {
+                      connectGoogleDrive();
+                  }
+              } finally {
+                  setCloudUploading(false);
+              }
+          };
+
+          // Suppression d'un fichier avec confirmation et mise à jour immédiate du quota
+          const deleteCloudFile = async (fileId, fileName) => {
+              if (!confirm(`Supprimer définitivement « ${fileName} » de votre Google Drive ?\n(Cela libérera de l'espace dans votre quota 1 Go)`)) return;
+              try {
+                  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+                      method: 'DELETE',
+                      headers: { Authorization: `Bearer ${driveToken}` }
+                  });
+                  if (!res.ok && res.status !== 204) throw new Error("Impossible de supprimer");
+                  
+                  showToast(`« ${fileName} » supprimé de votre Drive`, "info", "info");
+                  setCloudFiles(prev => prev.filter(f => f.id !== fileId));
+                  setCloudStorageUsed(prev => {
+                      const removed = cloudFiles.find(f => f.id === fileId);
+                      return Math.max(0, prev - (parseInt(removed?.size, 10) || 0));
+                  });
+              } catch (e) {
+                  showToast("Erreur suppression : " + e.message, "warning", "warning");
+              }
+          };
+
           // Gestion du thème clair / sombre (synchronisé avec localStorage et la balise html)
           const [isDark, setIsDark] = useState(() => {
               try {
@@ -902,9 +1173,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               setAuthError(null);
               try {
                   const provider = new GoogleAuthProvider();
+                  provider.addScope('https://www.googleapis.com/auth/drive.file');
                   provider.setCustomParameters({ prompt: 'select_account' });
                   const cred = await signInWithPopup(auth, provider);
                   const currentUser = cred.user;
+                  const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
+                  if (token) {
+                      setDriveToken(token);
+                      loadWorksBoxCloudFiles(token);
+                  }
                   
                   if (userDb && currentUser) {
                       try {
@@ -1266,14 +1543,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const openSubject = (subject) => { setSelectedSubject(subject); setCurrentView('subject'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
           const openTerms = () => { setSelectedSubject(null); setCurrentView('terms'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
           const openCasioGuide = () => { setSelectedSubject(null); setCurrentView('casioGuide'); window.scrollTo({top: 0, behavior: 'smooth'}); };
-          const openFavorites = () => { 
-              setSelectedSubject(null); 
-              setCurrentView('favorites'); 
-              window.scrollTo({top: 0, behavior: 'smooth'}); 
+          
+          const openProfile = (tab = 'favorites') => {
               if (!activeUser) {
                   setShowAuthModal(true);
+                  return;
               }
+              setSelectedSubject(null);
+              setProfileTab(tab);
+              setCurrentView('profile');
+              window.scrollTo({top: 0, behavior: 'smooth'});
           };
+          const openFavorites = () => openProfile('favorites');
+          const openCloud = () => openProfile('cloud');
+          const openAccount = () => openProfile('account');
 
           const handleView = async (course, type) => {
               if (type === 'Numérique') setPreviewData({ link: course.digitalLink, title: course.title, type: 'Numérique', course });
@@ -1507,7 +1790,6 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         </div>
                         <div className="hidden lg:flex items-center space-x-6">
                             <button onClick={goHome} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${(currentView === 'home' || currentView === 'subject') ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><HomeIcon className="w-4 h-4 mr-1.5" /> Accueil</button>
-                            <button onClick={openFavorites} className={`text-sm font-medium flex items-center transition-colors hover:text-amber-400 ${currentView === 'favorites' ? 'text-amber-400 border-b-2 border-amber-400 pb-1 mt-1' : 'text-slate-400'}`}><Star className="w-4 h-4 mr-1.5" filled={currentView === 'favorites'} /> Favoris {activeUser && favorites.length > 0 && <span className="ml-1.5 bg-amber-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{favorites.length}</span>}</button>
                             <button onClick={openTerms} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'terms' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><Shield className="w-4 h-4 mr-1.5" /> Conditions</button>
                             <button onClick={openCasioGuide} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'casioGuide' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><HelpCircle className="w-4 h-4 mr-1.5" /> Tuto Casio</button>
                         </div>
@@ -1549,9 +1831,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         {activeUser ? (
                             <button 
                                 id="nav-btn-user-profile"
-                                onClick={() => setShowAccountModal(true)} 
-                                className="flex items-center space-x-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-xl transition-all active:scale-95"
-                                title="Gérer mon compte"
+                                onClick={() => openProfile(profileTab || 'favorites')} 
+                                className={`flex items-center space-x-2 text-xs font-bold px-3 py-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                                    currentView === 'profile' 
+                                        ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/50' 
+                                        : 'bg-slate-800 hover:bg-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 text-blue-400 border border-blue-500/30'
+                                }`}
+                                title="Accéder à mon espace profil et mes onglets exclusifs"
                             >
                                 {activeUser.photoURL ? (
                                     <img src={activeUser.photoURL} alt="Avatar" className="w-5 h-5 rounded-full object-cover border border-blue-400" />
@@ -1676,6 +1962,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                                 showSubject={true} 
                                                                 onCopy={() => copyCourseLink(course)}
                                                                 onShare={() => shareCourse(course)}
+                                                                onSaveToCloud={() => saveCourseToCloudDrive(course)}
                                                             />
                                                         ))}
                                                     </ul>
@@ -1759,63 +2046,201 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         </div>
                         )}
 
-                        {currentView === 'favorites' && (
-                        <div key="view-favorites" className="space-y-6 view-transition">
-                            <div className="flex items-center space-x-4 mb-8 border-b border-slate-200 dark:border-slate-800 pb-4">
-                                <div className="bg-amber-100 dark:bg-amber-950/80 p-3 rounded-xl"><Star className="w-8 h-8 text-amber-500" filled={true}/></div>
-                                <div><h1 className="text-3xl font-bold text-slate-900 dark:text-white">Mes Favoris</h1><p className="text-slate-500 dark:text-slate-400">Retrouvez ici vos cours sauvegardés.</p></div>
+                        {currentView === 'profile' && (
+                          <div key="view-profile" className="space-y-8 max-w-6xl mx-auto view-transition pb-12">
+                            {/* Navigation retour & Fil d'Ariane */}
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <button 
+                                    onClick={goHome}
+                                    id="btn-profile-back-to-site"
+                                    className="inline-flex items-center space-x-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs active:scale-95 cursor-pointer group"
+                                    title="Retourner à l'accueil du site"
+                                >
+                                    <ChevronLeft className="w-5 h-5 text-blue-600 dark:text-blue-400 group-hover:-translate-x-0.5 transition-transform" />
+                                    <span>← Retour au site</span>
+                                </button>
+                                <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                    <span>WorksBox</span>
+                                    <span>/</span>
+                                    <span className="text-blue-600 dark:text-blue-400 font-bold">Mon Espace Profil</span>
+                                </div>
                             </div>
 
-                            {!activeUser ? (
-                                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-8 sm:p-12 text-center max-w-lg mx-auto my-6 animate-in zoom-in-95 duration-200">
-                                    <div className="w-16 h-16 bg-amber-50 dark:bg-amber-950/60 text-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-amber-100 dark:border-amber-900 shadow-sm">
-                                        <Star className="w-8 h-8" filled={true} />
-                                    </div>
-                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Connexion requise</h2>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
-                                        Pour ajouter des cours à vos favoris et les retrouver lors de vos révisions, vous devez vous connecter.
-                                    </p>
-                                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                                        <button 
-                                            id="btn-favorites-login-cta"
-                                            onClick={() => setShowAuthModal(true)} 
-                                            className="w-full sm:w-auto px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center justify-center space-x-2"
-                                        >
-                                            <UserIcon className="w-4 h-4" />
-                                            <span>Se connecter pour utiliser les favoris</span>
-                                        </button>
-                                        <button 
-                                            onClick={goHome} 
-                                            className="w-full sm:w-auto px-5 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl active:scale-95 transition-all"
-                                        >
-                                            Explorer les cours
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : (
-                                <>
-                                    {(!user || user.isAnonymous) && (
-                                        <div className="bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                            <div className="flex items-center space-x-3">
-                                                <div className="bg-blue-100 dark:bg-blue-900/80 text-blue-600 dark:text-blue-400 p-2 rounded-xl flex-shrink-0"><UserIcon className="w-5 h-5"/></div>
-                                                <div>
-                                                    <p className="text-xs sm:text-sm font-bold text-blue-950 dark:text-blue-100">Synchronisez vos favoris dans le cloud</p>
-                                                    <p className="text-xs text-blue-700 dark:text-blue-300">Connectez-vous avec Google pour ne jamais perdre vos cours et les retrouver sur tous vos appareils.</p>
-                                                </div>
-                                            </div>
-                                            <button onClick={() => setShowAuthModal(true)} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all whitespace-nowrap">Lier avec Google</button>
+                            {/* Hero Card Profil Élève */}
+                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                <div className="flex items-center space-x-4 sm:space-x-5 min-w-0">
+                                    {activeUser?.photoURL ? (
+                                        <img src={activeUser.photoURL} alt="Avatar" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl object-cover border-2 border-blue-500 shadow-md flex-shrink-0" />
+                                    ) : (
+                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl ${activeUser?.isLocal ? 'bg-emerald-600' : (isUserAdmin ? 'bg-red-600' : 'bg-blue-600')} text-white flex items-center justify-center text-2xl sm:text-3xl font-black shadow-md flex-shrink-0`}>
+                                            {(activeUser?.displayName || activeUser?.email || 'E')[0].toUpperCase()}
                                         </div>
                                     )}
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center space-x-2 flex-wrap gap-1.5 mb-1">
+                                            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white truncate">
+                                                {activeUser?.displayName || (isUserAdmin ? 'Roman Ferrière' : 'Élève')}
+                                            </h1>
+                                            {activeUser?.isLocal ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                                    <UserIcon className="w-3 h-3 mr-1" /> Profil Élève
+                                                </span>
+                                            ) : isUserAdmin ? (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800">
+                                                    <Shield className="w-3 h-3 mr-1" /> Administrateur
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
+                                                    <Check className="w-3 h-3 mr-1" /> Compte Google
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate mb-2">{activeUser?.email}</p>
+                                        <div className="flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300 flex-wrap gap-1.5">
+                                            <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center">
+                                                <SchoolIcon className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
+                                                {selectedSchool} • {selectedClass}
+                                            </span>
+                                            <button 
+                                                onClick={() => setShowOnboarding(true)} 
+                                                className="text-blue-600 dark:text-blue-400 hover:underline text-[11px]"
+                                            >
+                                                Changer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Statut Google Drive Cloud */}
+                                <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full md:w-auto shrink-0">
+                                    <div className="flex items-center space-x-3">
+                                        <div className={`p-2.5 rounded-xl ${driveToken ? 'bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+                                            <Cloud className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Google Drive (1 Go)</span>
+                                            <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                                {driveToken ? 'Connecté • Espace Actif' : 'Non synchronisé'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {!driveToken ? (
+                                        <button 
+                                            onClick={connectGoogleDrive}
+                                            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition active:scale-95 flex items-center space-x-1.5 whitespace-nowrap"
+                                        >
+                                            <GoogleIcon className="w-3.5 h-3.5" />
+                                            <span>Lier Drive</span>
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => setProfileTab('cloud')}
+                                            className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-xs rounded-xl border border-sky-200 dark:border-sky-800 transition whitespace-nowrap"
+                                        >
+                                            Gérer mon Cloud
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Barre des Onglets Exclusifs du Profil */}
+                            <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+                                <button 
+                                    id="tab-profile-favorites"
+                                    onClick={() => setProfileTab('favorites')}
+                                    className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                                        profileTab === 'favorites' 
+                                            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40' 
+                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                    }`}
+                                >
+                                    <Star className="w-4 h-4" filled={profileTab === 'favorites'} />
+                                    <span>Mes Favoris</span>
+                                    <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
+                                        profileTab === 'favorites' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                    }`}>
+                                        {favorites.length}
+                                    </span>
+                                </button>
+
+                                <button 
+                                    id="tab-profile-cloud"
+                                    onClick={() => setProfileTab('cloud')}
+                                    className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                                        profileTab === 'cloud' 
+                                            ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20 ring-2 ring-sky-400/40' 
+                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                    }`}
+                                >
+                                    <Cloud className="w-4 h-4" />
+                                    <span>Mon Cloud (1 Go)</span>
+                                    {driveToken && (
+                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
+                                            profileTab === 'cloud' ? 'bg-white/20 text-white' : 'bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300'
+                                        }`}>
+                                            {cloudFiles.length}
+                                        </span>
+                                    )}
+                                </button>
+
+                                <button 
+                                    id="tab-profile-account"
+                                    onClick={() => setProfileTab('account')}
+                                    className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                                        profileTab === 'account' 
+                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 ring-2 ring-blue-400/40' 
+                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                    }`}
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    <span>Mon Compte & Établissement</span>
+                                </button>
+                            </div>
+
+                            {/* CONTENU ONGLET 1 : MES FAVORIS */}
+                            {profileTab === 'favorites' && (
+                                <div className="space-y-6 animate-in fade-in duration-200">
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+                                                <Star className="w-5 h-5 text-amber-500 mr-2" filled={true} /> Vos cours sauvegardés
+                                            </h2>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Retrouvez facilement tous les cours marqués d'une étoile pour réviser rapidement.</p>
+                                        </div>
+                                        {favoriteCourses.length > 0 && (
+                                            <div className="relative max-w-xs w-full">
+                                                <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Rechercher dans mes favoris..." 
+                                                    value={favoritesSearchQuery} 
+                                                    onChange={(e) => setFavoritesSearchQuery(e.target.value)} 
+                                                    className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-amber-500 text-slate-800 dark:text-slate-100"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {favoriteCourses.length === 0 ? (
-                                        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">
-                                            <Star className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                                            <p className="font-bold text-slate-700 dark:text-slate-200">Aucun favori enregistré pour le moment.</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Cliquez sur l'étoile d'un cours pour l'enregistrer dans cette liste.</p>
+                                        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-12 text-center space-y-3">
+                                            <Star className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+                                            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Aucun cours en favori pour l'instant</h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                                                Lorsque vous consultez des cours, cliquez sur l'étoile pour les ajouter à votre espace personnel et les retrouver ici en 1 clic.
+                                            </p>
+                                            <button 
+                                                onClick={goHome} 
+                                                className="mt-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-sm inline-flex items-center space-x-2"
+                                            >
+                                                <span>Explorer les cours</span>
+                                            </button>
                                         </div>
                                     ) : (
                                         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                                             <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                                                {favoriteCourses.map(course => (
+                                                {favoriteCourses
+                                                    .filter(c => !favoritesSearchQuery.trim() || c.title.toLowerCase().includes(favoritesSearchQuery.toLowerCase()) || c.subject.toLowerCase().includes(favoritesSearchQuery.toLowerCase()))
+                                                    .map(course => (
                                                     <CourseListItem 
                                                         key={course.id} 
                                                         course={course} 
@@ -1826,14 +2251,308 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                         showSubject={true} 
                                                         onCopy={() => copyCourseLink(course)}
                                                         onShare={() => shareCourse(course)}
+                                                        onSaveToCloud={() => saveCourseToCloudDrive(course)}
                                                     />
                                                 ))}
                                             </ul>
                                         </div>
                                     )}
-                                </>
+                                </div>
                             )}
-                        </div>
+
+                            {/* CONTENU ONGLET 2 : MON CLOUD (1 GO) */}
+                            {profileTab === 'cloud' && (
+                                <div className="space-y-6 animate-in fade-in duration-200">
+                                    {/* Jauge de Quota 1 Go & Actions */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-5">
+                                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <HardDrive className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                                                    <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Jauge d'espace de stockage (Quota : 1 Go)</h2>
+                                                </div>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                    Espace calculé sur les fichiers hébergés dans votre dossier Google Drive <em>WorksBox Cloud</em>.
+                                                </p>
+                                            </div>
+                                            <div className="text-right flex items-baseline space-x-2">
+                                                <span className="text-xl font-black text-slate-900 dark:text-white">
+                                                    {(cloudStorageUsed / (1024 * 1024)).toFixed(1)} Mo
+                                                </span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                                                    / 1 024 Mo (1 Go)
+                                                </span>
+                                                <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+                                                    (cloudStorageUsed / MAX_CLOUD_QUOTA_BYTES) > 0.9 
+                                                        ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' 
+                                                        : (cloudStorageUsed / MAX_CLOUD_QUOTA_BYTES) > 0.7 
+                                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' 
+                                                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                                }`}>
+                                                    {((cloudStorageUsed / MAX_CLOUD_QUOTA_BYTES) * 100).toFixed(1)} % utilisé
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Barre de progression */}
+                                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-4 rounded-full overflow-hidden p-0.5 border border-slate-200/80 dark:border-slate-700">
+                                            <div 
+                                                className={`h-full rounded-full transition-all duration-500 ${
+                                                    (cloudStorageUsed / MAX_CLOUD_QUOTA_BYTES) > 0.9 
+                                                        ? 'bg-gradient-to-r from-red-500 to-rose-600' 
+                                                        : (cloudStorageUsed / MAX_CLOUD_QUOTA_BYTES) > 0.7 
+                                                            ? 'bg-gradient-to-r from-amber-500 to-orange-600' 
+                                                            : 'bg-gradient-to-r from-sky-500 to-blue-600'
+                                                }`}
+                                                style={{ width: `${Math.min(100, Math.max(2, (cloudStorageUsed / MAX_CLOUD_QUOTA_BYTES) * 100))}%` }}
+                                            ></div>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 gap-3">
+                                            <span>Espace restant disponible : <strong className="text-slate-800 dark:text-slate-200 font-bold">{Math.max(0, ((MAX_CLOUD_QUOTA_BYTES - cloudStorageUsed) / (1024 * 1024))).toFixed(1)} Mo</strong></span>
+                                            <div className="flex items-center space-x-3">
+                                                {driveToken && (
+                                                    <button 
+                                                        onClick={() => loadWorksBoxCloudFiles(driveToken)}
+                                                        disabled={cloudLoading}
+                                                        className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5"
+                                                        title="Synchroniser avec Google Drive"
+                                                    >
+                                                        <RefreshCw className={`w-3.5 h-3.5 ${cloudLoading ? 'animate-spin' : ''}`} />
+                                                        <span>Actualiser</span>
+                                                    </button>
+                                                )}
+                                                <input 
+                                                    type="file" 
+                                                    id="cloud-file-uploader" 
+                                                    className="hidden" 
+                                                    onChange={(e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) {
+                                                            uploadFileToCloud(file);
+                                                            e.target.value = '';
+                                                        }
+                                                    }}
+                                                />
+                                                <button 
+                                                    onClick={() => {
+                                                        if (!driveToken) {
+                                                            connectGoogleDrive();
+                                                        } else {
+                                                            document.getElementById('cloud-file-uploader')?.click();
+                                                        }
+                                                    }}
+                                                    disabled={cloudUploading}
+                                                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-sm transition active:scale-95 flex items-center space-x-2"
+                                                >
+                                                    {cloudUploading ? (
+                                                        <>
+                                                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                                            <span>Téléversement...</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <UploadCloud className="w-4 h-4" />
+                                                            <span>Ajouter un document</span>
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Liste des fichiers Cloud */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-6">
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                                            <div className="flex items-center space-x-3">
+                                                <Folder className="w-6 h-6 text-sky-500" />
+                                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Documents dans votre WorksBox Cloud</h3>
+                                                <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                                                    {cloudFiles.length} fichier{cloudFiles.length !== 1 ? 's' : ''}
+                                                </span>
+                                            </div>
+                                            {driveToken && cloudFiles.length > 0 && (
+                                                <div className="relative max-w-xs w-full">
+                                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Filtrer mes fichiers Drive..." 
+                                                        value={cloudSearchQuery} 
+                                                        onChange={(e) => setCloudSearchQuery(e.target.value)} 
+                                                        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-sky-500 text-slate-800 dark:text-slate-100"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {!driveToken ? (
+                                            <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center space-y-4">
+                                                <div className="w-16 h-16 bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
+                                                    <Cloud className="w-8 h-8" />
+                                                </div>
+                                                <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">Connectez votre Google Drive pour activer votre espace 1 Go</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                                                    Vos fichiers sont privés, hébergés en toute sécurité sur votre propre compte Google dans le dossier dédié <strong>WorksBox Cloud</strong>.
+                                                </p>
+                                                <button 
+                                                    onClick={connectGoogleDrive}
+                                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition active:scale-95 inline-flex items-center space-x-2"
+                                                >
+                                                    <GoogleIcon className="w-4 h-4" />
+                                                    <span>Activer mon Cloud avec Google</span>
+                                                </button>
+                                            </div>
+                                        ) : cloudLoading ? (
+                                            <div className="py-12 flex flex-col items-center justify-center space-y-3">
+                                                <div className="w-8 h-8 border-3 border-sky-600 border-t-transparent rounded-full animate-spin"></div>
+                                                <p className="text-xs font-bold text-slate-500">Chargement de vos fichiers Google Drive...</p>
+                                            </div>
+                                        ) : cloudFiles.length === 0 ? (
+                                            <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center space-y-3">
+                                                <UploadCloud className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+                                                <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">Aucun fichier dans votre espace Cloud pour l'instant</h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                                                    Vous pouvez téléverser vos devoirs ou fiches personnelles, ou cliquer sur le bouton <strong>Drive</strong> sur un cours pour le copier dans votre espace.
+                                                </p>
+                                                <button 
+                                                    onClick={() => document.getElementById('cloud-file-uploader')?.click()}
+                                                    className="mt-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition"
+                                                >
+                                                    Téléverser un premier fichier
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                {cloudFiles
+                                                    .filter(f => !cloudSearchQuery.trim() || f.name.toLowerCase().includes(cloudSearchQuery.toLowerCase()))
+                                                    .map(file => {
+                                                        const sizeMb = ((parseInt(file.size, 10) || 0) / (1024 * 1024)).toFixed(2);
+                                                        const dateFormatted = file.modifiedTime ? new Date(file.modifiedTime).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+                                                        return (
+                                                            <div key={file.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 px-3 rounded-xl transition-colors">
+                                                                <div className="flex items-center space-x-3 min-w-0">
+                                                                    <div className="p-2.5 bg-sky-50 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 rounded-xl flex-shrink-0">
+                                                                        <FileText className="w-5 h-5" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{file.name}</h4>
+                                                                        <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                                            <span>{sizeMb} Mo</span>
+                                                                            <span>•</span>
+                                                                            <span>Modifié le {dateFormatted}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
+                                                                    {file.webViewLink && (
+                                                                        <a 
+                                                                            href={file.webViewLink} 
+                                                                            target="_blank" 
+                                                                            rel="noopener noreferrer" 
+                                                                            className="px-3 py-1.5 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 text-xs font-bold rounded-lg transition flex items-center"
+                                                                        >
+                                                                            <ExternalLink className="w-3.5 h-3.5 mr-1" /> Ouvrir sur Drive
+                                                                        </a>
+                                                                    )}
+                                                                    <button 
+                                                                        onClick={() => deleteCloudFile(file.id, file.name)} 
+                                                                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-lg transition"
+                                                                        title="Supprimer du Drive et libérer l'espace"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CONTENU ONGLET 3 : MON COMPTE & RÉGLAGES */}
+                            {profileTab === 'account' && (
+                                <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-200">
+                                    {/* Établissement et Classe */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block">Scolarité</span>
+                                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Établissement & Classe active</h3>
+                                            </div>
+                                            <button 
+                                                onClick={() => setShowOnboarding(true)}
+                                                className="px-3.5 py-1.5 bg-blue-50 dark:bg-blue-950/80 hover:bg-blue-100 text-blue-700 dark:text-blue-300 text-xs font-bold rounded-xl transition"
+                                            >
+                                                Modifier
+                                            </button>
+                                        </div>
+                                        <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl space-y-1">
+                                            <p className="text-sm font-black text-slate-900 dark:text-white flex items-center">
+                                                <SchoolIcon className="w-4 h-4 text-blue-500 mr-2" />
+                                                {selectedSchool || 'Non sélectionné'}
+                                            </p>
+                                            <p className="text-xs text-slate-600 dark:text-slate-400 pl-6">
+                                                Classe : <strong>{selectedClass || 'Non sélectionnée'}</strong>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Liaison Google pour les élèves locaux */}
+                                    {activeUser?.isLocal && (
+                                        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                            <div>
+                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block">Synchronisation</span>
+                                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Associer un compte Google</h3>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Conservez vos favoris et votre Cloud sur tous vos téléphones et ordinateurs.</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setShowAuthModal(true)}
+                                                className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition shadow-sm whitespace-nowrap flex items-center space-x-2"
+                                            >
+                                                <GoogleIcon className="w-4 h-4" />
+                                                <span>Lier Google</span>
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Accès Admin si applicable */}
+                                    {isUserAdmin && (
+                                        <div className="bg-gradient-to-r from-red-950/70 to-slate-900 border border-red-500/50 rounded-3xl p-6 flex items-center justify-between shadow-sm">
+                                            <div className="text-xs text-slate-200 mr-2">
+                                                <span className="font-extrabold flex items-center text-red-400 text-sm mb-1">
+                                                    <Shield className="w-4 h-4 mr-1.5 inline" /> Panneau d'Administration
+                                                </span>
+                                                <span className="text-xs text-slate-300">Gérez les cours, fiches Casio et importations Google Drive par IA.</span>
+                                            </div>
+                                            <a
+                                                href="admin.html"
+                                                className="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm flex items-center space-x-1.5"
+                                            >
+                                                <span>Ouvrir le Panel</span>
+                                                <ExternalLink className="w-3.5 h-3.5" />
+                                            </a>
+                                        </div>
+                                    )}
+
+                                    {/* Déconnexion */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex items-center justify-between">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Déconnexion de WorksBox</h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Vous pourrez vous reconnecter à tout moment.</p>
+                                        </div>
+                                        <button 
+                                            onClick={handleSignOut}
+                                            className="px-4 py-2 bg-red-50 dark:bg-red-950/50 hover:bg-red-100 text-red-700 dark:text-red-300 font-bold text-xs rounded-xl border border-red-200 dark:border-red-900 transition flex items-center space-x-1.5"
+                                        >
+                                            <LogOut className="w-3.5 h-3.5" />
+                                            <span>Se déconnecter</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                          </div>
                         )}
 
                         {currentView === 'subject' && (
@@ -1884,6 +2603,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             toggleFav={toggleFav} 
                                             onCopyCourse={copyCourseLink}
                                             onShareCourse={shareCourse}
+                                            onSaveCourseToCloud={saveCourseToCloudDrive}
                                         />
                                     ))}
                                 </div>
@@ -1931,6 +2651,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       onClose={() => setPreviewData(null)} 
                       onCopy={(link, title) => copyToClipboard(link, title ? `Lien de « ${title} » copié !` : "Lien copié dans le presse-papiers !")}
                       onShare={previewData.course ? () => shareCourse(previewData.course) : undefined}
+                      onSaveToCloud={previewData.course ? () => saveCourseToCloudDrive(previewData.course) : undefined}
                   />
               )}
 
@@ -2403,7 +3124,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             return null;
         }
 
-        function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false, onCopy, onShare }) {
+        function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false, onCopy, onShare, onSaveToCloud }) {
             const courseTag = course.tag || 'Cours';
             const style = COLOR_PALETTES[tagColors?.[courseTag]] || COLOR_PALETTES.slate;
             return (
@@ -2442,6 +3163,17 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         {course.videoLink && <button onClick={() => handleView(course, 'Vidéo')} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><VideoIcon className="w-4 h-4 mr-1"/> Vidéo</button>}
                         {course.imageLink && <button onClick={() => handleView(course, 'Image')} className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><ImageIcon className="w-4 h-4 mr-1"/> Image</button>}
                         {course.audioLink && <button onClick={() => handleView(course, 'Audio')} className="px-3 py-1.5 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><MusicIcon className="w-4 h-4 mr-1"/> Audio</button>}
+                        {onSaveToCloud && (
+                            <button 
+                                type="button"
+                                onClick={onSaveToCloud}
+                                className="px-2.5 py-1.5 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"
+                                title="Sauvegarder ce cours dans mon Google Drive (1 Go)"
+                            >
+                                <Cloud className="w-4 h-4 mr-1 text-sky-500 dark:text-sky-400" />
+                                <span className="hidden sm:inline">Drive</span>
+                            </button>
+                        )}
                         <button 
                             type="button"
                             onClick={() => onShare ? onShare(course) : (onCopy ? onCopy(course) : null)} 
@@ -2456,7 +3188,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
-        function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse, onShareCourse }) {
+        function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse, onShareCourse, onSaveCourseToCloud }) {
             const [isExpanded, setIsExpanded] = useState(chapterCourses.length <= 1);
             return (
                 <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-200">
@@ -2490,6 +3222,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         toggleFav={() => toggleFav(course.id)} 
                                         onCopy={onCopyCourse ? () => onCopyCourse(course) : undefined}
                                         onShare={onShareCourse ? () => onShareCourse(course) : (onCopyCourse ? () => onCopyCourse(course) : undefined)}
+                                        onSaveToCloud={onSaveCourseToCloud ? () => onSaveCourseToCloud(course) : undefined}
                                     />
                                 ))}
                             </ul>
@@ -2626,7 +3359,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
-        function PreviewModal({ data, onClose, onCopy, onShare }) {
+        function PreviewModal({ data, onClose, onCopy, onShare, onSaveToCloud }) {
             let previewUrl = data.link;
             const isGoogleDrive = previewUrl.includes('drive.google.com/file/d/');
             if (isGoogleDrive) {
@@ -2653,6 +3386,17 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <h2 className="font-bold text-slate-800 dark:text-white text-base sm:text-lg truncate">{data.title}</h2>
                             </div>
                             <div className="flex items-center space-x-2 flex-shrink-0">
+                                {onSaveToCloud && (
+                                    <button 
+                                        id="btn-save-cloud-preview"
+                                        onClick={onSaveToCloud} 
+                                        className="text-xs font-bold bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 border border-sky-200 dark:border-sky-800 px-3 py-2 rounded-xl text-sky-700 dark:text-sky-300 flex items-center shadow-sm transition-colors active:scale-95"
+                                        title="Sauvegarder dans mon espace Google Drive (1 Go)"
+                                    >
+                                        <Cloud className="w-3.5 h-3.5 mr-1.5 text-sky-600 dark:text-sky-400" />
+                                        <span>Sauvegarder Drive</span>
+                                    </button>
+                                )}
                                 {onShare && (
                                     <button 
                                         id="btn-share-preview-link"
