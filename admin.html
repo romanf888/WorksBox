@@ -5,7 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorksBox — Administration</title>
     <meta name="description" content="Dashboard d'administration WorksBox.">
+    <!-- Favicon & App Icons -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="shortcut icon" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <meta name="theme-color" content="#991b1b">
     <!-- Global error shield for cross-origin script noise -->
     <script>
         window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -65,8 +70,39 @@
         .w-16 { width: 4rem; } .h-16 { height: 4rem; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
-    <div id="root"></div>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+    <div id="root">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; background-color: #0b0f19; color: #f8fafc;">
+            <!-- Logo WorksBox SVG vectoriel intégré -->
+            <svg viewBox="0 0 64 64" width="64" height="64" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(220, 38, 38, 0.35);">
+                <defs>
+                    <linearGradient id="initAdminWbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ef4444"/>
+                        <stop offset="100%" stop-color="#991b1b"/>
+                    </linearGradient>
+                    <linearGradient id="initAdminBoxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="100%" stop-color="#e2e8f0"/>
+                    </linearGradient>
+                    <filter id="initAdminShadow" x="-10%" y="-10%" width="130%" height="130%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/>
+                    </filter>
+                </defs>
+                <rect width="64" height="64" rx="16" fill="url(#initAdminWbGrad)"/>
+                <g filter="url(#initAdminShadow)">
+                    <path d="M16 22C16 19.7909 17.7909 18 20 18H28C30.2091 18 32 19.7909 32 22V42C32 44.2091 30.2091 46 28 46H20C17.7909 46 16 44.2091 16 42V22Z" fill="url(#initAdminBoxGrad)"/>
+                    <path d="M32 22C32 19.7909 33.7909 18 36 18H44C46.2091 18 48 19.7909 48 22V42C48 44.2091 46.2091 46 44 46H36C33.7909 46 32 44.2091 32 42V22Z" fill="url(#initAdminBoxGrad)"/>
+                    <path d="M29 20V44M35 20V44" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M21 25H27M21 30H27M21 35H25" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M37 25H43M37 30H43M37 35H41" stroke="#b91c1c" stroke-width="2" stroke-linecap="round"/>
+                </g>
+            </svg>
+            <div style="width: 36px; height: 36px; border: 3px solid rgba(239, 68, 68, 0.2); border-top-color: #ef4444; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;"></div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin: 0 0 6px 0;">Chargement de l'Administration...</h2>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">WorksBox • Espace de gestion sécurisé</p>
+        </div>
+    </div>
 
     <script type="text/babel" data-type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
@@ -351,6 +387,34 @@
         const DownloadIcon = ({ className = "w-4 h-4" }) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
         const HardDriveIcon = ({ className = "w-4 h-4" }) => <Icon className={className}><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></Icon>;
         const FileTextIcon = ({ className = "w-4 h-4" }) => <Icon className={className}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></Icon>;
+
+        // Logo WorksBox officiel avec dégradé et livre/cloud stylisé
+        const WorksBoxLogo = ({ className = "w-8 h-8", style }) => (
+            <svg className={className} width="32" height="32" style={{ maxWidth: '100%', display: 'inline-block', flexShrink: 0, ...style }} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="adminWbGradInApp" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#3b82f6"/>
+                        <stop offset="100%" stopColor="#1d4ed8"/>
+                    </linearGradient>
+                    <linearGradient id="adminWbPageGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#ffffff"/>
+                        <stop offset="100%" stopColor="#e2e8f0"/>
+                    </linearGradient>
+                </defs>
+                <rect width="64" height="64" rx="16" fill="url(#adminWbGradInApp)"/>
+                <g filter="drop-shadow(0px 2px 3px rgba(0,0,0,0.25))">
+                    <path d="M32 20 L32 46" stroke="#bfdbfe" strokeWidth="2.5" strokeLinecap="round"/>
+                    <path d="M32 24 C25 20, 18 21, 14 23.5 C13 24.2, 13 25.5, 13 27 L13 43 C18 40.5, 25 39.5, 32 43 Z" fill="url(#adminWbPageGrad)" stroke="#60a5fa" strokeWidth="1.2" strokeLinejoin="round"/>
+                    <path d="M32 24 C39 20, 46 21, 50 23.5 C51 24.2, 51 25.5, 51 27 L51 43 C46 40.5, 39 39.5, 32 43 Z" fill="url(#adminWbPageGrad)" stroke="#60a5fa" strokeWidth="1.2" strokeLinejoin="round"/>
+                    <path d="M18 29 C22 27.5, 26 27.5, 29 28.5" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M18 34 C22 32.5, 26 32.5, 29 33.5" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="38" cy="28.5" r="1.5" fill="#3b82f6"/>
+                    <circle cx="43" cy="28.5" r="1.5" fill="#3b82f6"/>
+                    <path d="M36 34 C39 33.5, 43 33.5, 46 34" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M28 17 C28 14.8, 29.8 13, 32 13 C34.2 13, 36 14.8, 36 17 Z" fill="#93c5fd"/>
+                </g>
+            </svg>
+        );
 
         const DEFAULT_SHARED_CLOUD_CONFIG = {
             enabled: true,
@@ -2065,8 +2129,11 @@
                         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-amber-900/10 rounded-full blur-3xl pointer-events-none"></div>
 
                         <div className="max-w-md w-full bg-slate-900/95 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-xl relative z-10 text-center space-y-6">
-                            <div className="w-16 h-16 bg-red-900/40 border border-red-500/30 text-red-400 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
-                                <ShieldIcon className="w-8 h-8" />
+                            <div className="flex items-center justify-center space-x-3 mx-auto">
+                                <WorksBoxLogo className="w-16 h-16 rounded-2xl shadow-xl shadow-blue-600/30" />
+                                <div className="w-16 h-16 bg-red-900/40 border border-red-500/30 text-red-400 rounded-2xl flex items-center justify-center shadow-lg">
+                                    <ShieldIcon className="w-8 h-8" />
+                                </div>
                             </div>
 
                             <div>
@@ -2139,6 +2206,7 @@
                         <div className="w-full max-w-[1700px] mx-auto px-4 sm:px-6 lg:px-8">
                             <div className="flex items-center justify-between min-h-[4rem] py-2 gap-3 flex-wrap lg:flex-nowrap">
                                 <div className="flex items-center space-x-3 cursor-pointer shrink-0" onClick={() => { setActiveTab('home'); setSelectedSubject(null); }}>
+                                    <WorksBoxLogo className="w-9 h-9 rounded-xl shadow-md" />
                                     <div className="p-2 bg-red-800 border border-red-700 rounded-xl shadow-xs">
                                         <SettingsIcon className="w-5 h-5 text-white" />
                                     </div>
