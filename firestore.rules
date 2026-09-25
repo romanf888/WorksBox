@@ -46,5 +46,16 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Shared Cloud files & collections - Public read, write restricted to verified admin
+    match /artifacts/{appId}/public/data/sharedCloudFiles/{fileId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /artifacts/{appId}/public/data/sharedCloud/{configId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

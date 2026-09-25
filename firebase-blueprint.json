@@ -71,8 +71,31 @@
         "classSubjects": { "type": "object" },
         "announcement": { "type": "string", "maxLength": 512 },
         "termsContent": { "type": "string", "maxLength": 50000 },
-        "casioGuideContent": { "type": "string", "maxLength": 50000 }
+        "casioGuideContent": { "type": "string", "maxLength": 50000 },
+        "sharedCloudConfig": { "type": "object" }
       }
+    },
+    "SharedCloudFile": {
+      "title": "SharedCloudFile",
+      "description": "File stored or indexed in the shared cloud managed by admin",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 256 },
+        "size": { "type": "number" },
+        "mimeType": { "type": "string", "maxLength": 128 },
+        "url": { "type": "string", "maxLength": 2048 },
+        "downloadUrl": { "type": "string", "maxLength": 2048 },
+        "category": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 1024 },
+        "school": { "type": "string", "maxLength": 128 },
+        "classe": { "type": "string", "maxLength": 128 },
+        "uploaderName": { "type": "string", "maxLength": 128 },
+        "uploaderEmail": { "type": "string", "maxLength": 256 },
+        "downloadsCount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "size"]
     }
   },
   "firestore": {
@@ -91,6 +114,10 @@
     "/artifacts/{appId}/public/data/settings/global": {
       "schema": { "$ref": "#/entities/GlobalSettings" },
       "description": "Global platform settings"
+    },
+    "/artifacts/{appId}/public/data/sharedCloudFiles/{fileId}": {
+      "schema": { "$ref": "#/entities/SharedCloudFile" },
+      "description": "Shared cloud files accessible to all students"
     }
   }
 }

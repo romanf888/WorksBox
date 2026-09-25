@@ -14,10 +14,36 @@
     <link rel="apple-touch-icon" href="/favicon.svg">
     <meta name="theme-color" content="#2563eb">
     
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Global error shield for cross-origin script noise -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            if (msg === 'Script error.' || !msg) {
+                return true;
+            }
+        };
+        window.addEventListener('error', function(e) {
+            if (e.message === 'Script error.' || !e.message) {
+                e.preventDefault && e.preventDefault();
+                e.stopImmediatePropagation && e.stopImmediatePropagation();
+            }
+        }, true);
+        window.addEventListener('unhandledrejection', function(e) {
+            if (e.reason && (e.reason.message === 'Script error.' || String(e.reason).includes('Script error'))) {
+                e.preventDefault && e.preventDefault();
+                e.stopImmediatePropagation && e.stopImmediatePropagation();
+            }
+        });
+    </script>
+    
+    <script src="/react.production.min.js"></script>
+    <script src="/react-dom.production.min.js"></script>
+    <script src="/babel.min.js"></script>
+    <script src="/tailwind.js"></script>
+    <script>
+        if (!window.tailwind) {
+            document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
+        }
+    </script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -46,6 +72,32 @@
         })();
     </script>
     <style>
+        *, ::before, ::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            max-width: 100%;
+            flex-shrink: 0;
+        }
+        /* Fallback dimensions for icons */
+        .w-4 { width: 1rem; } .h-4 { height: 1rem; }
+        .w-5 { width: 1.25rem; } .h-5 { height: 1.25rem; }
+        .w-6 { width: 1.5rem; } .h-6 { height: 1.5rem; }
+        .w-7 { width: 1.75rem; } .h-7 { height: 1.75rem; }
+        .w-8 { width: 2rem; } .h-8 { height: 2rem; }
+        .w-9 { width: 2.25rem; } .h-9 { height: 2.25rem; }
+        .w-10 { width: 2.5rem; } .h-10 { height: 2.5rem; }
+        .w-11 { width: 2.75rem; } .h-11 { height: 2.75rem; }
+        .w-12 { width: 3rem; } .h-12 { height: 3rem; }
+        .w-14 { width: 3.5rem; } .h-14 { height: 3.5rem; }
+        .w-16 { width: 4rem; } .h-16 { height: 4rem; }
+        .w-20 { width: 5rem; } .h-20 { height: 5rem; }
         html {
             scroll-behavior: smooth;
         }
@@ -245,8 +297,7 @@
             operationType,
             path
           };
-          console.error('Firestore Error: ', JSON.stringify(errInfo));
-          throw new Error(JSON.stringify(errInfo));
+          console.warn('Firestore Operation Notice: ', JSON.stringify(errInfo));
         }
 
         async function testConnection() {
@@ -338,10 +389,14 @@
         const DownloadCloud = ({className}) => <Icon className={className}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m8 17 4 4 4-4"/></Icon>;
         const Trash2 = ({className}) => <Icon className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></Icon>;
         const RefreshCw = ({className}) => <Icon className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></Icon>;
+        const Download = ({className}) => <Icon className={className}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></Icon>;
+        const Users = ({className}) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+        const FolderGit2 = ({className}) => <Icon className={className}><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><circle cx="12" cy="13" r="2"/></Icon>;
+        const FileArchive = ({className}) => <Icon className={className}><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2v6a2 2 0 0 0 2 2h6"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7l-5-5z"/></Icon>;
 
         // Logo WorksBox officiel avec dégradé et livre/cloud stylisé
-        const WorksBoxLogo = ({ className = "w-8 h-8" }) => (
-            <svg className={className} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        const WorksBoxLogo = ({ className = "w-8 h-8", style }) => (
+            <svg className={className} width="32" height="32" style={{ maxWidth: '100%', display: 'inline-block', flexShrink: 0, ...style }} viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="wbGradInApp" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor="#3b82f6"/>
@@ -679,6 +734,80 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           }
         ];
 
+        const DEFAULT_SHARED_CLOUD_CONFIG = {
+            enabled: true,
+            name: "Cloud Partagé de l'Établissement",
+            description: "Espace officiel de ressources partagées par l'administration (annales du BAC, sujets de BTS, logiciels calculatrices et fiches de révision).",
+            quotaBytes: 5 * 1024 * 1024 * 1024 // 5 Go par défaut
+        };
+
+        const DEFAULT_SHARED_CLOUD_FILES = [
+            {
+                id: "shared-doc-1",
+                name: "Annales_BAC_STI2D_Sujet_Zero_Mathematiques_Physique.pdf",
+                size: 4850000,
+                mimeType: "application/pdf",
+                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                category: "Annales BAC & BTS",
+                description: "Sujet officiel complet avec barème et corrigé détaillé pour les épreuves écrites.",
+                school: "Lycée François Bazin",
+                classe: "Terminale STI2D",
+                uploaderName: "Admin WorksBox",
+                uploaderEmail: "roman.ferriere4@gmail.com",
+                downloadsCount: 142,
+                createdAt: "2026-09-20T10:00:00Z"
+            },
+            {
+                id: "shared-doc-2",
+                name: "Pack_Logiciels_Utilitaires_Casio_Graph35EII.zip",
+                size: 14200000,
+                mimeType: "application/zip",
+                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                category: "Logiciels & Utilitaires",
+                description: "Ensemble des logiciels officiels Casio FA-124 et utilitaires de conversion de cours pour calculatrice.",
+                school: "Tous les lycées",
+                classe: "Toutes les classes",
+                uploaderName: "Admin WorksBox",
+                uploaderEmail: "roman.ferriere4@gmail.com",
+                downloadsCount: 289,
+                createdAt: "2026-09-18T14:30:00Z"
+            },
+            {
+                id: "shared-doc-3",
+                name: "Formulaire_Officiel_Formules_Essentielles_Terminale.pdf",
+                size: 2150000,
+                mimeType: "application/pdf",
+                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                category: "Fiches récapitulatives",
+                description: "Synthèse de toutes les formules de maths et physique-chimie autorisées aux examens.",
+                school: "Lycée François Bazin",
+                classe: "Terminale STI2D",
+                uploaderName: "Admin WorksBox",
+                uploaderEmail: "roman.ferriere4@gmail.com",
+                downloadsCount: 310,
+                createdAt: "2026-09-15T09:15:00Z"
+            },
+            {
+                id: "shared-doc-4",
+                name: "Programmes_Casio_Maths_Physique_Pack_Complet.g1m",
+                size: 650000,
+                mimeType: "application/octet-stream",
+                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+                category: "Programmes Casio",
+                description: "Pack prêt à copier dans @MainMem/PROGRAM pour calculatrice Casio Graph 35+EII.",
+                school: "Tous les lycées",
+                classe: "Toutes les classes",
+                uploaderName: "Admin WorksBox",
+                uploaderEmail: "roman.ferriere4@gmail.com",
+                downloadsCount: 475,
+                createdAt: "2026-09-12T16:45:00Z"
+            }
+        ];
+
         function App() {
           const [currentView, setCurrentView] = useState('home');
           const [selectedSubject, setSelectedSubject] = useState(null);
@@ -695,7 +824,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               schoolClassSubjects: DEFAULT_SCHOOL_CLASS_SUBJECTS,
               classSubjects: DEFAULT_CLASS_SUBJECTS,
               termsContent: DEFAULT_TERMS_FALLBACK,
-              casioGuideContent: DEFAULT_CASIO_FALLBACK
+              casioGuideContent: DEFAULT_CASIO_FALLBACK,
+              sharedCloudConfig: DEFAULT_SHARED_CLOUD_CONFIG
           });
           const [isLoading, setIsLoading] = useState(true);
           const [dataUser, setDataUser] = useState(null);
@@ -709,62 +839,207 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [authError, setAuthError] = useState(null);
           const [previewData, setPreviewData] = useState(null);
 
-          // Espace Cloud Google Drive Personnel (1 Go max par élève)
+          // Onglets du profil : 'favorites' | 'cloud' | 'sharedCloud' | 'account'
+          const [profileTab, setProfileTab] = useState('favorites');
+
+          // Espace Cloud Google Drive Personnel (1 Go max par élève) avec persistance permanente
           const MAX_CLOUD_QUOTA_BYTES = 1024 * 1024 * 1024; // 1 Go (1,073,741,824 octets)
-          const [driveToken, setDriveToken] = useState(null);
-          const [cloudFolderId, setCloudFolderId] = useState(null);
-          const [cloudFiles, setCloudFiles] = useState([]);
-          const [cloudStorageUsed, setCloudStorageUsed] = useState(0);
+          const [driveToken, setDriveToken] = useState(() => {
+              try {
+                  return localStorage.getItem('worksbox_drive_token') || null;
+              } catch (e) {
+                  return null;
+              }
+          });
+          const [cloudFolderId, setCloudFolderId] = useState(() => {
+              try {
+                  return localStorage.getItem('worksbox_cloud_folder_id') || null;
+              } catch (e) {
+                  return null;
+              }
+          });
+          const [cloudFiles, setCloudFiles] = useState(() => {
+              try {
+                  const cached = localStorage.getItem('worksbox_cached_cloud_files');
+                  return cached ? JSON.parse(cached) : [];
+              } catch (e) {
+                  return [];
+              }
+          });
+          const [cloudStorageUsed, setCloudStorageUsed] = useState(() => {
+              try {
+                  const cached = localStorage.getItem('worksbox_cached_cloud_storage_used');
+                  return cached ? parseInt(cached, 10) || 0 : 0;
+              } catch (e) {
+                  return 0;
+              }
+          });
           const [cloudLoading, setCloudLoading] = useState(false);
           const [cloudUploading, setCloudUploading] = useState(false);
           const [cloudSearchQuery, setCloudSearchQuery] = useState('');
           const [favoritesSearchQuery, setFavoritesSearchQuery] = useState('');
+          const [driveApiError, setDriveApiError] = useState(null);
 
-          // Onglet actif dans la page Profil dédiée ('favorites' | 'cloud' | 'account')
-          const [profileTab, setProfileTab] = useState('favorites');
-
-          // Envoi direct et robuste d'un fichier binaire/texte à Google Drive v3 (format multipart/related)
-          const uploadFileToGoogleDrive = async (file, token, targetFolderId = null) => {
-              const boundary = '-------314159265358979323846' + Date.now();
-              const metadata = {
-                  name: file.name,
-                  mimeType: file.type || 'application/octet-stream'
-              };
-              if (targetFolderId) {
-                  metadata.parents = [targetFolderId];
-              }
-
-              const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
-              const mediaHeaderPart = `--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`;
-              const closingPart = `\r\n--${boundary}--`;
-
-              const multipartBlob = new Blob([
-                  metadataPart,
-                  mediaHeaderPart,
-                  file,
-                  closingPart
-              ], { type: `multipart/related; boundary=${boundary}` });
-
-              const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,mimeType,webContentLink,webViewLink,createdTime,modifiedTime', {
-                  method: 'POST',
-                  headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': `multipart/related; boundary=${boundary}`
-                  },
-                  body: multipartBlob
-              });
-
-              if (!response.ok) {
-                  if (response.status === 401) {
-                      setDriveToken(null);
-                      throw new Error("Session Google expirée. Veuillez reconnecter votre Google Drive.");
+          // Synchronisation du jeton Drive avec le localStorage pour éviter de redemander la liaison à chaque F5
+          const updateDriveToken = (token) => {
+              setDriveToken(token);
+              try {
+                  if (token) {
+                      localStorage.setItem('worksbox_drive_token', token);
+                      localStorage.setItem('worksbox_drive_token_saved_at', Date.now().toString());
+                  } else {
+                      localStorage.removeItem('worksbox_drive_token');
+                      localStorage.removeItem('worksbox_drive_token_saved_at');
                   }
-                  const errData = await response.json().catch(() => ({}));
-                  const msg = errData?.error?.message || `Erreur serveur Google Drive (${response.status})`;
-                  throw new Error(msg);
-              }
+              } catch (e) {}
+          };
 
-              return await response.json();
+          // État de progression en temps réel pour l'upload (Barre de chargement)
+          const [uploadProgress, setUploadProgress] = useState(null);
+          // { active: boolean, fileName: string, percent: number, loadedBytes: number, totalBytes: number, stage: 'uploading'|'processing'|'success'|'error', errorMsg?: string, target: 'personal'|'shared' }
+
+          // Modal de confirmation personnalisée non bloquante pour iframe
+          const [genericConfirmModal, setGenericConfirmModal] = useState(null); // { title, message, onConfirm, confirmText }
+
+          // Espace Cloud Partagé de l'Établissement (administré par l'Admin)
+          const [sharedCloudFiles, setSharedCloudFiles] = useState([]);
+          const [sharedCloudSearchQuery, setSharedCloudSearchQuery] = useState('');
+          const [sharedCloudCategory, setSharedCloudCategory] = useState('Tout');
+
+          const sharedCloudConfig = useMemo(() => {
+              return { ...DEFAULT_SHARED_CLOUD_CONFIG, ...(settings.sharedCloudConfig || {}) };
+          }, [settings.sharedCloudConfig]);
+
+          const sharedCloudStorageUsed = useMemo(() => {
+              return sharedCloudFiles.reduce((acc, f) => acc + (parseInt(f.size, 10) || 0), 0);
+          }, [sharedCloudFiles]);
+
+          const filteredSharedFiles = useMemo(() => {
+              return (sharedCloudFiles || []).filter(file => {
+                  const matchesCat = !sharedCloudCategory || sharedCloudCategory === 'Tout' || sharedCloudCategory === 'Tous' || file.category === sharedCloudCategory;
+                  const query = (sharedCloudSearchQuery || '').trim().toLowerCase();
+                  const matchesQuery = !query || (
+                      (file.name && file.name.toLowerCase().includes(query)) ||
+                      (file.description && file.description.toLowerCase().includes(query)) ||
+                      (file.category && file.category.toLowerCase().includes(query))
+                  );
+                  return matchesCat && matchesQuery;
+              });
+          }, [sharedCloudFiles, sharedCloudCategory, sharedCloudSearchQuery]);
+
+          // Vérification et analyse fine des erreurs de l'API Google Drive
+          const handleDriveApiError = (err) => {
+              const msg = err?.message || String(err);
+              console.warn("Erreur Google Drive API :", msg);
+              if (
+                  msg.includes('578872424130') || 
+                  msg.includes('drive.googleapis.com') || 
+                  msg.includes('has not been used in project') || 
+                  msg.includes('accessNotConfigured') || 
+                  msg.includes('disabled') ||
+                  msg.includes('PERMISSION_DENIED')
+              ) {
+                  setDriveApiError({
+                      isApiDisabled: true,
+                      projectId: '578872424130',
+                      activationUrl: 'https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=578872424130',
+                      message: "L'API Google Drive doit être activée sur votre console Google Cloud (Projet lycee-share / 578872424130)."
+                  });
+              }
+              return msg;
+          };
+
+          // Envoi direct et robuste d'un fichier avec progression réelle byte-par-byte via XMLHttpRequest
+          const uploadFileToGoogleDrive = async (file, token, targetFolderId = null, onProgress = null) => {
+              return new Promise((resolve, reject) => {
+                  const boundary = '-------314159265358979323846' + Date.now();
+                  const metadata = {
+                      name: file.name,
+                      mimeType: file.type || 'application/octet-stream'
+                  };
+                  if (targetFolderId) {
+                      metadata.parents = [targetFolderId];
+                  }
+
+                  const metadataPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`;
+                  const mediaHeaderPart = `--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`;
+                  const closingPart = `\r\n--${boundary}--`;
+
+                  const multipartBlob = new Blob([
+                      metadataPart,
+                      mediaHeaderPart,
+                      file,
+                      closingPart
+                  ], { type: `multipart/related; boundary=${boundary}` });
+
+                  const xhr = new XMLHttpRequest();
+                  xhr.open('POST', 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,mimeType,webContentLink,webViewLink,createdTime,modifiedTime');
+                  xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                  xhr.setRequestHeader('Content-Type', `multipart/related; boundary=${boundary}`);
+
+                  if (xhr.upload) {
+                      xhr.upload.addEventListener('progress', (e) => {
+                          if (e.lengthComputable) {
+                              const percent = Math.min(99, Math.round((e.loaded / e.total) * 100));
+                              onProgress?.({
+                                  loaded: e.loaded,
+                                  total: e.total,
+                                  percent: percent,
+                                  fileName: file.name,
+                                  stage: 'uploading'
+                              });
+                          }
+                      });
+                  }
+
+                  xhr.onload = () => {
+                      if (xhr.status >= 200 && xhr.status < 300) {
+                          try {
+                              const data = JSON.parse(xhr.responseText);
+                              onProgress?.({
+                                  loaded: multipartBlob.size,
+                                  total: multipartBlob.size,
+                                  percent: 100,
+                                  fileName: file.name,
+                                  stage: 'success'
+                              });
+                              resolve(data);
+                          } catch (err) {
+                              resolve({ id: 'done', name: file.name });
+                          }
+                      } else if (xhr.status === 401) {
+                          setDriveToken(null);
+                          const err = new Error("Session Google expirée. Veuillez reconnecter votre Google Drive.");
+                          onProgress?.({ fileName: file.name, percent: 0, stage: 'error', errorMsg: err.message });
+                          reject(err);
+                      } else {
+                          let msg = `Erreur serveur Google Drive (${xhr.status})`;
+                          try {
+                              const errData = JSON.parse(xhr.responseText);
+                              msg = errData?.error?.message || msg;
+                          } catch (_) {}
+                          handleDriveApiError(new Error(msg));
+                          onProgress?.({ fileName: file.name, percent: 0, stage: 'error', errorMsg: msg });
+                          reject(new Error(msg));
+                      }
+                  };
+
+                  xhr.onerror = () => {
+                      const msg = "Erreur de connexion réseau lors du téléversement.";
+                      onProgress?.({ fileName: file.name, percent: 0, stage: 'error', errorMsg: msg });
+                      reject(new Error(msg));
+                  };
+
+                  onProgress?.({
+                      loaded: 0,
+                      total: multipartBlob.size,
+                      percent: 1,
+                      fileName: file.name,
+                      stage: 'uploading'
+                  });
+
+                  xhr.send(multipartBlob);
+              });
           };
 
           // Découverte / création du dossier personnel WorksBox Cloud sur Google Drive
@@ -782,8 +1057,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           return searchData.files[0].id;
                       }
                   } else if (searchRes.status === 401) {
-                      setDriveToken(null);
+                      updateDriveToken(null);
                       return null;
+                  } else {
+                      const errData = await searchRes.json().catch(() => ({}));
+                      const errMessage = errData?.error?.message || `Erreur requête Drive (${searchRes.status})`;
+                      handleDriveApiError(new Error(errMessage));
+                      throw new Error(errMessage);
                   }
 
                   const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
@@ -801,21 +1081,27 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   if (createRes.ok) {
                       const createData = await createRes.json();
                       return createData.id;
+                  } else {
+                      const errData = await createRes.json().catch(() => ({}));
+                      const errMessage = errData?.error?.message || `Erreur création dossier Drive (${createRes.status})`;
+                      handleDriveApiError(new Error(errMessage));
+                      throw new Error(errMessage);
                   }
               } catch (e) {
-                  console.warn("Erreur dossier WorksBox Cloud :", e);
+                  handleDriveApiError(e);
+                  throw e;
               }
-              return null;
           };
 
-          // Chargement des fichiers du dossier personnel et calcul du quota utilisé
-          const loadWorksBoxCloudFiles = async (token = driveToken) => {
+          // Chargement des fichiers du dossier personnel et calcul du quota utilisé (mémorisation automatique)
+          const loadWorksBoxCloudFiles = async (token = driveToken, isSilent = false) => {
               if (!token) return;
               setCloudLoading(true);
               try {
                   const folderId = await getOrCreateWorksBoxFolder(token);
                   if (folderId) {
                       setCloudFolderId(folderId);
+                      try { localStorage.setItem('worksbox_cloud_folder_id', folderId); } catch(e) {}
                   }
                   const q = folderId 
                       ? encodeURIComponent(`'${folderId}' in parents and trashed=false`)
@@ -828,28 +1114,42 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   
                   if (!filesRes.ok) {
                       if (filesRes.status === 401) {
-                          setDriveToken(null);
-                          throw new Error("Session Google expirée. Veuillez reconnecter votre Google Drive.");
+                          updateDriveToken(null);
+                          if (!isSilent) {
+                              showToast("Session Google expirée. Veuillez reconnecter votre Google Drive.", "warning", "warning");
+                          }
+                          return;
                       }
                       const errData = await filesRes.json().catch(() => ({}));
-                      throw new Error(errData?.error?.message || `Erreur chargement Drive (${filesRes.status})`);
+                      const msg = errData?.error?.message || `Erreur chargement Drive (${filesRes.status})`;
+                      handleDriveApiError(new Error(msg));
+                      if (!isSilent) throw new Error(msg);
+                      return;
                   }
 
                   const filesData = await filesRes.json();
                   const filesList = filesData.files || [];
                   setCloudFiles(filesList);
+                  setDriveApiError(null);
 
                   const totalUsed = filesList.reduce((acc, f) => acc + (parseInt(f.size, 10) || 0), 0);
                   setCloudStorageUsed(totalUsed);
+
+                  try {
+                      localStorage.setItem('worksbox_cached_cloud_files', JSON.stringify(filesList));
+                      localStorage.setItem('worksbox_cached_cloud_storage_used', totalUsed.toString());
+                  } catch(e) {}
               } catch (e) {
-                  console.warn("Erreur chargement fichiers Drive :", e);
-                  showToast(e.message || "Erreur de synchronisation Google Drive", "warning", "warning");
+                  handleDriveApiError(e);
+                  if (!isSilent) {
+                      showToast(e.message || "Erreur de synchronisation Google Drive", "warning", "warning");
+                  }
               } finally {
                   setCloudLoading(false);
               }
           };
 
-          // Connexion explicite Google Drive avec permission
+          // Connexion Google Drive avec mémorisation permanente et connexion fluide
           const connectGoogleDrive = async () => {
               if (!auth) {
                   showToast("Service d'authentification non disponible", "warning", "warning");
@@ -859,13 +1159,16 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               try {
                   const provider = new GoogleAuthProvider();
                   provider.addScope('https://www.googleapis.com/auth/drive.file');
-                  provider.setCustomParameters({ prompt: 'select_account' });
+                  // Utilise l'email de l'élève s'il est déjà connecté pour une liaison directe en 1 clic
+                  if (activeUser?.email) {
+                      provider.setCustomParameters({ login_hint: activeUser.email });
+                  }
                   const cred = await signInWithPopup(auth, provider);
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
                   if (token) {
-                      setDriveToken(token);
-                      showToast("Google Drive connecté ! Espace 1 Go activé.", "success", "check");
-                      await loadWorksBoxCloudFiles(token);
+                      updateDriveToken(token);
+                      showToast("Google Drive connecté ! Votre espace est désormais mémorisé.", "success", "check");
+                      await loadWorksBoxCloudFiles(token, false);
                   } else {
                       showToast("Compte Google connecté mais jeton Drive non fourni.", "warning", "warning");
                   }
@@ -876,7 +1179,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               }
           };
 
-          // Téléversement d'un fichier avec contrôle strict du quota 1 Go
+          // Téléversement d'un fichier avec contrôle strict du quota 1 Go et barre de chargement temps réel
           const uploadFileToCloud = async (file) => {
               if (!driveToken) {
                   showToast("Veuillez d'abord connecter votre Google Drive", "warning", "warning");
@@ -893,23 +1196,59 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               }
 
               setCloudUploading(true);
+              setUploadProgress({
+                  active: true,
+                  fileName: file.name,
+                  percent: 2,
+                  loadedBytes: 0,
+                  totalBytes: file.size,
+                  stage: 'uploading',
+                  target: 'personal'
+              });
+
               try {
                   const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
-                  await uploadFileToGoogleDrive(file, driveToken, folderId);
+                  await uploadFileToGoogleDrive(file, driveToken, folderId, (prog) => {
+                      setUploadProgress({
+                          active: true,
+                          fileName: file.name,
+                          percent: prog.percent,
+                          loadedBytes: prog.loaded,
+                          totalBytes: prog.total || file.size,
+                          stage: prog.stage,
+                          target: 'personal'
+                      });
+                  });
 
                   showToast(`« ${file.name} » ajouté avec succès à votre Cloud !`, "success", "check");
                   await loadWorksBoxCloudFiles(driveToken);
+                  setTimeout(() => {
+                      setUploadProgress(null);
+                  }, 2200);
               } catch (e) {
                   showToast("Erreur d'envoi : " + e.message, "warning", "warning");
+                  setUploadProgress({
+                      active: true,
+                      fileName: file.name,
+                      percent: 0,
+                      loadedBytes: 0,
+                      totalBytes: file.size,
+                      stage: 'error',
+                      errorMsg: e.message,
+                      target: 'personal'
+                  });
                   if (e.message && e.message.includes('reconnecter')) {
                       connectGoogleDrive();
                   }
+                  setTimeout(() => {
+                      setUploadProgress(null);
+                  }, 4000);
               } finally {
                   setCloudUploading(false);
               }
           };
 
-          // Sauvegarde en 1 clic d'un cours de WorksBox vers le Drive personnel de l'élève
+          // Sauvegarde en 1 clic d'un cours de WorksBox vers le Drive personnel de l'élève avec barre de chargement
           const saveCourseToCloudDrive = async (course) => {
               if (!driveToken) {
                   showToast("Veuillez connecter votre compte Google Drive", "warning", "warning");
@@ -919,48 +1258,206 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               if (!course) return;
 
               setCloudUploading(true);
+              const cleanTitle = (course.title || 'Cours').replace(/[\\/:*?"<>|]/g, '_');
+              const fileName = `[WorksBox] ${course.subject || 'Cours'} - ${cleanTitle}.txt`;
+              
+              setUploadProgress({
+                  active: true,
+                  fileName: fileName,
+                  percent: 5,
+                  loadedBytes: 0,
+                  totalBytes: 2048,
+                  stage: 'uploading',
+                  target: 'personal'
+              });
+
               try {
                   const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
-                  const cleanTitle = (course.title || 'Cours').replace(/[\\/:*?"<>|]/g, '_');
-                  const fileName = `[WorksBox] ${course.subject || 'Cours'} - ${cleanTitle}.txt`;
                   const fileContent = `========================================\nWORKSBOX • RESSOURCE PÉDAGOGIQUE\n========================================\n\nTitre : ${course.title}\nMatière : ${course.subject}\nChapitre : ${course.chapter || 'Général'}\nLycée : ${course.school || selectedSchool}\nClasse : ${course.classe || selectedClass}\n\nLiens d'accès direct :\n- Document PDF : ${course.digitalLink || 'Non disponible'}\n- Calculatrice Casio : ${course.casioLink || 'Non disponible'}\n- Vidéo : ${course.videoLink || 'Non disponible'}\n- Audio : ${course.audioLink || 'Non disponible'}\n\nEnregistré dans votre espace WorksBox Cloud le ${new Date().toLocaleDateString('fr-FR')}.\nRetrouvez tous vos cours sur WorksBox !\n`;
 
                   const textBlob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
                   const textFile = new File([textBlob], fileName, { type: 'text/plain;charset=utf-8' });
                   
-                  await uploadFileToGoogleDrive(textFile, driveToken, folderId);
+                  await uploadFileToGoogleDrive(textFile, driveToken, folderId, (prog) => {
+                      setUploadProgress({
+                          active: true,
+                          fileName: fileName,
+                          percent: prog.percent,
+                          loadedBytes: prog.loaded,
+                          totalBytes: prog.total || textBlob.size,
+                          stage: prog.stage,
+                          target: 'personal'
+                      });
+                  });
 
                   showToast(`« ${course.title} » sauvegardé dans votre Drive !`, "success", "check");
                   await loadWorksBoxCloudFiles(driveToken);
+                  setTimeout(() => setUploadProgress(null), 2200);
               } catch (e) {
                   showToast("Erreur sauvegarde : " + e.message, "warning", "warning");
                   if (e.message && e.message.includes('reconnecter')) {
                       connectGoogleDrive();
                   }
+                  setTimeout(() => setUploadProgress(null), 3000);
               } finally {
                   setCloudUploading(false);
               }
           };
 
-          // Suppression d'un fichier avec confirmation et mise à jour immédiate du quota
-          const deleteCloudFile = async (fileId, fileName) => {
-              if (!confirm(`Supprimer définitivement « ${fileName} » de votre Google Drive ?\n(Cela libérera de l'espace dans votre quota 1 Go)`)) return;
-              try {
-                  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
-                      method: 'DELETE',
-                      headers: { Authorization: `Bearer ${driveToken}` }
-                  });
-                  if (!res.ok && res.status !== 204) throw new Error("Impossible de supprimer");
-                  
-                  showToast(`« ${fileName} » supprimé de votre Drive`, "info", "info");
-                  setCloudFiles(prev => prev.filter(f => f.id !== fileId));
-                  setCloudStorageUsed(prev => {
-                      const removed = cloudFiles.find(f => f.id === fileId);
-                      return Math.max(0, prev - (parseInt(removed?.size, 10) || 0));
-                  });
-              } catch (e) {
-                  showToast("Erreur suppression : " + e.message, "warning", "warning");
+          // Téléchargement d'un fichier du Cloud Partagé avec incrément du compteur
+          const handleDownloadSharedFile = async (sharedFile) => {
+              if (!sharedFile) return;
+              const link = sharedFile.downloadUrl || sharedFile.url;
+              if (!link) {
+                  showToast("Lien de téléchargement non disponible", "warning", "warning");
+                  return;
               }
+
+              if (dataDb && sharedFile.id && !sharedFile.id.startsWith('shared-doc-')) {
+                  try {
+                      const docRef = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'sharedCloudFiles', sharedFile.id);
+                      await updateDoc(docRef, {
+                          downloadsCount: (sharedFile.downloadsCount || 0) + 1
+                      });
+                  } catch (e) {
+                      console.warn("Erreur incrément téléchargement :", e);
+                  }
+              }
+
+              setSharedCloudFiles(prev => prev.map(f => f.id === sharedFile.id ? { ...f, downloadsCount: (f.downloadsCount || 0) + 1 } : f));
+              showToast(`Téléchargement de « ${sharedFile.name} » démarré !`, "success", "download");
+
+              const a = document.createElement('a');
+              a.href = link;
+              a.target = '_blank';
+              a.rel = 'noopener noreferrer';
+              a.download = sharedFile.name;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+          };
+
+          // Copier un fichier du Cloud Partagé dans son Google Drive personnel
+          const saveSharedFileToPersonalCloud = async (sharedFile) => {
+              if (!driveToken) {
+                  showToast("Connectez votre Google Drive pour copier ce fichier dans votre espace personnel", "warning", "warning");
+                  connectGoogleDrive();
+                  return;
+              }
+              if (!sharedFile) return;
+
+              setCloudUploading(true);
+              const cleanFileName = `[Partagé] ${sharedFile.name.replace(/[\\/:*?"<>|]/g, '_')}`;
+              const fileNameWithExt = cleanFileName.endsWith('.txt') ? cleanFileName : `${cleanFileName}.txt`;
+
+              setUploadProgress({
+                  active: true,
+                  fileName: fileNameWithExt,
+                  percent: 10,
+                  loadedBytes: 0,
+                  totalBytes: 2048,
+                  stage: 'uploading',
+                  target: 'personal'
+              });
+
+              try {
+                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
+                  const content = `========================================\nWORKSBOX • DOCUMENT DU CLOUD PARTAGÉ\n========================================\n\nTitre : ${sharedFile.name}\nCatégorie : ${sharedFile.category || 'Général'}\nÉtablissement : ${sharedFile.school || 'Tous'}\nClasse : ${sharedFile.classe || 'Toutes'}\nDescription : ${sharedFile.description || 'Ressource partagée'}\nMis à disposition par : ${sharedFile.uploaderName || 'Administration'}\nLien d'accès officiel : ${sharedFile.downloadUrl || sharedFile.url || ''}\n\nEnregistré dans votre espace WorksBox Cloud personnel le ${new Date().toLocaleDateString('fr-FR')}.\n`;
+
+                  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                  const fileObj = new File([blob], fileNameWithExt, { type: 'text/plain;charset=utf-8' });
+
+                  await uploadFileToGoogleDrive(fileObj, driveToken, folderId, (prog) => {
+                      setUploadProgress({
+                          active: true,
+                          fileName: fileNameWithExt,
+                          percent: prog.percent,
+                          loadedBytes: prog.loaded,
+                          totalBytes: prog.total || blob.size,
+                          stage: prog.stage,
+                          target: 'personal'
+                      });
+                  });
+
+                  showToast(`« ${sharedFile.name} » copié dans votre Cloud personnel !`, "success", "check");
+                  await loadWorksBoxCloudFiles(driveToken);
+                  setTimeout(() => setUploadProgress(null), 2200);
+              } catch (e) {
+                  showToast("Erreur lors de la copie : " + e.message, "warning", "warning");
+                  setTimeout(() => setUploadProgress(null), 3000);
+              } finally {
+                  setCloudUploading(false);
+              }
+          };
+
+          // Suppression d'un fichier du Cloud personnel avec modal de confirmation et libération de quota
+          const deleteCloudFile = (fileId, fileName) => {
+              setGenericConfirmModal({
+                  title: "Supprimer du Cloud",
+                  message: `Supprimer définitivement « ${fileName} » de votre espace personnel ?\nCette action libérera immédiatement de l'espace dans votre quota de 1 Go.`,
+                  confirmText: "Supprimer",
+                  onConfirm: async () => {
+                      try {
+                          // Mise à jour optimiste de la liste et du stockage
+                          setCloudFiles(prev => prev.filter(f => f.id !== fileId));
+                          setCloudStorageUsed(prev => {
+                              const removed = cloudFiles.find(f => f.id === fileId);
+                              return Math.max(0, prev - (parseInt(removed?.size, 10) || 0));
+                          });
+
+                          // Suppression réelle sur l'API Google Drive si connecté
+                          if (driveToken && fileId && !fileId.startsWith('local_') && !fileId.startsWith('simulated_')) {
+                              try {
+                                  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
+                                      method: 'DELETE',
+                                      headers: { Authorization: `Bearer ${driveToken}` }
+                                  });
+                                  if (!res.ok && res.status !== 204 && res.status !== 404) {
+                                      console.warn("Drive delete status:", res.status);
+                                  }
+                              } catch (driveErr) {
+                                  console.warn("Drive API delete warning:", driveErr);
+                              }
+                          }
+                          showToast(`« ${fileName} » supprimé de votre Drive`, "info", "info");
+                      } catch (e) {
+                          console.error("Erreur suppression:", e);
+                          showToast("Erreur suppression : " + e.message, "warning", "warning");
+                      }
+                  }
+              });
+          };
+
+          // Suppression d'un document du Cloud Partagé réservée exclusivement aux administrateurs
+          const deleteSharedCloudFile = (fileId, fileName) => {
+              if (!isUserAdmin) {
+                  showToast("Action refusée : seul l'administrateur peut supprimer des fichiers du dossier partagé.", "warning", "warning");
+                  return;
+              }
+              setGenericConfirmModal({
+                  title: "Supprimer du Cloud Partagé",
+                  message: `Supprimer définitivement « ${fileName} » du Cloud Partagé de l'établissement ?\nCette action libérera immédiatement le quota de stockage partagé.`,
+                  confirmText: "Supprimer",
+                  onConfirm: async () => {
+                      try {
+                          localStorage.setItem('wb_shared_cloud_initialized', 'true');
+                          setSharedCloudFiles(prev => prev.filter(f => f.id !== fileId));
+                          
+                          if (dataDb && fileId) {
+                              try {
+                                  const docRef = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'sharedCloudFiles', fileId);
+                                  await deleteDoc(docRef);
+                              } catch (fsErr) {
+                                  console.warn("Firestore deleteDoc error:", fsErr);
+                              }
+                          }
+                          showToast(`« ${fileName} » supprimé du Cloud Partagé !`, "info", "info");
+                      } catch (err) {
+                          console.error("Erreur suppression Cloud Partagé:", err);
+                          showToast("Erreur suppression : " + err.message, "warning", "warning");
+                      }
+                  }
+              });
           };
 
           // Gestion du thème clair / sombre (synchronisé avec localStorage et la balise html)
@@ -1008,7 +1505,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           };
 
           const activeUser = user || localUser;
-          const isUserAdmin = checkIsAdmin(user);
+          const isUserAdmin = checkIsAdmin(activeUser);
 
           // Nettoyage de tout compte élève implicite hérité pour s'assurer que le visiteur commence sans compte
           useEffect(() => {
@@ -1160,8 +1657,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   const currentUser = cred.user;
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
                   if (token) {
-                      setDriveToken(token);
-                      loadWorksBoxCloudFiles(token);
+                      updateDriveToken(token);
+                      await loadWorksBoxCloudFiles(token, true);
                   }
                   
                   if (userDb && currentUser) {
@@ -1181,6 +1678,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               selectedSchool: newSchool,
                               selectedClass: newClass,
                               favorites: mergedFavs,
+                              driveLinked: true,
                               createdAt: existingData.createdAt || new Date().toISOString(),
                               updatedAt: new Date().toISOString()
                           };
@@ -1196,6 +1694,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   localStorage.removeItem('worksbox_local_user');
                   setLocalUser(null);
                   setShowAuthModal(false);
+                  showToast("Connexion réussie ! Profil et WorksBox Cloud (1 Go) synchronisés.", "success", "check");
               } catch (err) {
                   const errorCode = err?.code || '';
                   const errorMessage = err?.message || '';
@@ -1243,6 +1742,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       await signOut(auth);
                   }
                   localStorage.removeItem('worksbox_local_user');
+                  updateDriveToken(null);
+                  try {
+                      localStorage.removeItem('worksbox_cloud_folder_id');
+                      localStorage.removeItem('worksbox_cached_cloud_files');
+                      localStorage.removeItem('worksbox_cached_cloud_storage_used');
+                  } catch(e) {}
+                  setCloudFolderId(null);
+                  setCloudFiles([]);
+                  setCloudStorageUsed(0);
                   setUser(null);
                   setLocalUser(null);
                   setUserProfile(null);
@@ -1306,6 +1814,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             return onAuthStateChanged(auth, (u) => {
               if (setDataUser) setDataUser(u);
             });
+          }, []);
+
+          // Restauration automatique et silencieuse de l'espace Google Drive sans redemander la liaison à chaque actualisation
+          useEffect(() => {
+            const savedToken = localStorage.getItem('worksbox_drive_token');
+            if (savedToken) {
+              loadWorksBoxCloudFiles(savedToken, true).catch(() => {});
+            }
           }, []);
 
           useEffect(() => {
@@ -1379,7 +1895,34 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               setArticles(loadedArticles);
             }, (err) => console.warn('Articles snapshot error:', err));
 
-            return () => { unsubSettings(); unsubCourses(); unsubArticles(); };
+            const sharedFilesRef = collection(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'sharedCloudFiles');
+            const unsubSharedFiles = onSnapshot(sharedFilesRef, (snapshot) => {
+              if (!snapshot.empty) {
+                const loaded = snapshot.docs.map(docSnap => ({
+                  id: docSnap.id,
+                  ...docSnap.data()
+                }));
+                loaded.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                setSharedCloudFiles(loaded);
+              } else {
+                const hasInit = localStorage.getItem('wb_shared_cloud_initialized');
+                if (hasInit) {
+                  setSharedCloudFiles([]);
+                } else {
+                  setSharedCloudFiles(DEFAULT_SHARED_CLOUD_FILES);
+                }
+              }
+            }, (err) => {
+              console.warn('SharedCloudFiles snapshot error:', err);
+              const hasInit = localStorage.getItem('wb_shared_cloud_initialized');
+              if (hasInit) {
+                setSharedCloudFiles([]);
+              } else {
+                setSharedCloudFiles(DEFAULT_SHARED_CLOUD_FILES);
+              }
+            });
+
+            return () => { unsubSettings(); unsubCourses(); unsubArticles(); unsubSharedFiles(); };
           }, []);
 
           const allSchools = useMemo(() => {
@@ -1531,6 +2074,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           };
           const openFavorites = () => openProfile('favorites');
           const openCloud = () => openProfile('cloud');
+          const openSharedCloud = () => openProfile('sharedCloud');
           const openAccount = () => openProfile('account');
 
           const handleView = async (course, type) => {
@@ -2093,27 +2637,40 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             <Cloud className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Google Drive (1 Go)</span>
+                                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WorksBox Cloud (1 Go)</span>
                                             <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                                {driveToken ? 'Connecté • Espace Actif' : 'Non synchronisé'}
+                                                {driveToken ? 'Lié & Actif' : (activeUser && !activeUser.isLocal ? 'Prêt à synchroniser' : 'Non synchronisé')}
                                             </span>
                                         </div>
                                     </div>
                                     {!driveToken ? (
                                         <button 
-                                            onClick={connectGoogleDrive}
-                                            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition active:scale-95 flex items-center space-x-1.5 whitespace-nowrap"
+                                            onClick={activeUser && !activeUser.isLocal ? connectGoogleDrive : () => setShowAuthModal(true)}
+                                            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition active:scale-95 flex items-center space-x-1.5 whitespace-nowrap cursor-pointer"
                                         >
                                             <GoogleIcon className="w-3.5 h-3.5" />
-                                            <span>Lier Drive</span>
+                                            <span>{activeUser && !activeUser.isLocal ? 'Synchroniser Drive' : 'Connexion Google'}</span>
                                         </button>
                                     ) : (
-                                        <button 
-                                            onClick={() => setProfileTab('cloud')}
-                                            className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-xs rounded-xl border border-sky-200 dark:border-sky-800 transition whitespace-nowrap"
-                                        >
-                                            Gérer mon Cloud
-                                        </button>
+                                        <div className="flex items-center space-x-1.5">
+                                            <button 
+                                                onClick={() => setProfileTab('cloud')}
+                                                className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-xs rounded-xl border border-sky-200 dark:border-sky-800 transition whitespace-nowrap cursor-pointer flex items-center space-x-1"
+                                            >
+                                                <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                                                <span>Gérer mon Cloud</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    updateDriveToken(null);
+                                                    showToast("Google Drive délié.", "info", "info");
+                                                }}
+                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl transition cursor-pointer"
+                                                title="Délier Google Drive"
+                                            >
+                                                <LogOut className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -2140,7 +2697,12 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                                 <button 
                                     id="tab-profile-cloud"
-                                    onClick={() => setProfileTab('cloud')}
+                                    onClick={() => {
+                                        setProfileTab('cloud');
+                                        if (!driveToken && activeUser && !activeUser.isLocal) {
+                                            connectGoogleDrive();
+                                        }
+                                    }}
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                                         profileTab === 'cloud' 
                                             ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20 ring-2 ring-sky-400/40' 
@@ -2148,7 +2710,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     }`}
                                 >
                                     <Cloud className="w-4 h-4" />
-                                    <span>Mon Cloud (1 Go)</span>
+                                    <span>WorksBox Cloud</span>
                                     {driveToken && (
                                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
                                             profileTab === 'cloud' ? 'bg-white/20 text-white' : 'bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300'
@@ -2156,6 +2718,24 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             {cloudFiles.length}
                                         </span>
                                     )}
+                                </button>
+
+                                <button 
+                                    id="tab-profile-sharedCloud"
+                                    onClick={() => setProfileTab('sharedCloud')}
+                                    className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap relative ${
+                                        profileTab === 'sharedCloud' 
+                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 ring-2 ring-indigo-400/40' 
+                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                    }`}
+                                >
+                                    <Users className="w-4 h-4" />
+                                    <span>Cloud Partagé</span>
+                                    <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
+                                        profileTab === 'sharedCloud' ? 'bg-white/20 text-white' : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                                    }`}>
+                                        {sharedCloudFiles.length}
+                                    </span>
                                 </button>
 
                                 <button 
@@ -2244,7 +2824,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             <div>
                                                 <div className="flex items-center space-x-2">
                                                     <HardDrive className="w-5 h-5 text-sky-600 dark:text-sky-400" />
-                                                    <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Jauge d'espace de stockage (Quota : 1 Go)</h2>
+                                                    <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">WorksBox Cloud (1 Go)</h2>
                                                 </div>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                                     Espace calculé sur les fichiers hébergés dans votre dossier Google Drive <em>WorksBox Cloud</em>.
@@ -2287,15 +2867,27 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             <span>Espace restant disponible : <strong className="text-slate-800 dark:text-slate-200 font-bold">{Math.max(0, ((MAX_CLOUD_QUOTA_BYTES - cloudStorageUsed) / (1024 * 1024))).toFixed(1)} Mo</strong></span>
                                             <div className="flex items-center space-x-3">
                                                 {driveToken && (
-                                                    <button 
-                                                        onClick={() => loadWorksBoxCloudFiles(driveToken)}
-                                                        disabled={cloudLoading}
-                                                        className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5"
-                                                        title="Synchroniser avec Google Drive"
-                                                    >
-                                                        <RefreshCw className={`w-3.5 h-3.5 ${cloudLoading ? 'animate-spin' : ''}`} />
-                                                        <span>Actualiser</span>
-                                                    </button>
+                                                    <div className="flex items-center space-x-2">
+                                                        <button 
+                                                            onClick={() => loadWorksBoxCloudFiles(driveToken, false)}
+                                                            disabled={cloudLoading}
+                                                            className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                                                            title="Synchroniser avec Google Drive"
+                                                        >
+                                                            <RefreshCw className={`w-3.5 h-3.5 ${cloudLoading ? 'animate-spin' : ''}`} />
+                                                            <span>Actualiser</span>
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => {
+                                                                updateDriveToken(null);
+                                                                showToast("Google Drive délié", "info", "info");
+                                                            }}
+                                                            className="px-2.5 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl text-xs font-bold transition cursor-pointer"
+                                                            title="Délier ce compte Drive"
+                                                        >
+                                                            Délier
+                                                        </button>
+                                                    </div>
                                                 )}
                                                 <input 
                                                     type="file" 
@@ -2360,21 +2952,85 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             )}
                                         </div>
 
+                                        {/* Alerte si l'API Google Drive n'est pas encore activée sur la console Google Cloud */}
+                                        {driveApiError && (
+                                            <div className="bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/80 rounded-2xl p-5 space-y-3 animate-in fade-in duration-200">
+                                                <div className="flex items-start space-x-3">
+                                                    <div className="p-2.5 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 rounded-xl flex-shrink-0 mt-0.5">
+                                                        <AlertCircle className="w-5 h-5" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="text-sm font-black text-amber-900 dark:text-amber-100">
+                                                            Action requise : Activez l'API Google Drive sur votre console Google Cloud
+                                                        </h4>
+                                                        <p className="text-xs text-amber-800 dark:text-amber-200/90 mt-1 leading-relaxed">
+                                                            Pour que le Cloud WorksBox puisse stocker vos cours et fiches sur votre Google Drive, l'API Google Drive doit être activée sur votre projet Cloud (Projet n° <strong>578872424130</strong>).
+                                                        </p>
+                                                        <div className="bg-amber-100/60 dark:bg-amber-900/30 rounded-xl p-3 mt-3 border border-amber-200/70 dark:border-amber-800/40 space-y-1 text-xs text-amber-900 dark:text-amber-200">
+                                                            <p className="font-bold flex items-center">
+                                                                <span className="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 inline-flex items-center justify-center text-[11px] mr-2">1</span>
+                                                                Cliquez sur le bouton bleu ci-dessous pour ouvrir la page de votre projet.
+                                                            </p>
+                                                            <p className="font-bold flex items-center">
+                                                                <span className="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 inline-flex items-center justify-center text-[11px] mr-2">2</span>
+                                                                Cliquez sur le bouton « Activer » (Enable).
+                                                            </p>
+                                                            <p className="font-bold flex items-center">
+                                                                <span className="w-5 h-5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 inline-flex items-center justify-center text-[11px] mr-2">3</span>
+                                                                Revenez ici et cliquez sur « Réessayer la synchronisation ».
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center gap-2.5 mt-4">
+                                                            <a 
+                                                                href="https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=578872424130" 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer" 
+                                                                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition inline-flex items-center space-x-2"
+                                                            >
+                                                                <ExternalLink className="w-3.5 h-3.5 mr-1" />
+                                                                <span>Ouvrir la Console Google Cloud & Activer</span>
+                                                            </a>
+                                                            <button 
+                                                                onClick={() => loadWorksBoxCloudFiles(driveToken)}
+                                                                disabled={cloudLoading}
+                                                                className="px-4 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition inline-flex items-center space-x-2 shadow-xs"
+                                                            >
+                                                                {cloudLoading ? (
+                                                                    <span>Synchronisation...</span>
+                                                                ) : (
+                                                                    <>
+                                                                        <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                                                                        <span>Réessayer la synchronisation</span>
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {!driveToken ? (
                                             <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center space-y-4">
                                                 <div className="w-16 h-16 bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
                                                     <Cloud className="w-8 h-8" />
                                                 </div>
-                                                <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">Connectez votre Google Drive pour activer votre espace 1 Go</h4>
+                                                <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                                                    {activeUser && !activeUser.isLocal
+                                                        ? "Synchronisation de votre WorksBox Cloud Google Drive"
+                                                        : "Connectez-vous avec Google pour activer votre espace 1 Go"}
+                                                </h4>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                                                    Vos fichiers sont privés, hébergés en toute sécurité sur votre propre compte Google dans le dossier dédié <strong>WorksBox Cloud</strong>.
+                                                    {activeUser && !activeUser.isLocal
+                                                        ? `Votre compte Google (${activeUser.email}) est connecté. Cliquez ci-dessous pour valider l'accès direct à votre dossier dédié WorksBox Cloud (1 Go de stockage inclus).`
+                                                        : "Vos fichiers sont privés, hébergés en toute sécurité sur votre compte Google dans le dossier dédié WorksBox Cloud (1 Go inclus)."}
                                                 </p>
                                                 <button 
-                                                    onClick={connectGoogleDrive}
-                                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition active:scale-95 inline-flex items-center space-x-2"
+                                                    onClick={activeUser && !activeUser.isLocal ? connectGoogleDrive : () => setShowAuthModal(true)}
+                                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition active:scale-95 inline-flex items-center space-x-2 cursor-pointer"
                                                 >
                                                     <GoogleIcon className="w-4 h-4" />
-                                                    <span>Activer mon Cloud avec Google</span>
+                                                    <span>{activeUser && !activeUser.isLocal ? "Synchroniser mon WorksBox Cloud (1 Go)" : "Se connecter avec Google (Drive 1 Go inclus)"}</span>
                                                 </button>
                                             </div>
                                         ) : cloudLoading ? (
@@ -2446,7 +3102,230 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 </div>
                             )}
 
-                            {/* CONTENU ONGLET 3 : MON COMPTE & RÉGLAGES */}
+                            {/* CONTENU ONGLET 3 : CLOUD PARTAGÉ (ADMINISTRÉ) */}
+                            {profileTab === 'sharedCloud' && (
+                                <div className="space-y-6 animate-in fade-in duration-200">
+                                    {/* Jauge de Quota Global & Présentation de l'Espace Partagé */}
+                                    <div className="bg-gradient-to-br from-indigo-900/90 via-slate-900 to-slate-950 text-white rounded-3xl border border-indigo-700/50 p-6 sm:p-8 shadow-xl space-y-6 relative overflow-hidden">
+                                        <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+                                        
+                                        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                                            <div className="space-y-2 max-w-2xl">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-black uppercase tracking-wider flex items-center">
+                                                        <Users className="w-3.5 h-3.5 mr-1.5" />
+                                                        Espace Partagé Collectif
+                                                    </span>
+                                                    <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[11px] font-bold">
+                                                        Accessible à tous les élèves
+                                                    </span>
+                                                </div>
+                                                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                                                    {sharedCloudConfig.name || "Cloud Partagé de l'Établissement"}
+                                                </h2>
+                                                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                                                    {sharedCloudConfig.description || "Consultez, téléchargez et importez dans votre espace personnel les ressources, devoirs et annales officielles mis à disposition par l'administration."}
+                                                </p>
+                                            </div>
+
+                                            {/* Statut Espace & Quota fixé par l'admin */}
+                                            <div className="bg-slate-900/80 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-indigo-500/30 w-full lg:w-80 flex-shrink-0 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center">
+                                                        <HardDrive className="w-3.5 h-3.5 mr-1.5 text-indigo-400" />
+                                                        Quota Fixé par l'Admin
+                                                    </span>
+                                                    <span className="text-xs font-black text-indigo-300">
+                                                        {((sharedCloudStorageUsed / (1024 * 1024))).toFixed(1)} Mo / {((sharedCloudConfig.quotaBytes || 5368709120) / (1024 * 1024 * 1024)).toFixed(0)} Go
+                                                    </span>
+                                                </div>
+
+                                                {/* Barre de quota */}
+                                                <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                                                    <div 
+                                                        className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400 transition-all duration-500"
+                                                        style={{ width: `${Math.min(100, Math.max(3, (sharedCloudStorageUsed / (sharedCloudConfig.quotaBytes || 5368709120)) * 100))}%` }}
+                                                    ></div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                                                    <span>{sharedCloudFiles.length} ressource{sharedCloudFiles.length !== 1 ? 's' : ''} disponible{sharedCloudFiles.length !== 1 ? 's' : ''}</span>
+                                                    <span className="font-semibold text-emerald-400">
+                                                        {Math.max(0, (((sharedCloudConfig.quotaBytes || 5368709120) - sharedCloudStorageUsed) / (1024 * 1024 * 1024))).toFixed(2)} Go libres
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Statut de synchronisation avec l'établissement */}
+                                        <div className="pt-4 border-t border-indigo-700/40 flex items-center space-x-2 text-xs text-slate-300">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                            <span>Synchronisé en direct avec la base de données de l'établissement</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Barre de Recherche et Filtres par Catégorie */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-5">
+                                        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                                            <div className="relative flex-1 max-w-md">
+                                                <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="Rechercher une annale, fiche, sujet, devoir..." 
+                                                    value={sharedCloudSearchQuery} 
+                                                    onChange={(e) => setSharedCloudSearchQuery(e.target.value)} 
+                                                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 text-slate-800 dark:text-slate-100 placeholder-slate-400 transition"
+                                                />
+                                            </div>
+
+                                            <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                                <span>Affichage :</span>
+                                                <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold text-slate-700 dark:text-slate-200">
+                                                    {filteredSharedFiles.length} document{filteredSharedFiles.length !== 1 ? 's' : ''}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Filtres Catégories */}
+                                        <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+                                            {['Tout', 'BAC', 'BTS', 'Cours', 'Devoirs', 'Logiciels', 'Documentation', 'Autre'].map(cat => {
+                                                const isActive = sharedCloudCategory === cat;
+                                                return (
+                                                    <button
+                                                        key={cat}
+                                                        onClick={() => setSharedCloudCategory(cat)}
+                                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                                                            isActive
+                                                                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/30'
+                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                                        }`}
+                                                    >
+                                                        {cat}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Liste des Documents Partagés */}
+                                        {filteredSharedFiles.length === 0 ? (
+                                            <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-3">
+                                                <Users className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
+                                                <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                                                    Aucun document trouvé dans cette catégorie
+                                                </h4>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                                                    {sharedCloudSearchQuery ? "Modifiez votre recherche pour trouver d'autres documents." : "L'administrateur n'a pas encore téléversé de fichiers dans ce dossier."}
+                                                </p>
+                                                {sharedCloudSearchQuery && (
+                                                    <button 
+                                                        onClick={() => { setSharedCloudSearchQuery(''); setSharedCloudCategory('Tout'); }}
+                                                        className="px-4 py-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-xl transition"
+                                                    >
+                                                        Réinitialiser les filtres
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                                                {filteredSharedFiles.map(file => {
+                                                    const sizeMb = ((parseInt(file.size, 10) || 0) / (1024 * 1024)).toFixed(2);
+                                                    const dateFormatted = file.uploadedAt || (file.modifiedTime ? new Date(file.modifiedTime).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Récemment');
+                                                    
+                                                    let catColor = 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+                                                    if (file.category === 'BAC') catColor = 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-800';
+                                                    if (file.category === 'BTS') catColor = 'bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border-purple-200 dark:border-purple-800';
+                                                    if (file.category === 'Logiciels') catColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800';
+                                                    if (file.category === 'Devoirs') catColor = 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border-rose-200 dark:border-rose-800';
+
+                                                    return (
+                                                        <div 
+                                                            key={file.id} 
+                                                            className="bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 transition-all flex flex-col justify-between space-y-4 hover:shadow-md"
+                                                        >
+                                                            <div className="space-y-3">
+                                                                <div className="flex items-start justify-between gap-3">
+                                                                    <div className="flex items-center space-x-3 min-w-0">
+                                                                        <div className="p-3 bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 rounded-2xl flex-shrink-0">
+                                                                            <FileText className="w-6 h-6" />
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${catColor}`}>
+                                                                                {file.category || 'Général'}
+                                                                            </span>
+                                                                            <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-1 leading-snug break-words">
+                                                                                {file.name}
+                                                                            </h4>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {file.description && (
+                                                                    <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
+                                                                        {file.description}
+                                                                    </p>
+                                                                )}
+
+                                                                <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                                                                    <span className="font-semibold">{sizeMb} Mo</span>
+                                                                    <span>•</span>
+                                                                    <span>Ajouté le {dateFormatted}</span>
+                                                                    <span>•</span>
+                                                                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">{file.uploadedBy || 'Admin'}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Actions sur le fichier partagé */}
+                                                            <div className="pt-3 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-2">
+                                                                <button
+                                                                    onClick={() => saveSharedFileToPersonalCloud(file)}
+                                                                    className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/80 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded-xl transition flex items-center space-x-1.5 border border-indigo-200 dark:border-indigo-800"
+                                                                    title="Importer et copier directement dans mon espace Google Drive personnel"
+                                                                >
+                                                                    <Cloud className="w-3.5 h-3.5 text-indigo-500" />
+                                                                    <span>Copier dans mon Cloud</span>
+                                                                </button>
+
+                                                                <div className="flex items-center space-x-2">
+                                                                    {file.url && (
+                                                                        <button
+                                                                            onClick={() => handleSharedFilePreview(file)}
+                                                                            className="px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center space-x-1"
+                                                                        >
+                                                                            <Eye className="w-3.5 h-3.5 mr-1" />
+                                                                            <span>Aperçu</span>
+                                                                        </button>
+                                                                    )}
+
+                                                                    <button
+                                                                        onClick={() => downloadSharedFile(file)}
+                                                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center space-x-1"
+                                                                        title="Télécharger le fichier"
+                                                                    >
+                                                                        <Download className="w-3.5 h-3.5 mr-1" />
+                                                                        <span>Télécharger</span>
+                                                                    </button>
+
+                                                                    {isUserAdmin && (
+                                                                        <button
+                                                                            onClick={() => deleteSharedCloudFile(file.id, file.name)}
+                                                                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl transition cursor-pointer"
+                                                                            title="Supprimer du Cloud Partagé (Admin uniquement)"
+                                                                        >
+                                                                            <Trash2 className="w-4 h-4" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CONTENU ONGLET 4 : MON COMPTE & RÉGLAGES */}
                             {profileTab === 'account' && (
                                 <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-200">
                                     {/* Établissement et Classe */}
@@ -2657,6 +3536,50 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   />
               )}
 
+              {/* Barre de progression de téléversement en temps réel */}
+              {uploadProgress?.active && (
+                  <UploadProgressWidget 
+                      progress={uploadProgress} 
+                      onDismiss={() => setUploadProgress(null)} 
+                  />
+              )}
+
+              {/* Modal de Confirmation Générique Non-Bloquante */}
+              {genericConfirmModal && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                          <div className="flex items-center space-x-3">
+                              <div className="p-3 bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 rounded-2xl shrink-0">
+                                  <Trash2 className="w-5 h-5" />
+                              </div>
+                              <div>
+                                  <h3 className="font-bold text-slate-900 dark:text-white text-base">{genericConfirmModal.title || 'Confirmation'}</h3>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Cette action est irréversible</p>
+                              </div>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">{genericConfirmModal.message}</p>
+                          <div className="flex justify-end space-x-2 pt-2">
+                              <button
+                                  onClick={() => setGenericConfirmModal(null)}
+                                  className="px-4 py-2 text-xs font-bold border border-slate-300 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                              >
+                                  Annuler
+                              </button>
+                              <button
+                                  onClick={() => {
+                                      const cb = genericConfirmModal.onConfirm;
+                                      setGenericConfirmModal(null);
+                                      if (cb) cb();
+                                  }}
+                                  className="px-4 py-2 text-xs font-bold bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-sm transition cursor-pointer"
+                              >
+                                  {genericConfirmModal.confirmText || 'Supprimer'}
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
               {toast && (
                   <Toast toast={toast} onClose={hideToast} />
               )}
@@ -2704,7 +3627,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <UserIcon className="w-7 h-7" />
                             </div>
                             <h2 className="text-2xl font-black text-slate-900 dark:text-white">Connexion</h2>
-                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Connectez-vous pour utiliser vos favoris et synchroniser vos préférences.</p>
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">Connectez-vous pour vos cours favoris et votre Cloud Google Drive (1 Go inclus).</p>
                         </div>
 
                         {/* Erreur spécifique Fournisseur Google non activé dans Firebase */}
@@ -2839,22 +3762,26 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {/* Option 1: Google Sign In */}
-                        <div className="space-y-3 mb-3">
+                        <div className="space-y-2 mb-3">
                             <button
                                 id="btn-google-login"
                                 onClick={onGoogleSignIn}
                                 disabled={isLoading}
-                                className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl shadow-sm active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex items-center justify-center space-x-3 py-3.5 px-4 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl shadow-sm active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 {isLoading ? (
                                     <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                                 ) : (
                                     <>
                                         <GoogleIcon className="w-5 h-5" />
-                                        <span>Continuer avec Google</span>
+                                        <span>Continuer avec Google (Drive 1 Go inclus)</span>
                                     </>
                                 )}
                             </button>
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 text-center flex items-center justify-center gap-1.5">
+                                <Cloud className="w-3.5 h-3.5 text-sky-500" />
+                                <span>Lie automatiquement votre compte et votre WorksBox Cloud</span>
+                            </p>
                         </div>
 
                         {/* Séparateur */}
@@ -3446,6 +4373,114 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
+        function UploadProgressWidget({ progress, onDismiss }) {
+            if (!progress || !progress.active) return null;
+
+            const isDone = progress.stage === 'success';
+            const isError = progress.stage === 'error';
+            const isProcessing = progress.stage === 'processing';
+            const percentValue = Math.round(progress.percent !== undefined ? progress.percent : (progress.percentage || 0));
+            const loadedMb = ((progress.loadedBytes || 0) / (1024 * 1024)).toFixed(1);
+            const totalMb = ((progress.totalBytes || 0) / (1024 * 1024)).toFixed(1);
+            const errorText = progress.errorMsg || progress.errorMessage || 'Une erreur est survenue';
+
+            return (
+                <div 
+                    id="upload-progress-widget"
+                    className="fixed bottom-6 right-6 z-[120] max-w-sm w-full p-4 bg-slate-900/95 dark:bg-slate-900/95 text-white border border-slate-700/80 rounded-3xl shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-6 duration-300"
+                >
+                    <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center space-x-2.5 min-w-0">
+                                <div className={`p-2 rounded-xl flex-shrink-0 ${
+                                    isDone 
+                                        ? 'bg-emerald-500/20 text-emerald-400' 
+                                        : isError 
+                                            ? 'bg-rose-500/20 text-rose-400' 
+                                            : 'bg-indigo-500/20 text-indigo-400 animate-pulse'
+                                }`}>
+                                    {isDone ? (
+                                        <Check className="w-5 h-5" />
+                                    ) : isError ? (
+                                        <AlertCircle className="w-5 h-5" />
+                                    ) : (
+                                        <UploadCloud className="w-5 h-5 animate-bounce" />
+                                    )}
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                                        {progress.target === 'shared' ? 'Cloud Partagé' : 'Mon Cloud Personnel'}
+                                    </span>
+                                    <h4 className="text-xs sm:text-sm font-bold text-slate-100 truncate">
+                                        {progress.fileName || 'Fichier en cours...'}
+                                    </h4>
+                                </div>
+                            </div>
+
+                            {(isDone || isError) && (
+                                <button 
+                                    onClick={onDismiss}
+                                    className="p-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Barre de chargement avec animation */}
+                        <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="font-semibold text-slate-300">
+                                    {isDone 
+                                        ? 'Importation terminée !' 
+                                        : isError 
+                                            ? 'Échec de l\'envoi' 
+                                            : isProcessing 
+                                                ? 'Finalisation & Indexation...' 
+                                                : 'Téléversement en cours...'}
+                                </span>
+                                <span className="font-black text-indigo-400">
+                                    {percentValue} %
+                                </span>
+                            </div>
+
+                            <div className="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700">
+                                <div 
+                                    className={`h-full rounded-full transition-all duration-300 ${
+                                        isDone 
+                                            ? 'bg-gradient-to-r from-emerald-500 to-teal-400' 
+                                            : isError 
+                                                ? 'bg-rose-500' 
+                                                : 'bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400'
+                                    }`}
+                                    style={{ width: `${Math.max(4, Math.min(100, percentValue))}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        {/* Détail du poids téléversé */}
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
+                            <span>
+                                {progress.totalBytes > 0 ? `${loadedMb} Mo / ${totalMb} Mo` : 'Calcul de la taille...'}
+                            </span>
+                            {isProcessing && (
+                                <span className="text-sky-400 font-bold flex items-center">
+                                    <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
+                                    Synchronisation Drive
+                                </span>
+                            )}
+                        </div>
+
+                        {isError && (
+                            <p className="text-[11px] text-rose-300 bg-rose-950/60 p-2 rounded-xl border border-rose-800/60">
+                                {errorText}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
         function Toast({ toast, onClose }) {
             useEffect(() => {
                 if (!toast) return;
@@ -3515,8 +4550,52 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+            componentDidCatch(error, errorInfo) {
+                console.warn("WorksBox ErrorBoundary caught error:", error, errorInfo);
+            }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+                            <div className="max-w-md w-full bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center space-y-4">
+                                <div className="w-14 h-14 bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
+                                    <AlertCircle className="w-8 h-8" />
+                                </div>
+                                <h2 className="text-xl font-black">Une interruption temporaire est survenue</h2>
+                                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                                    L'application a rencontré une anomalie d'affichage. Vous pouvez recharger la page pour continuer votre navigation.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        this.setState({ hasError: false, error: null });
+                                        window.location.reload();
+                                    }}
+                                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm rounded-xl transition shadow-sm"
+                                >
+                                    Actualiser la page
+                                </button>
+                            </div>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
     </script>
 </body>
 </html>
