@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorksBox — Administration</title>
     <meta name="description" content="Dashboard d'administration WorksBox.">
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <!-- Global error shield for cross-origin script noise -->
     <script>
         window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -26,10 +26,25 @@
             }
         });
     </script>
-    <script src="/react.production.min.js"></script>
-    <script src="/react-dom.production.min.js"></script>
-    <script src="/babel.min.js"></script>
-    <script src="/tailwind.js"></script>
+    <script src="react.production.min.js"></script>
+    <script>
+        if (!window.React) {
+            document.write('<script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>');
+        }
+    </script>
+    <script src="react-dom.production.min.js"></script>
+    <script>
+        if (!window.ReactDOM) {
+            document.write('<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>');
+        }
+    </script>
+    <script src="babel.min.js"></script>
+    <script>
+        if (!window.Babel) {
+            document.write('<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"><\/script>');
+        }
+    </script>
+    <script src="tailwind.js"></script>
     <script>
         if (!window.tailwind) {
             document.write('<script src="https://cdn.tailwindcss.com"><\/script>');

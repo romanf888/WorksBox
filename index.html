@@ -9,9 +9,9 @@
     <meta property="og:description" content="Plateforme de partage et consultation de cours et ressources scolaires avec support calculatrice Casio.">
     
     <!-- Favicon & App Icons -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="alternate icon" href="/favicon.svg">
-    <link rel="apple-touch-icon" href="/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
     <meta name="theme-color" content="#2563eb">
     
     <!-- Global error shield for cross-origin script noise -->
@@ -35,10 +35,26 @@
         });
     </script>
     
-    <script src="/react.production.min.js"></script>
-    <script src="/react-dom.production.min.js"></script>
-    <script src="/babel.min.js"></script>
-    <script src="/tailwind.js"></script>
+    <!-- Scripts avec chemins relatifs et secours CDN pour compatibilité totale (GitHub Pages, sous-dossiers, etc.) -->
+    <script src="react.production.min.js"></script>
+    <script>
+        if (!window.React) {
+            document.write('<script src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>');
+        }
+    </script>
+    <script src="react-dom.production.min.js"></script>
+    <script>
+        if (!window.ReactDOM) {
+            document.write('<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>');
+        }
+    </script>
+    <script src="babel.min.js"></script>
+    <script>
+        if (!window.Babel) {
+            document.write('<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"><\/script>');
+        }
+    </script>
+    <script src="tailwind.js"></script>
     <script>
         if (!window.tailwind) {
             document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
@@ -212,11 +228,35 @@
 <body class="bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 selection:bg-blue-200 selection:text-blue-900 transition-colors duration-200">
     
     <div id="root">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif;">
-            <img src="/favicon.svg" alt="WorksBox Logo" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);" />
-            <div style="width: 36px; height: 36px; border: 3px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;"></div>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; font-family: system-ui, -apple-system, sans-serif; background-color: #0b0f19; color: #f8fafc;">
+            <!-- Logo WorksBox SVG intégré : s'affiche instantanément à 100% sans requête réseau -->
+            <svg viewBox="0 0 64 64" width="64" height="64" style="width: 64px; height: 64px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);">
+                <defs>
+                    <linearGradient id="initWbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#3b82f6"/>
+                        <stop offset="100%" stop-color="#1d4ed8"/>
+                    </linearGradient>
+                    <linearGradient id="initBoxGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="100%" stop-color="#e2e8f0"/>
+                    </linearGradient>
+                    <filter id="initShadow" x="-10%" y="-10%" width="130%" height="130%">
+                        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.25"/>
+                    </filter>
+                </defs>
+                <rect width="64" height="64" rx="16" fill="url(#initWbGrad)"/>
+                <g filter="url(#initShadow)">
+                    <path d="M16 22C16 19.7909 17.7909 18 20 18H28C30.2091 18 32 19.7909 32 22V42C32 44.2091 30.2091 46 28 46H20C17.7909 46 16 44.2091 16 42V22Z" fill="url(#initBoxGrad)"/>
+                    <path d="M32 22C32 19.7909 33.7909 18 36 18H44C46.2091 18 48 19.7909 48 22V42C48 44.2091 46.2091 46 44 46H36C33.7909 46 32 44.2091 32 42V22Z" fill="url(#initBoxGrad)"/>
+                    <path d="M29 20V44M35 20V44" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M21 25H27M21 30H27M21 35H25" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M37 25H43M37 30H43M37 35H41" stroke="#2563eb" stroke-width="2" stroke-linecap="round"/>
+                </g>
+            </svg>
+            <div style="width: 36px; height: 36px; border: 3px solid rgba(59, 130, 246, 0.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 16px;"></div>
             <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-            <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0;">Chargement de WorksBox...</h2>
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin: 0 0 6px 0;">Chargement de WorksBox...</h2>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin: 0;">Plateforme de cours et cloud scolaire</p>
         </div>
     </div>
 
