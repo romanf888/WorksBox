@@ -946,9 +946,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [sharedCloudSearchQuery, setSharedCloudSearchQuery] = useState('');
           const [sharedCloudCategory, setSharedCloudCategory] = useState('Tout');
 
-          const sharedCloudConfig = useMemo(() => {
-              return { ...DEFAULT_SHARED_CLOUD_CONFIG, ...(settings.sharedCloudConfig || {}) };
-          }, [settings.sharedCloudConfig]);
+          const [sharedCloudConfig, setSharedCloudConfig] = useState(() => {
+              try {
+                  const s = localStorage.getItem('worksbox_shared_config');
+                  if (s) return { ...DEFAULT_SHARED_CLOUD_CONFIG, ...JSON.parse(s) };
+              } catch(e) {}
+              return DEFAULT_SHARED_CLOUD_CONFIG;
+          });
+
+          useEffect(() => {
+              if (settings && settings.sharedCloudConfig) {
+                  setSharedCloudConfig(prev => ({ ...prev, ...settings.sharedCloudConfig }));
+              }
+          }, [settings?.sharedCloudConfig]);
 
           const sharedCloudStorageUsed = useMemo(() => {
               return sharedCloudFiles.reduce((acc, f) => acc + (parseInt(f.size, 10) || 0), 0);
@@ -1344,16 +1354,44 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               }
           };
 
-          // Téléchargement d'un fichier du Cloud Partagé avec incrément du compteur
-          const handleDownloadSharedFile = async (sharedFile) => {
+          // Prévisualisation d'un document du Cloud Partagé
+          const handleSharedFilePreview = (sharedFile) => {
+              if (!sharedFile) return;
+              const link = sharedFile.url || sharedFile.downloadUrl;
+              if (!link) {
+                  showToast("Aucun lien de prévisualisation disponible", "warning", "warning");
+                  return;
+              }
+              let detectedType = 'Numérique';
+              const cleanName = (sharedFile.name || '').toLowerCase();
+              if (cleanName.endsWith('.mp4') || cleanName.endsWith('.webm') || link.includes('youtube.com') || link.includes('youtu.be')) {
+                  detectedType = 'Vidéo';
+              } else if (cleanName.endsWith('.mp3') || cleanName.endsWith('.wav') || cleanName.endsWith('.m4a')) {
+                  detectedType = 'Audio';
+              } else if (cleanName.endsWith('.png') || cleanName.endsWith('.jpg') || cleanName.endsWith('.jpeg') || cleanName.endsWith('.webp') || cleanName.endsWith('.svg') || link.startsWith('data:image/')) {
+                  detectedType = 'Image';
+              } else if (cleanName.endsWith('.g1m') || cleanName.endsWith('.g2m') || cleanName.endsWith('.casio')) {
+                  detectedType = 'Casio';
+              }
+
+              setPreviewData({
+                  link,
+                  title: sharedFile.name,
+                  type: detectedType,
+                  sharedFile: sharedFile
+              });
+          };
+
+          // Téléchargement d'un fichier du Cloud Partagé
+          const downloadSharedFile = async (sharedFile) => {
               if (!sharedFile) return;
               const link = sharedFile.downloadUrl || sharedFile.url;
               if (!link) {
-                  showToast("Lien de téléchargement non disponible", "warning", "warning");
+                  showToast("Lien de téléchargement non disponible pour ce fichier", "warning", "warning");
                   return;
               }
 
-              if (dataDb && sharedFile.id && !sharedFile.id.startsWith('shared-doc-')) {
+              if (dataDb && sharedFile.id && !sharedFile.id.startsWith('shared-bac-') && !sharedFile.id.startsWith('shared-bts-')) {
                   try {
                       const docRef = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'sharedCloudFiles', sharedFile.id);
                       await updateDoc(docRef, {
@@ -1367,15 +1405,30 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               setSharedCloudFiles(prev => prev.map(f => f.id === sharedFile.id ? { ...f, downloadsCount: (f.downloadsCount || 0) + 1 } : f));
               showToast(`Téléchargement de « ${sharedFile.name} » démarré !`, "success", "download");
 
-              const a = document.createElement('a');
-              a.href = link;
-              a.target = '_blank';
-              a.rel = 'noopener noreferrer';
-              a.download = sharedFile.name;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
+              // Résolution du lien Google Drive direct
+              let downloadHref = link;
+              const driveMatch = link.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || link.match(/id=([a-zA-Z0-9_-]+)/);
+              if (driveMatch && driveMatch[1]) {
+                  downloadHref = `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
+              }
+
+              try {
+                  const a = document.createElement('a');
+                  a.href = downloadHref;
+                  a.target = '_blank';
+                  a.rel = 'noopener noreferrer';
+                  a.download = sharedFile.name || 'document';
+                  document.body.appendChild(a);
+                  a.click();
+                  setTimeout(() => {
+                      try { document.body.removeChild(a); } catch(e) {}
+                  }, 250);
+              } catch (e) {
+                  window.open(downloadHref, '_blank', 'noopener,noreferrer');
+              }
           };
+
+          const handleDownloadSharedFile = downloadSharedFile;
 
           // Copier un fichier du Cloud Partagé dans son Google Drive personnel
           const saveSharedFileToPersonalCloud = async (sharedFile) => {
@@ -1962,7 +2015,22 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               }
             });
 
-            return () => { unsubSettings(); unsubCourses(); unsubArticles(); unsubSharedFiles(); };
+            // Synchronisation en direct de la configuration du Cloud Partagé (nom, description, quota, statut)
+            const sharedConfigRef = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'settings', 'sharedCloud');
+            const unsubSharedConfig = onSnapshot(sharedConfigRef, (docSnap) => {
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setSharedCloudConfig(prev => {
+                  const merged = { ...prev, ...data };
+                  try {
+                    localStorage.setItem('worksbox_shared_config', JSON.stringify(merged));
+                  } catch(e) {}
+                  return merged;
+                });
+              }
+            }, (err) => console.warn('SharedCloudConfig snapshot error:', err));
+
+            return () => { unsubSettings(); unsubCourses(); unsubArticles(); unsubSharedFiles(); unsubSharedConfig(); };
           }, []);
 
           const allSchools = useMemo(() => {
@@ -3338,22 +3406,12 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                                                                     <button
                                                                         onClick={() => downloadSharedFile(file)}
-                                                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center space-x-1"
+                                                                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center space-x-1 cursor-pointer"
                                                                         title="Télécharger le fichier"
                                                                     >
                                                                         <Download className="w-3.5 h-3.5 mr-1" />
                                                                         <span>Télécharger</span>
                                                                     </button>
-
-                                                                    {isUserAdmin && (
-                                                                        <button
-                                                                            onClick={() => deleteSharedCloudFile(file.id, file.name)}
-                                                                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl transition cursor-pointer"
-                                                                            title="Supprimer du Cloud Partagé (Admin uniquement)"
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" />
-                                                                        </button>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -3545,7 +3603,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       onClose={() => setPreviewData(null)} 
                       onCopy={(link, title) => copyToClipboard(link, title ? `Lien de « ${title} » copié !` : "Lien copié dans le presse-papiers !")}
                       onShare={previewData.course ? () => shareCourse(previewData.course) : undefined}
-                      onSaveToCloud={previewData.course ? () => saveCourseToCloudDrive(previewData.course) : undefined}
+                      onSaveToCloud={
+                          previewData.course 
+                              ? () => saveCourseToCloudDrive(previewData.course) 
+                              : (previewData.sharedFile ? () => saveSharedFileToPersonalCloud(previewData.sharedFile) : undefined)
+                      }
                   />
               )}
 

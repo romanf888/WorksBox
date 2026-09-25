@@ -542,6 +542,14 @@
             });
             const [sharedCategoryFilter, setSharedCategoryFilter] = useState('Tout');
             const [sharedSearchQuery, setSharedSearchQuery] = useState('');
+            const [sharedNameInput, setSharedNameInput] = useState(() => sharedCloudConfig.name || "Cloud Partagé de l'Établissement");
+            const [sharedDescInput, setSharedDescInput] = useState(() => sharedCloudConfig.description || "Espace officiel de ressources partagées par l'administration.");
+
+            useEffect(() => {
+                if (sharedCloudConfig.name) setSharedNameInput(sharedCloudConfig.name);
+                if (sharedCloudConfig.description) setSharedDescInput(sharedCloudConfig.description);
+            }, [sharedCloudConfig.name, sharedCloudConfig.description]);
+
             const [renameModal, setRenameModal] = useState(null); // { oldName, newName, scope }
             const [deleteSubjectModal, setDeleteSubjectModal] = useState(null); // { subject, school, classe, classCount, totalCount }
             const [deleteGenericModal, setDeleteGenericModal] = useState(null); // { title, message, onConfirm }
@@ -722,10 +730,14 @@
             const handleUpdateSharedConfig = async (updates) => {
                 const newConfig = { ...sharedCloudConfig, ...updates };
                 setSharedCloudConfig(newConfig);
+                try {
+                    localStorage.setItem('worksbox_shared_config', JSON.stringify(newConfig));
+                } catch(e) {}
                 if (dataDb) {
                     try {
-                        await setDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'settings', 'sharedCloud'), updates, { merge: true });
-                        showToast('Paramètres du Cloud Partagé synchronisés !');
+                        await setDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'settings', 'sharedCloud'), newConfig, { merge: true });
+                        await setDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'settings', 'global'), { sharedCloudConfig: newConfig }, { merge: true });
+                        showToast('Paramètres du Cloud Partagé enregistrés et publiés !');
                     } catch (e) {
                         showToast('Erreur Firestore : ' + e.message, 'error');
                     }
@@ -2837,8 +2849,10 @@
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    defaultValue={sharedCloudConfig.name || "Cloud Partagé de l'Établissement"}
-                                                    onBlur={(e) => handleUpdateSharedConfig({ name: e.target.value })}
+                                                    value={sharedNameInput}
+                                                    onChange={(e) => setSharedNameInput(e.target.value)}
+                                                    onBlur={() => handleUpdateSharedConfig({ name: sharedNameInput, description: sharedDescInput })}
+                                                    placeholder="ex: Cloud Partagé de l'Établissement"
                                                     className="w-full bg-slate-800 border border-indigo-500/50 rounded-xl px-3 py-2 text-white outline-none focus:border-indigo-400"
                                                 />
                                             </div>
@@ -2850,20 +2864,26 @@
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    defaultValue={sharedCloudConfig.description || "Espace officiel de ressources partagées par l'administration."}
-                                                    onBlur={(e) => handleUpdateSharedConfig({ description: e.target.value })}
+                                                    value={sharedDescInput}
+                                                    onChange={(e) => setSharedDescInput(e.target.value)}
+                                                    onBlur={() => handleUpdateSharedConfig({ name: sharedNameInput, description: sharedDescInput })}
+                                                    placeholder="ex: Ressources officielles, devoirs et annales mis à disposition."
                                                     className="w-full bg-slate-800 border border-indigo-500/50 rounded-xl px-3 py-2 text-white outline-none focus:border-indigo-400"
                                                 />
                                             </div>
 
-                                            {/* Activation / Désactivation */}
-                                            <div className="space-y-1.5 flex flex-col justify-end">
-                                                <label className="font-bold text-slate-300 uppercase block tracking-wider">
-                                                    Disponibilité pour les élèves
-                                                </label>
+                                            {/* Activation / Désactivation & Sauvegarde */}
+                                            <div className="space-y-2 flex flex-col justify-end">
+                                                <button
+                                                    onClick={() => handleUpdateSharedConfig({ name: sharedNameInput, description: sharedDescInput })}
+                                                    className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer text-xs"
+                                                >
+                                                    <CheckIcon className="w-3.5 h-3.5" />
+                                                    <span>Enregistrer nom & description</span>
+                                                </button>
                                                 <button
                                                     onClick={() => handleUpdateSharedConfig({ enabled: sharedCloudConfig.enabled === false ? true : false })}
-                                                    className={`w-full py-2 px-3 rounded-xl font-bold transition flex items-center justify-center space-x-2 ${
+                                                    className={`w-full py-2 px-3 rounded-xl font-bold transition flex items-center justify-center space-x-2 text-xs cursor-pointer ${
                                                         sharedCloudConfig.enabled !== false
                                                             ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
                                                             : 'bg-rose-600 hover:bg-rose-500 text-white'
