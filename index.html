@@ -94,6 +94,11 @@
         body {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f6f9fe;
+            min-height: 100vh;
+        }
+        .dark body, html.dark body {
+            background-color: #070c18;
         }
         svg {
             display: inline-block;
@@ -116,6 +121,129 @@
         .w-20 { width: 5rem; } .h-20 { height: 5rem; }
         html {
             scroll-behavior: smooth;
+        }
+
+        /* === LIQUID GLASS DESIGN SYSTEM === */
+        .liquid-glass {
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.07), 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+        }
+        .dark .liquid-glass {
+            background: rgba(13, 20, 36, 0.65);
+            backdrop-filter: blur(24px) saturate(190%);
+            -webkit-backdrop-filter: blur(24px) saturate(190%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.16);
+        }
+
+        .liquid-glass-card {
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 25px -5px rgba(37, 99, 235, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03), inset 0 1px 1px 0 rgba(255, 255, 255, 1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .dark .liquid-glass-card {
+            background: rgba(15, 23, 42, 0.68);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            box-shadow: 0 12px 35px -8px rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .liquid-glass-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.45);
+            box-shadow: 0 18px 40px -10px rgba(37, 99, 235, 0.18), inset 0 1px 2px 0 rgba(255, 255, 255, 1);
+        }
+        .dark .liquid-glass-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(96, 165, 250, 0.35);
+            box-shadow: 0 20px 45px -10px rgba(14, 165, 233, 0.22), inset 0 1px 2px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .liquid-glass-nav {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+        }
+        .dark .liquid-glass-nav {
+            background: rgba(7, 12, 24, 0.78);
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 12px 35px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+        }
+
+        .liquid-glass-pill {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+        }
+        .dark .liquid-glass-pill {
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .liquid-glass-input {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1.5px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03), inset 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: all 0.25s ease;
+        }
+        .dark .liquid-glass-input {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+            transition: all 0.25s ease;
+        }
+        .liquid-glass-input:focus {
+            border-color: rgba(59, 130, 246, 0.85);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18), 0 8px 25px rgba(37, 99, 235, 0.12);
+        }
+        .dark .liquid-glass-input:focus {
+            border-color: rgba(96, 165, 250, 0.85);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25), 0 8px 30px rgba(14, 165, 233, 0.2);
+        }
+
+        .liquid-glass-btn {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .dark .liquid-glass-btn {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .liquid-glass-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12), inset 0 1px 1px 0 rgba(255, 255, 255, 1);
+        }
+        .dark .liquid-glass-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
         }
 
         /* Fluid View Transitions */
@@ -2618,13 +2746,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           };
 
           return (
-            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 pb-20 transition-colors duration-200">
+            <div className="min-h-screen relative font-sans text-slate-800 dark:text-slate-100 pb-20 transition-colors duration-200">
+              {/* LIQUID AMBIENT BACKGROUND ORBS */}
+              <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 select-none">
+                  <div className="absolute -top-40 -left-40 w-[450px] h-[450px] sm:w-[650px] sm:h-[650px] bg-gradient-to-tr from-blue-500/15 via-sky-400/20 to-indigo-500/15 dark:from-blue-600/25 dark:via-cyan-500/20 dark:to-indigo-600/20 rounded-full blur-[110px] animate-pulse" style={{ animationDuration: '8s' }} />
+                  <div className="absolute top-1/4 -right-40 w-[400px] h-[400px] sm:w-[550px] sm:h-[550px] bg-gradient-to-br from-indigo-500/15 via-purple-500/15 to-pink-500/10 dark:from-indigo-600/25 dark:via-purple-600/20 dark:to-cyan-600/15 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+                  <div className="absolute -bottom-40 left-1/3 w-[450px] h-[450px] sm:w-[700px] sm:h-[700px] bg-gradient-to-tl from-sky-400/15 via-blue-600/15 to-teal-400/10 dark:from-sky-500/20 dark:via-blue-800/25 dark:to-indigo-900/30 rounded-full blur-[130px]" />
+              </div>
+
               {/* MODALE D'ACCEPTATION OBLIGATOIRE DES CONDITIONS D'UTILISATION */}
               {!hasAcceptedTerms && (
-                  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-300">
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh]">
-                          <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800 flex-shrink-0">
-                              <div className="bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 p-2.5 rounded-2xl">
+                  <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xl animate-in fade-in duration-300">
+                      <div className="liquid-glass rounded-3xl shadow-2xl w-full max-w-2xl p-6 sm:p-8 flex flex-col max-h-[90vh]">
+                          <div className="flex items-center space-x-3 mb-4 pb-4 border-b border-slate-200/60 dark:border-white/10 flex-shrink-0">
+                              <div className="bg-blue-500/20 text-blue-600 dark:text-blue-400 p-2.5 rounded-2xl border border-blue-400/30 shadow-xs">
                                   <Shield className="w-6 h-6" />
                               </div>
                               <div>
@@ -2634,11 +2769,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           </div>
 
                           <div 
-                              className="flex-1 overflow-y-auto pr-2 mb-6 bg-slate-50 dark:bg-slate-950 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-4"
+                              className="flex-1 overflow-y-auto pr-2 mb-6 bg-white/40 dark:bg-slate-950/50 rounded-2xl p-5 border border-white/60 dark:border-white/10 text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line space-y-4"
                               dangerouslySetInnerHTML={{ __html: settings.termsContent || DEFAULT_TERMS_FALLBACK }}
                           />
 
-                          <div className="flex-shrink-0 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                          <div className="flex-shrink-0 pt-2 border-t border-slate-200/60 dark:border-white/10 space-y-4">
                               <label className="flex items-start space-x-3 cursor-pointer select-none">
                                   <input 
                                       type="checkbox" 
@@ -2654,7 +2789,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               <button 
                                   onClick={handleAcceptTerms} 
                                   disabled={!termsAgreementChecked} 
-                                  className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all flex items-center justify-center space-x-2"
+                                  className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 cursor-pointer"
                               >
                                   <span>Accepter et continuer</span>
                               </button>
@@ -2665,20 +2800,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
               {/* MODALE DE CHOIX D'ÉTABLISSEMENT / CLASSE */}
               {hasAcceptedTerms && showOnboarding && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-md animate-in fade-in duration-300">
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-lg p-8 sm:p-10 border border-slate-100 dark:border-slate-800 relative">
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xl animate-in fade-in duration-300">
+                      <div className="liquid-glass rounded-3xl shadow-2xl w-full max-w-lg p-8 sm:p-10 relative">
                           {selectedSchool && selectedClass && (
                               <button 
                                   type="button" 
                                   onClick={() => setShowOnboarding(false)} 
-                                  className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                                  className="absolute top-5 right-5 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
                                   title="Fermer"
                               >
                                   <X className="w-5 h-5" />
                               </button>
                           )}
                           <div className="text-center mb-8">
-                              <WorksBoxLogo className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-md" />
+                              <WorksBoxLogo className="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-blue-500/20" />
                               <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">Bienvenue sur WorksBox</h1>
                               <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Veuillez indiquer votre établissement et votre classe pour accéder aux cours.</p>
                           </div>
@@ -2696,7 +2831,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                           }
                                       }} 
                                       required 
-                                      className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer"
+                                      className="w-full liquid-glass-input rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
                                   >
                                       <option value="" disabled>-- Choisir un lycée --</option>
                                       {allSchools.map(s => <option key={s} value={s}>{s}</option>)}
@@ -2708,37 +2843,41 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                       value={selectedClass} 
                                       onChange={(e) => setSelectedClass(e.target.value)} 
                                       required 
-                                      className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:border-blue-500 cursor-pointer"
+                                      className="w-full liquid-glass-input rounded-xl px-4 py-3 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none cursor-pointer"
                                   >
                                       <option value="" disabled>-- Choisir une classe --</option>
                                       {availableClassesForSchool.map(c => <option key={c} value={c}>{c}</option>)}
                                   </select>
                               </div>
-                              <button type="submit" disabled={!selectedSchool || !selectedClass} className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all">Accéder aux cours</button>
+                              <button type="submit" disabled={!selectedSchool || !selectedClass} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-all cursor-pointer">Accéder aux cours</button>
                           </form>
                       </div>
                   </div>
               )}
 
               {settings.announcement && (
-                  <div className="bg-amber-500 text-white text-sm font-bold py-2 px-4 flex justify-center items-center">
-                      <Megaphone className="w-4 h-4 mr-2" />{settings.announcement}
+                  <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur-md text-white text-sm font-bold py-2.5 px-4 flex justify-center items-center shadow-sm border-b border-amber-400/40">
+                      <Megaphone className="w-4 h-4 mr-2 animate-bounce" />{settings.announcement}
                   </div>
               )}
 
-              <nav className="bg-slate-900 dark:bg-slate-950 text-white shadow-lg sticky top-0 z-10 border-b border-slate-800 dark:border-slate-800/80 transition-colors duration-200">
+              {/* NAVIGATION PRINCIPALE LIQUID GLASS */}
+              <nav className="liquid-glass-nav sticky top-0 z-30 transition-all duration-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                   <div className="flex justify-between items-center h-16">
                     <div className="flex items-center space-x-8">
                         <div className="flex items-center space-x-3 cursor-pointer group active:scale-95 transition-all" onClick={goHome}>
-                            <WorksBoxLogo className="w-9 h-9 rounded-xl shadow-md group-hover:scale-105 transition-transform" />
-                            <span className="font-bold text-xl tracking-tight">WorksBox</span>
+                            <div className="relative">
+                                <WorksBoxLogo className="w-9 h-9 rounded-xl shadow-md group-hover:scale-105 transition-transform" />
+                                <div className="absolute inset-0 rounded-xl bg-blue-500/20 blur-sm -z-10 group-hover:bg-blue-400/30 transition-colors" />
+                            </div>
+                            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">WorksBox</span>
                         </div>
-                        <div className="hidden lg:flex items-center space-x-6">
-                            <button onClick={goHome} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${(currentView === 'home' || currentView === 'subject') ? 'text-white border-b-2 border-blue-500 pb-1 mt-1 font-bold' : 'text-slate-400'}`}><HomeIcon className="w-4 h-4 mr-1.5" /> Accueil</button>
-                            <button onClick={openSoftwareHub} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'software' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1 font-bold' : 'text-slate-300 hover:text-white'}`}><Layers className="w-4 h-4 mr-1.5 text-blue-400" /> Logiciels</button>
-                            <button onClick={openTerms} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'terms' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><Shield className="w-4 h-4 mr-1.5" /> Conditions</button>
-                            <button onClick={openCasioGuide} className={`text-sm font-medium flex items-center transition-colors hover:text-white ${currentView === 'casioGuide' ? 'text-white border-b-2 border-blue-500 pb-1 mt-1' : 'text-slate-400'}`}><HelpCircle className="w-4 h-4 mr-1.5" /> Tuto Casio</button>
+                        <div className="hidden lg:flex items-center space-x-1.5">
+                            <button onClick={goHome} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${(currentView === 'home' || currentView === 'subject') ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><HomeIcon className="w-4 h-4 mr-1.5" /> Accueil</button>
+                            <button onClick={openSoftwareHub} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${currentView === 'software' ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><Layers className="w-4 h-4 mr-1.5 text-blue-500 dark:text-blue-400" /> Logiciels</button>
+                            <button onClick={openTerms} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${currentView === 'terms' ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><Shield className="w-4 h-4 mr-1.5" /> Conditions</button>
+                            <button onClick={openCasioGuide} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${currentView === 'casioGuide' ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><HelpCircle className="w-4 h-4 mr-1.5" /> Tuto Casio</button>
                         </div>
                     </div>
                     <div className="flex items-center space-x-2.5">
@@ -2746,19 +2885,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         <button 
                             id="nav-btn-theme-toggle" 
                             onClick={toggleTheme} 
-                            className="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 border border-slate-700 dark:border-slate-750 transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white liquid-glass-btn transition-all active:scale-95 flex items-center justify-center cursor-pointer"
                             title={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
                             aria-label={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
                         >
                             {isDark ? (
                                 <Sun className="w-4 h-4 text-amber-400" />
                             ) : (
-                                <Moon className="w-4 h-4 text-sky-300" />
+                                <Moon className="w-4 h-4 text-sky-500" />
                             )}
                         </button>
 
-                        <button id="nav-btn-school-class" onClick={() => setShowOnboarding(true)} className="flex items-center space-x-2 text-xs font-bold bg-slate-800 hover:bg-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 transition-all active:scale-95">
-                            <SchoolIcon className="w-4 h-4 text-blue-400" />
+                        <button id="nav-btn-school-class" onClick={() => setShowOnboarding(true)} className="flex items-center space-x-2 text-xs font-bold liquid-glass-btn text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl transition-all active:scale-95 cursor-pointer">
+                            <SchoolIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                             <span className="hidden sm:inline truncate max-w-[130px]">{selectedSchool} • {selectedClass}</span>
                         </button>
 
@@ -2782,7 +2921,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 className={`flex items-center space-x-2 text-xs font-bold px-3 py-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
                                     currentView === 'profile' 
                                         ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/50' 
-                                        : 'bg-slate-800 hover:bg-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800 text-blue-400 border border-blue-500/30'
+                                        : 'liquid-glass-btn text-blue-600 dark:text-blue-400'
                                 }`}
                                 title="Accéder à mon espace profil et mes onglets exclusifs"
                             >
@@ -2793,7 +2932,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         {(activeUser.displayName || activeUser.email || 'E')[0].toUpperCase()}
                                     </div>
                                 )}
-                                <span className="hidden sm:inline max-w-[110px] truncate text-slate-200">{activeUser.displayName || activeUser.email?.split('@')[0]}</span>
+                                <span className="hidden sm:inline max-w-[110px] truncate text-slate-700 dark:text-slate-200">{activeUser.displayName || activeUser.email?.split('@')[0]}</span>
                                 {activeUser.isLocal && (
                                     <span className="hidden md:inline-block w-2 h-2 rounded-full bg-emerald-400" title="Profil élève actif"></span>
                                 )}
@@ -2802,7 +2941,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             <button 
                                 id="nav-btn-login"
                                 onClick={() => setShowAuthModal(true)} 
-                                className="flex items-center space-x-1.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-xl transition-all shadow-sm active:scale-95"
+                                className="flex items-center space-x-1.5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3.5 py-2 rounded-xl transition-all shadow-md shadow-blue-500/25 active:scale-95 cursor-pointer"
                             >
                                 <UserIcon className="w-4 h-4" />
                                 <span>Connexion</span>
@@ -2822,54 +2961,54 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         <div key="view-home" className="space-y-12 view-transition">
                             <div className="text-center max-w-2xl mx-auto">
                                 <div className="flex items-center justify-center space-x-3 mb-3">
-                                    <WorksBoxLogo className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl shadow-md" />
-                                    <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Ressources & Cours</h1>
+                                    <WorksBoxLogo className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl shadow-lg shadow-blue-500/20" />
+                                    <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Ressources & Cours</h1>
                                 </div>
                                 <div className="flex items-center justify-center space-x-2 mb-6">
-                                    <span className="inline-flex items-center space-x-1.5 bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300 text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-full shadow-xs">
+                                    <span className="inline-flex items-center space-x-1.5 liquid-glass-pill text-blue-800 dark:text-blue-300 text-xs sm:text-sm font-bold px-3.5 py-1.5 rounded-full shadow-xs">
                                         <SchoolIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                         <span>{selectedSchool || 'Choisir un lycée'}</span>
-                                        <span className="text-blue-300 dark:text-blue-700">•</span>
+                                        <span className="text-blue-300 dark:text-blue-600">•</span>
                                         <span>{selectedClass || 'Choisir une classe'}</span>
                                     </span>
                                     <button 
                                         onClick={() => setShowOnboarding(true)}
-                                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-xl shadow-xs transition-all active:scale-95"
+                                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 liquid-glass-btn px-3 py-1.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                                         title="Changer d'établissement ou de classe"
                                     >
                                         Changer
                                     </button>
                                 </div>
                                 <div className="max-w-xl mx-auto relative">
-                                    <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400 dark:text-slate-500" />
-                                    <input type="text" className="block w-full pl-12 pr-4 py-4 border-2 border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 focus:outline-none focus:border-blue-500 text-base shadow-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 transition-colors" placeholder="Rechercher un cours, un chapitre..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                    <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400 dark:text-slate-400" />
+                                    <input type="text" className="block w-full pl-12 pr-4 py-4 liquid-glass-input rounded-2xl text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-colors" placeholder="Rechercher un cours, un chapitre..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                                 </div>
                             </div>
 
                             {filteredArticles.length > 0 && (
                                 <div className="space-y-4">
-                                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center"><Newspaper className="w-5 h-5 mr-2 text-red-500"/> Actualités & Annonces</h3>
+                                    <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center"><Newspaper className="w-5 h-5 mr-2 text-red-500"/> Actualités & Annonces</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                         {filteredArticles.map(art => {
                                             const embedUrl = getYouTubeEmbedUrl(art.videoUrl);
                                             const hasMedia = !!(art.imageUrl || embedUrl);
                                             return (
-                                                <div key={art.id} className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border flex flex-col h-fit ${art.pinned ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20' : 'border-slate-200 dark:border-slate-800'}`}>
+                                                <div key={art.id} className={`liquid-glass-card rounded-3xl p-6 flex flex-col h-fit ${art.pinned ? 'border-amber-400/80 dark:border-amber-400/60 shadow-[0_8px_30px_rgba(251,191,36,0.15)]' : ''}`}>
                                                     <div>
                                                         <div className="flex justify-between items-center mb-3">
-                                                            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{new Date(art.date).toLocaleDateString('fr-FR')}</span>
-                                                            {art.pinned && <span className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700">Épinglé</span>}
+                                                            <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">{new Date(art.date).toLocaleDateString('fr-FR')}</span>
+                                                            {art.pinned && <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-xs">Épinglé</span>}
                                                         </div>
-                                                        <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{art.title}</h4>
+                                                        <h4 className="text-lg font-extrabold text-slate-900 dark:text-white mb-2">{art.title}</h4>
                                                         <p className={`text-slate-600 dark:text-slate-300 text-sm whitespace-pre-line ${hasMedia ? 'mb-4' : 'mb-0'}`}>{art.content}</p>
                                                     </div>
                                                     {art.imageUrl && (
-                                                        <div className="mt-4 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 max-h-72">
+                                                        <div className="mt-4 rounded-2xl overflow-hidden border border-white/60 dark:border-white/10 bg-slate-900/10 max-h-72 shadow-inner">
                                                             <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover" onError={(e)=>{e.target.style.display='none'}} />
                                                         </div>
                                                     )}
                                                     {embedUrl && (
-                                                        <div className="mt-4 aspect-video w-full rounded-xl overflow-hidden shadow-sm bg-slate-900">
+                                                        <div className="mt-4 aspect-video w-full rounded-2xl overflow-hidden shadow-md bg-slate-950 border border-white/10">
                                                             <iframe src={embedUrl} className="w-full h-full border-0" allowFullScreen title="YouTube Video"></iframe>
                                                         </div>
                                                     )}
@@ -2882,23 +3021,30 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                             {searchQuery.length >= 2 ? (
                                 <div className="space-y-6">
-                                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-2">Résultats pour "{searchQuery}"</h3>
+                                    <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 border-b border-white/40 dark:border-white/10 pb-2">Résultats pour "{searchQuery}"</h3>
                                     {searchedCourses.length === 0 && filteredSubjectsList.length === 0 ? (
-                                        <p className="text-slate-500 dark:text-slate-400 text-center py-8">Aucun résultat trouvé.</p>
+                                        <div className="liquid-glass rounded-3xl p-12 text-center text-slate-500 dark:text-slate-400">
+                                            <Search className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-3 opacity-60" />
+                                            <p className="font-bold text-base text-slate-700 dark:text-slate-300">Aucun résultat trouvé pour « {searchQuery} ».</p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Essayez un autre mot-clé ou parcourez les matières ci-dessous.</p>
+                                        </div>
                                     ) : (
                                         <div className="space-y-8">
                                             {filteredSubjectsList.length > 0 && (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
                                                     {filteredSubjectsList.map(sub => (
-                                                        <div key={sub} onClick={() => openSubject(sub)} className="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer flex items-center space-x-3 transition-colors">
-                                                            <Folder className="w-6 h-6 text-blue-500" /><h3 className="font-bold text-slate-800 dark:text-slate-100">{sub}</h3>
+                                                        <div key={sub} onClick={() => openSubject(sub)} className="liquid-glass-card rounded-2xl p-4.5 cursor-pointer flex items-center space-x-3.5 group h-full">
+                                                            <div className="w-11 h-11 rounded-xl bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform shadow-xs shrink-0">
+                                                                <Folder className="w-6 h-6" />
+                                                            </div>
+                                                            <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{sub}</h3>
                                                         </div>
                                                     ))}
                                                 </div>
                                             )}
                                             {searchedCourses.length > 0 && (
-                                                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                                                    <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                <div className="liquid-glass rounded-3xl overflow-hidden shadow-lg">
+                                                    <ul className="divide-y divide-white/60 dark:divide-white/10">
                                                         {searchedCourses.map(course => (
                                                             <CourseListItem 
                                                                 key={course.id} 
@@ -2923,38 +3069,115 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             ) : (
                                 <>
                                     {latestCourses.length > 0 && (
-                                        <div>
-                                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center"><Clock className="w-5 h-5 mr-2 text-blue-500"/> Derniers ajouts</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center"><Clock className="w-5 h-5 mr-2 text-blue-500"/> Derniers ajouts</h3>
+                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 liquid-glass-pill px-3 py-1 rounded-xl">
+                                                    {selectedClass}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
                                                 {latestCourses.map(course => (
-                                                    <div key={course.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm relative group hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
-                                                        <div className="absolute top-3 right-3 flex items-center space-x-1 z-10">
-                                                            <button 
-                                                                onClick={() => shareCourse(course)} 
-                                                                className="text-slate-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                                                title="Partager ce cours (copier le lien direct)"
-                                                            >
-                                                                <Share2 className="w-4 h-4" />
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => toggleFav(course.id)} 
-                                                                className="text-slate-300 dark:text-slate-600 hover:text-amber-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                                                title={favorites.includes(course.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
-                                                            >
-                                                                <Star className="w-5 h-5" filled={favorites.includes(course.id)} />
-                                                            </button>
+                                                    <div key={course.id} className="liquid-glass-card rounded-3xl p-5 sm:p-5.5 relative group flex flex-col justify-between h-full">
+                                                        <div>
+                                                            <div className="flex items-center justify-between mb-2.5">
+                                                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-400/20 px-2.5 py-0.5 rounded-full border border-blue-400/30 truncate max-w-[140px]">
+                                                                    {course.subject}
+                                                                </span>
+                                                                <div className="flex items-center space-x-1 shrink-0">
+                                                                    <button 
+                                                                        onClick={() => shareCourse(course)} 
+                                                                        className="text-slate-400 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1.5 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 cursor-pointer"
+                                                                        title="Partager ce cours (copier le lien direct)"
+                                                                    >
+                                                                        <Share2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => toggleFav(course.id)} 
+                                                                        className="text-slate-400 dark:text-slate-400 hover:text-amber-400 transition-colors p-1.5 rounded-xl hover:bg-white/60 dark:hover:bg-white/10 cursor-pointer"
+                                                                        title={favorites.includes(course.id) ? "Retirer des favoris" : "Ajouter aux favoris"}
+                                                                    >
+                                                                        <Star className="w-4 h-4" filled={favorites.includes(course.id)} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <h4 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base mb-3 line-clamp-2 min-h-[2.5rem] leading-snug">
+                                                                {course.title}
+                                                            </h4>
                                                         </div>
-                                                        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-2 pr-14">{course.subject}</div>
-                                                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm mb-2 line-clamp-2">{course.title}</h4>
-                                                        <div className="flex flex-wrap gap-1.5 mt-4">
-                                                            {course.digitalLink && <button onClick={() => handleView(course, 'Numérique')} className="flex-1 min-w-[65px] bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><Eye className="w-3 h-3 mr-1"/> PDF</button>}
-                                                            {course.casioLink && <button onClick={() => handleView(course, 'Casio')} className="flex-1 min-w-[65px] bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><Calculator className="w-3 h-3 mr-1"/> Casio</button>}
-                                                            {course.videoLink && <button onClick={() => handleView(course, 'Vidéo')} className="flex-1 min-w-[65px] bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><VideoIcon className="w-3 h-3 mr-1"/> Vidéo</button>}
-                                                            {course.imageLink && <button onClick={() => handleView(course, 'Image')} className="flex-1 min-w-[65px] bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-700 dark:text-amber-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><ImageIcon className="w-3 h-3 mr-1"/> Image</button>}
-                                                            {course.audioLink && <button onClick={() => handleView(course, 'Audio')} className="flex-1 min-w-[65px] bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors"><MusicIcon className="w-3 h-3 mr-1"/> Audio</button>}
-                                                            <button onClick={() => handleTakeNotesOnCourse(course)} className="flex-1 min-w-[65px] bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors" title="Prendre des notes sur ce cours dans WorksBox Note"><PenTool className="w-3 h-3 mr-1 text-sky-500 dark:text-sky-400"/> Noter</button>
-                                                            <button onClick={() => saveCourseToCloudDrive(course)} className="flex-1 min-w-[65px] bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors" title="Sauvegarder la fiche sur votre WorksBox Cloud"><CloudIcon className="w-3 h-3 mr-1 text-indigo-500 dark:text-indigo-400"/> Cloud</button>
-                                                            <button onClick={() => shareCourse(course)} className="flex-1 min-w-[65px] bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 text-xs font-bold py-1.5 rounded flex justify-center items-center transition-colors" title="Partager ce cours (copier le lien direct)"><Share2 className="w-3 h-3 mr-1 text-blue-500 dark:text-blue-400"/> Partager</button>
+
+                                                        {/* Section Actions avec disposition soignée et alignée */}
+                                                        <div className="mt-3 pt-3 border-t border-slate-200/60 dark:border-white/10 space-y-2">
+                                                            {/* Formats de consultation principaux */}
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                {course.digitalLink && (
+                                                                    <button 
+                                                                        onClick={() => handleView(course, 'Numérique')} 
+                                                                        className="flex-1 min-w-[70px] py-2 px-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+                                                                    >
+                                                                        <Eye className="w-3.5 h-3.5 mr-1" /> PDF
+                                                                    </button>
+                                                                )}
+                                                                {course.casioLink && (
+                                                                    <button 
+                                                                        onClick={() => handleView(course, 'Casio')} 
+                                                                        className="flex-1 min-w-[70px] py-2 px-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+                                                                    >
+                                                                        <Calculator className="w-3.5 h-3.5 mr-1" /> Casio
+                                                                    </button>
+                                                                )}
+                                                                {course.videoLink && (
+                                                                    <button 
+                                                                        onClick={() => handleView(course, 'Vidéo')} 
+                                                                        className="flex-1 min-w-[70px] py-2 px-2.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold rounded-xl flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+                                                                    >
+                                                                        <VideoIcon className="w-3.5 h-3.5 mr-1" /> Vidéo
+                                                                    </button>
+                                                                )}
+                                                                {course.imageLink && (
+                                                                    <button 
+                                                                        onClick={() => handleView(course, 'Image')} 
+                                                                        className="flex-1 min-w-[70px] py-2 px-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white text-xs font-bold rounded-xl flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+                                                                    >
+                                                                        <ImageIcon className="w-3.5 h-3.5 mr-1" /> Image
+                                                                    </button>
+                                                                )}
+                                                                {course.audioLink && (
+                                                                    <button 
+                                                                        onClick={() => handleView(course, 'Audio')} 
+                                                                        className="flex-1 min-w-[70px] py-2 px-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl flex items-center justify-center shadow-xs transition-all active:scale-95 cursor-pointer"
+                                                                    >
+                                                                        <MusicIcon className="w-3.5 h-3.5 mr-1" /> Audio
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Raccourcis Outils (Note, Cloud, Partager) */}
+                                                            <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                                                                <button 
+                                                                    onClick={() => handleTakeNotesOnCourse(course)} 
+                                                                    className="flex-1 py-1.5 px-2 liquid-glass-btn text-sky-600 dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    title="Prendre des notes sur ce cours dans WorksBox Note"
+                                                                >
+                                                                    <PenTool className="w-3 h-3 mr-1 text-sky-500" />
+                                                                    <span>Note</span>
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => saveCourseToCloudDrive(course)} 
+                                                                    className="flex-1 py-1.5 px-2 liquid-glass-btn text-indigo-600 dark:text-indigo-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    title="Sauvegarder dans WorksBox Cloud"
+                                                                >
+                                                                    <CloudIcon className="w-3 h-3 mr-1 text-indigo-500" />
+                                                                    <span>Cloud</span>
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => shareCourse(course)} 
+                                                                    className="py-1.5 px-2.5 liquid-glass-btn text-slate-700 dark:text-slate-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    title="Partager ce cours (copier le lien direct)"
+                                                                >
+                                                                    <Share2 className="w-3 h-3 text-blue-500" />
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -2964,22 +3187,34 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                                     <div>
                                         <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center"><Folder className="w-5 h-5 mr-2 text-blue-500"/> Explorer par matière</h3>
-                                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
+                                            <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center"><Folder className="w-5 h-5 mr-2 text-blue-500"/> Explorer par matière</h3>
+                                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 liquid-glass-pill px-3 py-1 rounded-xl">
                                                 {sortedSubjects.length} matières pour {selectedClass}
                                             </span>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 items-stretch">
                                             {sortedSubjects.map((subject, index) => {
                                                 const sLower = (subject || '').trim().toLowerCase();
                                                 const courseCount = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === sLower).length;
+                                                // Dynamic colorful liquid glass gradients for each subject
+                                                const iconGradients = [
+                                                    'from-blue-600 to-cyan-500 text-white shadow-blue-500/25',
+                                                    'from-indigo-600 to-purple-600 text-white shadow-indigo-500/25',
+                                                    'from-emerald-600 to-teal-500 text-white shadow-emerald-500/25',
+                                                    'from-amber-500 to-orange-500 text-white shadow-amber-500/25',
+                                                    'from-rose-500 to-pink-500 text-white shadow-rose-500/25',
+                                                    'from-sky-500 to-blue-600 text-white shadow-sky-500/25'
+                                                ];
+                                                const grad = iconGradients[index % iconGradients.length];
                                                 return (
-                                                <div key={index} onClick={() => openSubject(subject)} className="bg-white dark:bg-slate-900 rounded-xl p-5 sm:p-6 shadow-xs border border-slate-200 dark:border-slate-800 hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500 cursor-pointer transition-all flex items-start space-x-4 group">
-                                                    <div className="bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 p-3 rounded-xl group-hover:scale-105 transition-transform"><Folder className="w-7 h-7 sm:w-8 sm:h-8" /></div>
+                                                <div key={index} onClick={() => openSubject(subject)} className="liquid-glass-card rounded-3xl p-5 sm:p-6 cursor-pointer flex items-center space-x-4 group h-full select-none">
+                                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform shrink-0`}>
+                                                        <Folder className="w-7 h-7" />
+                                                    </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center justify-between gap-1 mb-1">
-                                                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{subject}</h3>
-                                                            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/80 px-2 py-0.5 rounded-md border border-blue-100 dark:border-blue-900 shrink-0">
+                                                            <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{subject}</h3>
+                                                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-400/20 px-2 py-0.5 rounded-lg border border-blue-400/30 shrink-0">
                                                                 {selectedClass}
                                                             </span>
                                                         </div>
@@ -3002,15 +3237,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             {/* Navigation retour & Fil d'Ariane */}
                             <div className="flex items-center justify-between flex-wrap gap-4">
                                 <button 
-                                    onClick={goHome}
-                                    id="btn-profile-back-to-site"
-                                    className="inline-flex items-center space-x-2 px-4 py-2.5 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs active:scale-95 cursor-pointer group"
+                                    onClick={goHome} 
+                                    id="btn-profile-back-to-site" 
+                                    className="inline-flex items-center space-x-2 px-4 py-2.5 liquid-glass-btn text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-xs sm:text-sm transition-all shadow-xs active:scale-95 cursor-pointer group"
                                     title="Retourner à l'accueil du site"
                                 >
                                     <ChevronLeft className="w-5 h-5 text-blue-600 dark:text-blue-400 group-hover:-translate-x-0.5 transition-transform" />
                                     <span>← Retour au site</span>
                                 </button>
-                                <div className="flex items-center space-x-2 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 px-3.5 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                                <div className="flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300 liquid-glass-pill px-3.5 py-1.5 rounded-xl">
                                     <span>WorksBox</span>
                                     <span>/</span>
                                     <span className="text-blue-600 dark:text-blue-400 font-bold">Mon Espace Profil</span>
@@ -3018,12 +3253,12 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </div>
 
                             {/* Hero Card Profil Élève */}
-                            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                            <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                                 <div className="flex items-center space-x-4 sm:space-x-5 min-w-0">
                                     {activeUser?.photoURL ? (
                                         <img src={activeUser.photoURL} alt="Avatar" className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl object-cover border-2 border-blue-500 shadow-md flex-shrink-0" />
                                     ) : (
-                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl ${activeUser?.isLocal ? 'bg-emerald-600' : (isUserAdmin ? 'bg-red-600' : 'bg-blue-600')} text-white flex items-center justify-center text-2xl sm:text-3xl font-black shadow-md flex-shrink-0`}>
+                                        <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl ${activeUser?.isLocal ? 'bg-emerald-600' : (isUserAdmin ? 'bg-red-600' : 'bg-blue-600')} text-white flex items-center justify-center text-2xl sm:text-3xl font-black shadow-lg shadow-blue-500/20 flex-shrink-0`}>
                                             {(activeUser?.displayName || activeUser?.email || 'E')[0].toUpperCase()}
                                         </div>
                                     )}
@@ -3033,28 +3268,28 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                 {activeUser?.displayName || (isUserAdmin ? 'Roman Ferrière' : 'Élève')}
                                             </h1>
                                             {activeUser?.isLocal ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-400/30">
                                                     <UserIcon className="w-3 h-3 mr-1" /> Profil Élève
                                                 </span>
                                             ) : isUserAdmin ? (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 dark:bg-red-950 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-500/15 text-red-700 dark:text-red-300 border border-red-400/30">
                                                     <Shield className="w-3 h-3 mr-1" /> Administrateur
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-400/30">
                                                     <Check className="w-3 h-3 mr-1" /> Compte Google
                                                 </span>
                                             )}
                                         </div>
                                         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 truncate mb-2">{activeUser?.email}</p>
                                         <div className="flex items-center space-x-2 text-xs font-bold text-slate-600 dark:text-slate-300 flex-wrap gap-1.5">
-                                            <span className="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center">
+                                            <span className="liquid-glass-pill px-2.5 py-1 rounded-xl flex items-center">
                                                 <SchoolIcon className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
                                                 {selectedSchool} • {selectedClass}
                                             </span>
                                             <button 
                                                 onClick={() => setShowOnboarding(true)} 
-                                                className="text-blue-600 dark:text-blue-400 hover:underline text-[11px]"
+                                                className="text-blue-600 dark:text-blue-400 hover:underline text-[11px] font-bold cursor-pointer"
                                             >
                                                 Changer
                                             </button>
@@ -3063,13 +3298,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 </div>
 
                                 {/* Widget WorksBox Cloud */}
-                                <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3 w-full md:w-auto shrink-0">
+                                <div className="liquid-glass-card rounded-2xl p-4 flex items-center justify-between gap-3 w-full md:w-auto shrink-0 border border-white/60 dark:border-white/10">
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2.5 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
+                                        <div className="p-2.5 rounded-xl bg-sky-500/20 text-sky-600 dark:text-sky-400 border border-sky-400/30">
                                             <Cloud className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WorksBox Cloud (1 Go)</span>
+                                            <span className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WorksBox Cloud (1 Go)</span>
                                             <span className="text-xs font-bold text-slate-900 dark:text-white">
                                                 {activeUser && !activeUser.isLocal 
                                                     ? `${((cloudStorageUsed / (1024 * 1024))).toFixed(1)} Mo / 1 Go` 
@@ -3080,15 +3315,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     {activeUser && !activeUser.isLocal ? (
                                         <button 
                                             onClick={() => setProfileTab('cloud')}
-                                            className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-xs rounded-xl border border-sky-200 dark:border-sky-800 transition whitespace-nowrap cursor-pointer flex items-center space-x-1"
+                                            className="px-3.5 py-2 liquid-glass-btn text-sky-600 dark:text-sky-300 font-bold text-xs rounded-xl transition whitespace-nowrap cursor-pointer flex items-center space-x-1"
                                         >
-                                            <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                                            <Cloud className="w-3.5 h-3.5 text-sky-500" />
                                             <span>Mon Cloud</span>
                                         </button>
                                     ) : (
                                         <button 
-                                            onClick={() => setShowAuthModal(true)}
-                                            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition active:scale-95 flex items-center space-x-1.5 whitespace-nowrap cursor-pointer"
+                                            onClick={() => setShowAuthModal(true)} 
+                                            className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-sm transition active:scale-95 flex items-center space-x-1.5 whitespace-nowrap cursor-pointer"
                                         >
                                             <GoogleIcon className="w-3.5 h-3.5" />
                                             <span>Connexion</span>
@@ -3098,20 +3333,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </div>
 
                             {/* Barre des Onglets Exclusifs du Profil */}
-                            <div className="flex items-center space-x-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+                            <div className="flex items-center space-x-2 border-b border-white/40 dark:border-white/10 pb-2 overflow-x-auto">
                                 <button 
                                     id="tab-profile-favorites"
                                     onClick={() => setProfileTab('favorites')}
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                                         profileTab === 'favorites' 
-                                            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40' 
-                                             : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                            ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25 ring-2 ring-amber-400/40' 
+                                            : 'liquid-glass-btn text-slate-600 dark:text-slate-400'
                                     }`}
                                 >
                                     <Star className="w-4 h-4" filled={profileTab === 'favorites'} />
                                     <span>Mes Favoris</span>
                                     <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
-                                        profileTab === 'favorites' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                                        profileTab === 'favorites' ? 'bg-white/20 text-white' : 'liquid-glass-pill text-slate-700 dark:text-slate-300'
                                     }`}>
                                         {favorites.length}
                                     </span>
@@ -3122,14 +3357,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     onClick={() => setProfileTab('cloud')}
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                                         profileTab === 'cloud' 
-                                            ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20 ring-2 ring-sky-400/40' 
-                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                            ? 'bg-sky-600 text-white shadow-lg shadow-sky-600/25 ring-2 ring-sky-400/40' 
+                                            : 'liquid-glass-btn text-slate-600 dark:text-slate-400'
                                     }`}
                                 >
                                     <Cloud className="w-4 h-4" />
                                     <span>WorksBox Cloud</span>
                                     <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
-                                        profileTab === 'cloud' ? 'bg-white/20 text-white' : 'bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300'
+                                        profileTab === 'cloud' ? 'bg-white/20 text-white' : 'liquid-glass-pill text-sky-700 dark:text-sky-300'
                                     }`}>
                                         {cloudFiles.length}
                                     </span>
@@ -3140,14 +3375,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     onClick={() => setProfileTab('sharedCloud')}
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap relative ${
                                         profileTab === 'sharedCloud' 
-                                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 ring-2 ring-indigo-400/40' 
-                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 ring-2 ring-indigo-400/40' 
+                                            : 'liquid-glass-btn text-slate-600 dark:text-slate-400'
                                     }`}
                                 >
                                     <Users className="w-4 h-4" />
                                     <span>Cloud Partagé</span>
                                     <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
-                                        profileTab === 'sharedCloud' ? 'bg-white/20 text-white' : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300'
+                                        profileTab === 'sharedCloud' ? 'bg-white/20 text-white' : 'liquid-glass-pill text-indigo-700 dark:text-indigo-300'
                                     }`}>
                                         {sharedCloudFiles.length}
                                     </span>
@@ -3158,8 +3393,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     onClick={() => setProfileTab('account')}
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                                         profileTab === 'account' 
-                                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 ring-2 ring-blue-400/40' 
-                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25 ring-2 ring-blue-400/40' 
+                                            : 'liquid-glass-btn text-slate-600 dark:text-slate-400'
                                     }`}
                                 >
                                     <Settings className="w-4 h-4" />
@@ -3185,14 +3420,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                     placeholder="Rechercher dans mes favoris..." 
                                                     value={favoritesSearchQuery} 
                                                     onChange={(e) => setFavoritesSearchQuery(e.target.value)} 
-                                                    className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-amber-500 text-slate-800 dark:text-slate-100"
+                                                    className="w-full pl-9 pr-3 py-2 text-xs liquid-glass-input rounded-xl outline-none text-slate-800 dark:text-slate-100"
                                                 />
                                             </div>
                                         )}
                                     </div>
 
                                     {favoriteCourses.length === 0 ? (
-                                        <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-12 text-center space-y-3">
+                                        <div className="liquid-glass rounded-3xl p-12 text-center space-y-3">
                                             <Star className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto" />
                                             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Aucun cours en favori pour l'instant</h3>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
@@ -3200,14 +3435,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             </p>
                                             <button 
                                                 onClick={goHome} 
-                                                className="mt-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-sm inline-flex items-center space-x-2"
+                                                className="mt-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20 inline-flex items-center space-x-2 cursor-pointer active:scale-95"
                                             >
                                                 <span>Explorer les cours</span>
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                                            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        <div className="liquid-glass rounded-3xl shadow-lg overflow-hidden">
+                                            <ul className="divide-y divide-white/60 dark:divide-white/10">
                                                 {favoriteCourses
                                                     .filter(c => !favoritesSearchQuery.trim() || c.title.toLowerCase().includes(favoritesSearchQuery.toLowerCase()) || c.subject.toLowerCase().includes(favoritesSearchQuery.toLowerCase()))
                                                     .map(course => (
@@ -3235,7 +3470,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             {profileTab === 'cloud' && (
                                 <div className="space-y-6 animate-in fade-in duration-200">
                                     {/* Jauge de Quota 1 Go & Actions */}
-                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-5">
+                                    <div className="liquid-glass-card rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                             <div>
                                                 <div className="flex items-center space-x-2">
@@ -3285,7 +3520,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                 <button 
                                                     onClick={() => loadWorksBoxCloudFiles(driveToken, false)}
                                                     disabled={cloudLoading}
-                                                    className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                                                    className="px-3 py-2 liquid-glass-btn text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
                                                     title="Actualiser vos documents"
                                                 >
                                                     <RefreshCw className={`w-3.5 h-3.5 ${cloudLoading ? 'animate-spin' : ''}`} />
@@ -3312,7 +3547,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                         }
                                                     }}
                                                     disabled={cloudUploading}
-                                                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-sm transition active:scale-95 flex items-center space-x-2 cursor-pointer"
+                                                    className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-md shadow-blue-500/20 transition active:scale-95 flex items-center space-x-2 cursor-pointer"
                                                 >
                                                     {cloudUploading ? (
                                                         <>
@@ -3331,7 +3566,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     </div>
 
                                     {/* Liste des fichiers & Dossiers Cloud */}
-                                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-sm space-y-6">
+                                    <div className="liquid-glass rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
                                         {/* Fil d'ariane & Boutons d'actions rapides (Nouveau Dossier / Nouvelle Note) */}
                                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
                                             {/* Fil d'Ariane (Breadcrumbs) */}
@@ -3935,36 +4170,36 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                         {currentView === 'subject' && (
                         <div key={`view-subject-${selectedSubject}`} className="space-y-6 view-transition">
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs mb-6">
+                            <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 mb-6">
                                 <div className="flex flex-wrap items-center justify-between gap-4">
                                     <div className="flex items-center space-x-3.5">
                                         <button 
                                             onClick={goHome} 
-                                            className="p-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 shadow-2xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95 cursor-pointer"
+                                            className="p-2.5 liquid-glass-btn rounded-2xl text-slate-700 dark:text-slate-200 shadow-xs transition-all active:scale-95 cursor-pointer"
                                             title="Retour à l'accueil"
                                         >
-                                            <ChevronLeft className="w-5 h-5" />
+                                            <ChevronLeft className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                         </button>
                                         <div>
                                             <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400">
                                                 <span>{selectedSchool}</span>
                                                 <span className="text-slate-300 dark:text-slate-600">•</span>
-                                                <span className="bg-blue-100 dark:bg-blue-950/90 text-blue-800 dark:text-blue-300 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-900 font-extrabold">{selectedClass}</span>
+                                                <span className="liquid-glass-pill px-2.5 py-0.5 rounded-md font-extrabold text-blue-700 dark:text-blue-300">{selectedClass}</span>
                                             </div>
-                                            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">{selectedSubject}</h1>
+                                            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{selectedSubject}</h1>
                                         </div>
                                     </div>
-                                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
-                                        {chaptersData.reduce((acc, chap) => acc + chap.courses.length, 0)} cours spécifiques à <span className="font-bold text-blue-600 dark:text-blue-400">{selectedClass}</span>
+                                    <div className="text-xs font-bold text-slate-700 dark:text-slate-200 liquid-glass-pill px-4 py-2 rounded-xl">
+                                        {chaptersData.reduce((acc, chap) => acc + chap.courses.length, 0)} cours spécifiques à <span className="font-extrabold text-blue-600 dark:text-blue-400">{selectedClass}</span>
                                     </div>
                                 </div>
                             </div>
                             {chaptersData.length === 0 ? (
-                                <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-12 text-center text-slate-500 dark:text-slate-400">
+                                <div className="liquid-glass rounded-3xl p-12 text-center text-slate-500 dark:text-slate-400">
                                     <Folder className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
                                     <p className="font-bold text-slate-700 dark:text-slate-300 text-base">Aucun cours d'« {selectedSubject} » pour {selectedClass}.</p>
                                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">Chaque classe possède son propre programme et ses propres cours indépendants.</p>
-                                    <button onClick={goHome} className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow-xs">
+                                    <button onClick={goHome} className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer">
                                         ← Retourner à l'accueil
                                     </button>
                                 </div>
@@ -4012,9 +4247,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                         {currentView === 'casioGuide' && (
                           <div key="view-casioGuide" className="space-y-8 max-w-4xl mx-auto view-transition">
-                            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center"><HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-4"/> Tuto Casio Graph 35+EII</h1>
+                            <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center"><HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-4"/> Tuto Casio Graph 35+EII</h1>
                             <div 
-                                className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 space-y-6 text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed text-sm sm:text-base"
+                                className="liquid-glass rounded-3xl p-8 space-y-6 text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed text-sm sm:text-base shadow-xl"
                                 dangerouslySetInnerHTML={{ __html: settings.casioGuideContent || DEFAULT_CASIO_FALLBACK }}
                             />
                           </div>
@@ -4022,9 +4257,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                         {currentView === 'terms' && (
                           <div key="view-terms" className="space-y-8 max-w-4xl mx-auto view-transition">
-                            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white flex items-center"><Shield className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-4"/> Conditions d'utilisations</h1>
+                            <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center"><Shield className="w-8 h-8 text-blue-600 dark:text-blue-400 mr-4"/> Conditions d'utilisations</h1>
                             <div 
-                                className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-8 space-y-6 text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed text-sm sm:text-base"
+                                className="liquid-glass rounded-3xl p-8 space-y-6 text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed text-sm sm:text-base shadow-xl"
                                 dangerouslySetInnerHTML={{ __html: settings.termsContent || DEFAULT_TERMS_FALLBACK }}
                             />
                           </div>
@@ -4058,14 +4293,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 )}
               </main>
 
-              <footer className="mt-20 border-t border-slate-200 dark:border-slate-800 py-8 text-center text-xs text-slate-500 dark:text-slate-400 max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors">
+              <footer className="mt-20 border-t border-white/40 dark:border-white/10 py-8 text-center text-xs text-slate-500 dark:text-slate-400 max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors">
                   <span>WorksBox — Cours & Ressources pour Lycées</span>
                   <div className="flex items-center space-x-4">
-                      <button onClick={openTerms} className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">Conditions</button>
+                      <button onClick={openTerms} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">Conditions</button>
                       <span>•</span>
-                      <button onClick={openCasioGuide} className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">Tuto Casio</button>
+                      <button onClick={openCasioGuide} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">Tuto Casio</button>
                       <span>•</span>
-                      <a href="admin.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-semibold transition-colors flex items-center">Administration</a>
+                      <a href="admin.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-bold transition-colors flex items-center">Administration</a>
                   </div>
               </footer>
 
@@ -4121,10 +4356,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
               {/* Modal de Confirmation Générique Non-Bloquante */}
               {genericConfirmModal && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xl animate-in fade-in duration-200">
+                      <div className="liquid-glass rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4 animate-in zoom-in-95 duration-200">
                           <div className="flex items-center space-x-3">
-                              <div className="p-3 bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 rounded-2xl shrink-0">
+                              <div className="p-3 bg-red-500/20 text-red-600 dark:text-red-400 rounded-2xl shrink-0 border border-red-400/30">
                                   <Trash2 className="w-5 h-5" />
                               </div>
                               <div>
@@ -4136,7 +4371,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           <div className="flex justify-end space-x-2 pt-2">
                               <button
                                   onClick={() => setGenericConfirmModal(null)}
-                                  className="px-4 py-2 text-xs font-bold border border-slate-300 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                                  className="px-4 py-2 text-xs font-bold liquid-glass-btn rounded-xl text-slate-700 dark:text-slate-300 transition cursor-pointer"
                               >
                                   Annuler
                               </button>
@@ -4157,14 +4392,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
               {/* Modal de Création de Dossier WorksBox Cloud */}
               {showNewFolderModal && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-                      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5 border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xl animate-in fade-in duration-200">
+                      <div className="liquid-glass rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 space-y-5 animate-in zoom-in-95 duration-200">
                           <div className="flex items-center space-x-3">
-                              <div className="p-3 bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 rounded-2xl shrink-0">
+                              <div className="p-3 bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-2xl shrink-0 border border-sky-400/30">
                                   <FolderPlus className="w-6 h-6" />
                               </div>
                               <div>
-                                  <h3 className="font-bold text-slate-900 dark:text-white text-lg">Nouveau dossier Cloud</h3>
+                                  <h3 className="font-black text-slate-900 dark:text-white text-lg">Nouveau dossier Cloud</h3>
                                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                       Créer dans : <strong>{cloudBreadcrumbs[cloudBreadcrumbs.length - 1]?.name || 'WorksBox Cloud'}</strong>
                                   </p>
@@ -4182,21 +4417,21 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                       placeholder="Ex: Mathématiques, Physique-Chimie, Fiches BAC..." 
                                       required 
                                       autoFocus
-                                      className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 text-slate-900 dark:text-white"
+                                      className="w-full px-4 py-3 liquid-glass-input rounded-xl text-sm font-semibold outline-none text-slate-900 dark:text-white"
                                   />
                               </div>
                               <div className="flex justify-end space-x-2 pt-2">
                                   <button
                                       type="button"
                                       onClick={() => { setShowNewFolderModal(false); setNewFolderNameInput(''); }}
-                                      className="px-4 py-2.5 text-xs font-bold border border-slate-300 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+                                      className="px-4 py-2.5 text-xs font-bold liquid-glass-btn rounded-xl text-slate-700 dark:text-slate-300 transition cursor-pointer"
                                   >
                                       Annuler
                                   </button>
                                   <button
                                       type="submit"
                                       disabled={!newFolderNameInput.trim() || cloudLoading}
-                                      className="px-5 py-2.5 text-xs font-bold bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white rounded-xl shadow-sm transition cursor-pointer flex items-center space-x-1.5"
+                                      className="px-5 py-2.5 text-xs font-bold bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 disabled:opacity-50 text-white rounded-xl shadow-md transition cursor-pointer flex items-center space-x-1.5"
                                   >
                                       <FolderPlus className="w-3.5 h-3.5" />
                                       <span>Créer le dossier</span>
@@ -4207,14 +4442,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   </div>
               )}
 
-              {/* Barre de navigation mobile inférieure (Quick Access Bar) */}
-              <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-800 px-2 py-1.5 flex items-center justify-around text-slate-400 shadow-2xl">
+              {/* Barre de navigation mobile inférieure (Dock Liquid Glass) */}
+              <div className="lg:hidden fixed bottom-3 left-4 right-4 z-40 liquid-glass-nav rounded-2xl px-2 py-1.5 flex items-center justify-around text-slate-600 dark:text-slate-300 shadow-2xl border border-white/80 dark:border-white/10">
                   <button 
                       onClick={goHome} 
-                      className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
                           (currentView === 'home' || currentView === 'subject') 
-                              ? 'text-blue-400 font-bold' 
-                              : 'hover:text-slate-200'
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs' 
+                              : 'hover:text-blue-500'
                       }`}
                   >
                       <HomeIcon className="w-5 h-5 mb-0.5" />
@@ -4223,22 +4458,22 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                   <button 
                       onClick={openSoftwareHub} 
-                      className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
                           currentView === 'software' 
-                              ? 'text-blue-400 font-bold' 
-                              : 'text-slate-300 hover:text-white'
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs' 
+                              : 'hover:text-blue-500'
                       }`}
                   >
-                      <Layers className="w-5 h-5 mb-0.5 text-blue-400" />
+                      <Layers className="w-5 h-5 mb-0.5 text-blue-500 dark:text-blue-400" />
                       <span className="text-[10px] font-semibold">Logiciels</span>
                   </button>
 
                   <button 
                       onClick={() => openProfile('favorites')} 
-                      className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
                           currentView === 'profile' && profileTab === 'favorites' 
-                              ? 'text-amber-400 font-bold' 
-                              : 'hover:text-slate-200'
+                              ? 'bg-amber-500/15 text-amber-500 font-bold shadow-xs' 
+                              : 'hover:text-amber-500'
                       }`}
                   >
                       <Star className="w-5 h-5 mb-0.5" />
@@ -4253,10 +4488,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               setShowAuthModal(true);
                           }
                       }} 
-                      className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
                           currentView === 'profile' && (profileTab === 'profile' || profileTab === 'overview') 
-                              ? 'text-blue-400 font-bold' 
-                              : 'hover:text-slate-200'
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs' 
+                              : 'hover:text-blue-500'
                       }`}
                   >
                       <UserIcon className="w-5 h-5 mb-0.5" />
@@ -5897,10 +6132,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
             return (
                 <div key="view-software" className="space-y-10 max-w-7xl mx-auto view-transition font-sans">
-                    {/* EN-TÊTE / BANNIÈRE HERO STYLE MICROSOFT OFFICE 365 */}
-                    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-6 sm:p-10 border border-slate-800 shadow-xl">
+                    {/* EN-TÊTE / BANNIÈRE HERO LIQUID GLASS */}
+                    <div className="relative overflow-hidden rounded-3xl liquid-glass text-white p-6 sm:p-10 border border-white/60 dark:border-white/10 shadow-2xl bg-gradient-to-br from-slate-900/90 via-blue-950/80 to-indigo-950/90 backdrop-blur-2xl">
                         <div className="relative z-10 max-w-3xl space-y-4">
-                            <div className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 text-blue-300 rounded-full text-xs font-black uppercase tracking-wider">
+                            <div className="inline-flex items-center space-x-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 text-blue-300 rounded-full text-xs font-black uppercase tracking-wider shadow-xs">
                                 <Layers className="w-3.5 h-3.5" />
                                 <span>Suite Logicielle & Productivité WorksBox</span>
                             </div>
@@ -5908,28 +6143,28 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 Vos applications scolaires réunies.
                             </h1>
                             <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl">
-                                Traitement de texte Word 365, Stockage Cloud 1 Go, conversion Calculatrices Casio et fiches de révision : accédez instantanément à tous les logiciels WorksBox depuis un seul hub centralisé.
+                                Traitement de texte Word, Stockage Cloud 1 Go, conversion Calculatrices Casio et fiches de révision : accédez instantanément à tous les logiciels WorksBox depuis un seul hub centralisé.
                             </p>
                             
                             {/* Raccourcis d'actions rapides */}
                             <div className="flex flex-wrap items-center gap-3 pt-2">
                                 <button 
                                     onClick={onCreateNewNote}
-                                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/25 transition active:scale-95 flex items-center space-x-2 cursor-pointer"
+                                    className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-500/25 transition active:scale-95 flex items-center space-x-2 cursor-pointer"
                                 >
                                     <FilePlus className="w-4 h-4" />
                                     <span>Nouveau document Note</span>
                                 </button>
                                 <button 
                                     onClick={onOpenCloud}
-                                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/25 transition active:scale-95 flex items-center space-x-2 cursor-pointer"
+                                    className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-indigo-500/25 transition active:scale-95 flex items-center space-x-2 cursor-pointer"
                                 >
                                     <CloudIcon className="w-4 h-4" />
                                     <span>Accéder au Cloud (1 Go)</span>
                                 </button>
                                 <button 
                                     onClick={onOpenCasioGuide}
-                                    className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition active:scale-95 flex items-center space-x-2 cursor-pointer"
+                                    className="px-4 py-2.5 liquid-glass-btn text-slate-200 rounded-xl text-xs font-bold transition active:scale-95 flex items-center space-x-2 cursor-pointer"
                                 >
                                     <Calculator className="w-4 h-4 text-emerald-400" />
                                     <span>Tuto & Fiches Casio</span>
@@ -5947,7 +6182,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white flex items-center">
+                                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center">
                                     <Layers className="w-6 h-6 mr-2.5 text-blue-600 dark:text-blue-400" />
                                     Logiciels de la suite WorksBox
                                 </h2>
@@ -5955,43 +6190,43 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                            {/* Logiciel 1 : WorksBox Note */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 items-stretch">
+                            {/* Logiciel 1 : WorksBox Note (span 2 on lg) */}
+                            <div className="lg:col-span-2 liquid-glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full group">
                                 <div>
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 text-white flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform">
-                                            <FileText className="w-6 h-6" />
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-blue-800 text-white flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:scale-105 transition-transform shrink-0">
+                                            <FileText className="w-8 h-8" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-full">
+                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-500/15 text-blue-700 dark:text-blue-300 rounded-full border border-blue-400/30">
                                             Traitement de texte
                                         </span>
                                     </div>
-                                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                         WorksBox Note
                                     </h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed min-h-[3.5rem]">
                                         Éditeur de documents et de cours complet avec ruban d'outils, formules mathématiques, dictée vocale, sommaire automatique et exportations PDF/Casio.
                                     </p>
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
                                     <div className="flex items-center justify-between text-xs text-slate-400">
-                                        <span>🟢 Auto-Save Cloud actif</span>
-                                        <span>{notesList.length} note(s)</span>
+                                        <span className="flex items-center"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5 animate-pulse"></span>Auto-Save Cloud</span>
+                                        <span className="font-semibold">{notesList.length} note(s)</span>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 pt-1">
+                                    <div className="grid grid-cols-2 gap-2 pt-0.5">
                                         <button 
                                             onClick={() => {
                                                 if (notesList.length > 0) onOpenNote(notesList[0]);
                                                 else onCreateNewNote();
                                             }}
-                                            className="py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition text-center shadow-xs cursor-pointer"
+                                            className="py-2.5 px-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold rounded-xl text-xs transition text-center shadow-md shadow-blue-500/20 active:scale-95 cursor-pointer"
                                         >
                                             Ouvrir l'éditeur
                                         </button>
                                         <button 
                                             onClick={onCreateNewNote}
-                                            className="py-2 bg-blue-50 dark:bg-blue-950/70 hover:bg-blue-100 text-blue-700 dark:text-blue-300 font-bold rounded-xl text-xs transition text-center cursor-pointer"
+                                            className="py-2.5 px-3 liquid-glass-btn text-blue-700 dark:text-blue-300 font-bold rounded-xl text-xs transition text-center active:scale-95 cursor-pointer"
                                         >
                                             + Nouveau
                                         </button>
@@ -5999,45 +6234,45 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 </div>
                             </div>
 
-                            {/* Logiciel 2 : WorksBox Cloud */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+                            {/* Logiciel 2 : WorksBox Cloud (span 2 on lg) */}
+                            <div className="lg:col-span-2 liquid-glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full group">
                                 <div>
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-md shadow-indigo-500/30 group-hover:scale-105 transition-transform">
-                                            <CloudIcon className="w-6 h-6" />
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-700 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:scale-105 transition-transform shrink-0">
+                                            <CloudIcon className="w-8 h-8" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-full">
+                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 rounded-full border border-indigo-400/30">
                                             Stockage 1 Go
                                         </span>
                                     </div>
-                                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                         WorksBox Cloud
                                     </h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed min-h-[3.5rem]">
                                         Espace personnel pour organiser vos cours dans des dossiers personnalisés et sauvegarder automatiquement tous vos documents et fiches.
                                     </p>
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
                                     <div className="flex items-center justify-between text-xs text-slate-400">
-                                        <span>Utilisé : {formatFileSize(cloudStorageUsed)} / 1 Go</span>
-                                        <span>{cloudFiles.length} fichier(s)</span>
+                                        <span>{formatFileSize(cloudStorageUsed)} / 1 Go</span>
+                                        <span className="font-semibold">{cloudFiles.length} fichier(s)</span>
                                     </div>
-                                    <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                    <div className="w-full bg-slate-200/60 dark:bg-slate-800 h-2 rounded-full overflow-hidden p-0.5">
                                         <div 
                                             className="bg-gradient-to-r from-indigo-500 to-purple-600 h-full rounded-full transition-all"
                                             style={{ width: `${Math.min(100, Math.max(5, (cloudStorageUsed / (1024 * 1024 * 1024)) * 100))}%` }}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 pt-1">
+                                    <div className="grid grid-cols-2 gap-2 pt-0.5">
                                         <button 
                                             onClick={onOpenCloud}
-                                            className="py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition text-center shadow-xs cursor-pointer"
+                                            className="py-2.5 px-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs transition text-center shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer"
                                         >
                                             Ouvrir mon Cloud
                                         </button>
                                         <button 
                                             onClick={onOpenCloud}
-                                            className="py-2 bg-indigo-50 dark:bg-indigo-950/70 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold rounded-xl text-xs transition text-center cursor-pointer"
+                                            className="py-2.5 px-3 liquid-glass-btn text-indigo-700 dark:text-indigo-300 font-bold rounded-xl text-xs transition text-center active:scale-95 cursor-pointer"
                                         >
                                             Gérer dossiers
                                         </button>
@@ -6045,96 +6280,96 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 </div>
                             </div>
 
-                            {/* Logiciel 3 : WorksBox Casio Graph Transfert */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-800 hover:border-emerald-500 dark:hover:border-emerald-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+                            {/* Logiciel 3 : WorksBox Students (Casio) (span 2 on lg, md:col-span-2) */}
+                            <div className="md:col-span-2 lg:col-span-2 liquid-glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full group">
                                 <div>
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 group-hover:scale-105 transition-transform">
-                                            <Calculator className="w-6 h-6" />
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 group-hover:scale-105 transition-transform shrink-0">
+                                            <Calculator className="w-8 h-8" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 rounded-full">
+                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 rounded-full border border-emerald-400/30">
                                             Calculatrices Casio
                                         </span>
                                     </div>
-                                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                                         WorksBox Students
                                     </h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed min-h-[3.5rem]">
                                         Outil de conversion et de formatage de cours spécialement calibré pour les écrans Casio Graph 35+EII et 90+E (formats .txt / .g1m sans coupure de mots).
                                     </p>
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
                                     <div className="flex items-center justify-between text-xs text-slate-400">
-                                        <span>Graph 35+EII / 90+E</span>
-                                        <span>Mode Examen</span>
+                                        <span>Graph 35+EII & 90+E</span>
+                                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">Prêt Examen</span>
                                     </div>
                                     <button 
                                         onClick={onOpenCasioGuide}
-                                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition text-center shadow-xs cursor-pointer"
+                                        className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs transition text-center shadow-md shadow-emerald-500/20 active:scale-95 cursor-pointer"
                                     >
                                         Tutoriel & Guide de transfert
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Logiciel 4 : WorksBox WorksBox Cours */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-800 hover:border-amber-500 dark:hover:border-amber-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+                            {/* Logiciel 4 : WorksBox WorksBox Cours (span 3 on lg) */}
+                            <div className="lg:col-span-3 liquid-glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full group">
                                 <div>
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-md shadow-amber-500/30 group-hover:scale-105 transition-transform">
-                                            <BookOpen className="w-6 h-6" />
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform shrink-0">
+                                            <BookOpen className="w-8 h-8" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 rounded-full">
+                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 rounded-full border border-amber-400/30">
                                             Catalogue Lycée
                                         </span>
                                     </div>
-                                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                                         WorksBox Cours
                                     </h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed min-h-[3.5rem]">
                                         Accès immédiat à l'ensemble des cours, chapitres, synthèses, devoirs surveillés et fiches méthode de votre établissement scolaire.
                                     </p>
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
                                     <div className="flex items-center justify-between text-xs text-slate-400">
                                         <span>Ressources officielles</span>
-                                        <span>{courses.length} cours</span>
+                                        <span className="font-semibold">{courses.length} cours disponibles</span>
                                     </div>
                                     <button 
                                         onClick={onGoHome}
-                                        className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition text-center shadow-xs cursor-pointer"
+                                        className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold rounded-xl text-xs transition text-center shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer"
                                     >
                                         Parcourir les matières
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Logiciel 5 : WorksBox WorksBox Express */}
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-800 hover:border-rose-500 dark:hover:border-rose-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+                            {/* Logiciel 5 : WorksBox WorksBox Express (span 3 on lg) */}
+                            <div className="lg:col-span-3 liquid-glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full group">
                                 <div>
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-rose-500/30 group-hover:scale-105 transition-transform">
-                                            <Sigma className="w-6 h-6" />
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/30 group-hover:scale-105 transition-transform shrink-0">
+                                            <Sigma className="w-8 h-8" />
                                         </div>
-                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 rounded-full">
+                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-rose-500/15 text-rose-700 dark:text-rose-300 rounded-full border border-rose-400/30">
                                             Sciences & Formules
                                         </span>
                                     </div>
-                                    <h3 className="text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                                         WorksBox Express
                                     </h3>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
+                                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed min-h-[3.5rem]">
                                         Générateur rapide de fiches de formules mathématiques, physiques, chimiques et de définitions clés pour préparer vos contrôles et le Bac.
                                     </p>
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
                                     <div className="flex items-center justify-between text-xs text-slate-400">
-                                        <span>Modèles prêts</span>
-                                        <span>Maths, PC, NSI</span>
+                                        <span>Modèles prêts à l'emploi</span>
+                                        <span className="font-semibold">Maths, PC, NSI</span>
                                     </div>
                                     <button 
                                         onClick={onCreateNewNote}
-                                        className="w-full py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition text-center shadow-xs cursor-pointer"
+                                        className="w-full py-2.5 px-3 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white font-bold rounded-xl text-xs transition text-center shadow-md shadow-rose-500/20 active:scale-95 cursor-pointer"
                                     >
                                         Créer une fiche mémo
                                     </button>
@@ -6144,10 +6379,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                     </div>
 
                     {/* SECTION : DOCUMENTS ET ACTIVITÉS RÉCENTES (STYLE HUB OFFICE 365) */}
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                    <div className="liquid-glass rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/40 dark:border-white/10">
                             <div>
-                                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center">
+                                <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center">
                                     <Clock className="w-5 h-5 mr-2 text-blue-500" />
                                     Documents & Fichiers récents
                                 </h3>
@@ -6155,28 +6390,28 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </div>
 
                             {/* Filtres par onglet style Office 365 */}
-                            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-bold">
+                            <div className="flex items-center liquid-glass-pill p-1 rounded-2xl text-xs font-bold">
                                 <button 
                                     onClick={() => setRecentFilter('all')}
-                                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${recentFilter === 'all' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                                    className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer ${recentFilter === 'all' ? 'bg-blue-600 text-white shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                                 >
                                     Tous ({recentItems.length})
                                 </button>
                                 <button 
                                     onClick={() => setRecentFilter('notes')}
-                                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${recentFilter === 'notes' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                                    className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer ${recentFilter === 'notes' ? 'bg-blue-600 text-white shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                                 >
                                     Notes ({notesList.length})
                                 </button>
                                 <button 
                                     onClick={() => setRecentFilter('cloud')}
-                                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${recentFilter === 'cloud' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                                    className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer ${recentFilter === 'cloud' ? 'bg-blue-600 text-white shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                                 >
                                     Cloud ({cloudFiles.length})
                                 </button>
                                 <button 
                                     onClick={() => setRecentFilter('favorites')}
-                                    className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${recentFilter === 'favorites' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                                    className={`px-3.5 py-1.5 rounded-xl transition cursor-pointer ${recentFilter === 'favorites' ? 'bg-blue-600 text-white shadow-xs font-black' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
                                 >
                                     Favoris ({favorites.length})
                                 </button>
@@ -6186,18 +6421,18 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         {/* Liste des fichiers récents */}
                         {filteredRecents.length === 0 ? (
                             <div className="py-12 text-center text-slate-400 space-y-3">
-                                <FileText className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-700" />
+                                <FileText className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-700 opacity-60" />
                                 <p className="text-sm font-medium">Aucun document récent dans cette catégorie.</p>
                                 <button 
                                     onClick={onCreateNewNote}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition inline-flex items-center space-x-1.5 cursor-pointer"
+                                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition inline-flex items-center space-x-1.5 cursor-pointer shadow-md shadow-blue-500/20"
                                 >
                                     <FilePlus className="w-4 h-4" />
                                     <span>Créer un premier document</span>
                                 </button>
                             </div>
                         ) : (
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div className="divide-y divide-white/60 dark:divide-white/10">
                                 {filteredRecents.map(item => (
                                     <div 
                                         key={item.id}
@@ -6206,15 +6441,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             else if (item.type === 'cloud') onOpenCloud();
                                             else if (item.type === 'course') onOpenFavorites();
                                         }}
-                                        className="py-3.5 px-3 -mx-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 rounded-2xl transition cursor-pointer flex items-center justify-between gap-4 group"
+                                        className="py-3.5 px-3 -mx-3 hover:bg-white/50 dark:hover:bg-white/5 rounded-2xl transition cursor-pointer flex items-center justify-between gap-4 group"
                                     >
                                         <div className="flex items-center space-x-3.5 min-w-0 flex-1">
-                                            <div className={`p-2.5 rounded-xl flex-shrink-0 ${
+                                            <div className={`p-2.5 rounded-xl flex-shrink-0 border ${
                                                 item.type === 'note' 
-                                                    ? 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400' 
+                                                    ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-400/30' 
                                                     : item.type === 'cloud'
-                                                        ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-400'
-                                                        : 'bg-amber-100 text-amber-600 dark:bg-amber-950 dark:text-amber-400'
+                                                        ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-400/30'
+                                                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-400/30'
                                             }`}>
                                                 {item.type === 'note' && <FileText className="w-5 h-5" />}
                                                 {item.type === 'cloud' && <CloudIcon className="w-5 h-5" />}
@@ -6252,46 +6487,76 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             const courseTag = course.tag || 'Cours';
             const style = COLOR_PALETTES[tagColors?.[courseTag]] || COLOR_PALETTES.slate;
             return (
-                <li className="p-4 sm:p-6 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                    <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
-                        <div className="flex flex-col items-center space-y-1 mt-0.5">
-                            <button 
-                                onClick={toggleFav} 
-                                className="text-slate-300 dark:text-slate-600 hover:text-amber-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                title={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
-                            >
-                                <Star className="w-5 h-5 sm:w-6 sm:h-6" filled={isFav} />
-                            </button>
-                            {(onShare || onCopy) && (
-                                <button 
-                                    onClick={() => onShare ? onShare(course) : onCopy(course)} 
-                                    className="text-slate-300 dark:text-slate-600 hover:text-blue-500 dark:hover:text-blue-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                                    title="Partager ce cours (copier le lien direct)"
-                                >
-                                    <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="min-w-0">
+                <li className="p-4 sm:p-5 hover:bg-white/60 dark:hover:bg-white/5 transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4 group">
+                    <div className="flex items-start sm:items-center space-x-3.5 flex-1 min-w-0">
+                        <button 
+                            onClick={toggleFav} 
+                            className="text-slate-400 dark:text-slate-400 hover:text-amber-400 transition-colors p-2 rounded-2xl hover:bg-white/80 dark:hover:bg-white/10 cursor-pointer shrink-0"
+                            title={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
+                        >
+                            <Star className="w-5 h-5" filled={isFav} />
+                        </button>
+                        <div className="min-w-0 flex-1">
                             <div className="flex items-center space-x-2 mb-1 flex-wrap gap-1">
-                                {showSubject && <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">{course.subject}</span>}
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${style}`}>{courseTag}</span>
+                                {showSubject && (
+                                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full liquid-glass-pill text-blue-700 dark:text-blue-300 border border-blue-400/30">
+                                        {course.subject}
+                                    </span>
+                                )}
+                                <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider ${style}`}>{courseTag}</span>
                                 <FileTypeBadge fileType={course.fileType} mediaType={course.mediaType} />
                             </div>
-                            <h4 className="text-lg font-semibold text-slate-900 dark:text-white truncate">{course.title}</h4>
+                            <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-snug break-words group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {course.title}
+                            </h4>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-2 flex-wrap gap-2">
-                        {course.digitalLink && <button onClick={() => handleView(course, 'Numérique')} className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><Eye className="w-4 h-4 mr-1"/> PDF</button>}
-                        {course.casioLink && <button onClick={() => handleView(course, 'Casio')} className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><Calculator className="w-4 h-4 mr-1"/> Casio</button>}
-                        {course.videoLink && <button onClick={() => handleView(course, 'Vidéo')} className="px-3 py-1.5 bg-red-50 dark:bg-red-950/60 hover:bg-red-100 dark:hover:bg-red-900 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><VideoIcon className="w-4 h-4 mr-1"/> Vidéo</button>}
-                        {course.imageLink && <button onClick={() => handleView(course, 'Image')} className="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><ImageIcon className="w-4 h-4 mr-1"/> Image</button>}
-                        {course.audioLink && <button onClick={() => handleView(course, 'Audio')} className="px-3 py-1.5 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"><MusicIcon className="w-4 h-4 mr-1"/> Audio</button>}
+                    <div className="flex items-center space-x-2 flex-wrap gap-1.5 shrink-0 pl-10 md:pl-0">
+                        {course.digitalLink && (
+                            <button 
+                                onClick={() => handleView(course, 'Numérique')} 
+                                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center shadow-xs transition active:scale-95 cursor-pointer"
+                            >
+                                <Eye className="w-3.5 h-3.5 mr-1"/> PDF
+                            </button>
+                        )}
+                        {course.casioLink && (
+                            <button 
+                                onClick={() => handleView(course, 'Casio')} 
+                                className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold flex items-center shadow-xs transition active:scale-95 cursor-pointer"
+                            >
+                                <Calculator className="w-3.5 h-3.5 mr-1"/> Casio
+                            </button>
+                        )}
+                        {course.videoLink && (
+                            <button 
+                                onClick={() => handleView(course, 'Vidéo')} 
+                                className="px-3 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl text-xs font-bold flex items-center shadow-xs transition active:scale-95 cursor-pointer"
+                            >
+                                <VideoIcon className="w-3.5 h-3.5 mr-1"/> Vidéo
+                            </button>
+                        )}
+                        {course.imageLink && (
+                            <button 
+                                onClick={() => handleView(course, 'Image')} 
+                                className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl text-xs font-bold flex items-center shadow-xs transition active:scale-95 cursor-pointer"
+                            >
+                                <ImageIcon className="w-3.5 h-3.5 mr-1"/> Image
+                            </button>
+                        )}
+                        {course.audioLink && (
+                            <button 
+                                onClick={() => handleView(course, 'Audio')} 
+                                className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center shadow-xs transition active:scale-95 cursor-pointer"
+                            >
+                                <MusicIcon className="w-3.5 h-3.5 mr-1"/> Audio
+                            </button>
+                        )}
                         {onTakeNotes && (
                             <button 
                                 type="button"
                                 onClick={() => onTakeNotes(course)}
-                                className="px-2.5 py-1.5 bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95 cursor-pointer"
+                                className="px-2.5 py-1.5 liquid-glass-btn text-sky-600 dark:text-sky-300 rounded-xl text-xs font-bold flex items-center cursor-pointer transition active:scale-95"
                                 title="Prendre des notes sur ce cours dans WorksBox Note"
                             >
                                 <PenTool className="w-3.5 h-3.5 mr-1 text-sky-500" />
@@ -6302,20 +6567,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             <button 
                                 type="button"
                                 onClick={onSaveToCloud}
-                                className="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"
+                                className="px-2.5 py-1.5 liquid-glass-btn text-indigo-600 dark:text-indigo-300 rounded-xl text-xs font-bold flex items-center cursor-pointer transition active:scale-95"
                                 title="Sauvegarder ce cours dans mon Google Drive (1 Go)"
                             >
-                                <Cloud className="w-4 h-4 mr-1 text-blue-500 dark:text-blue-400" />
-                                <span className="hidden sm:inline">Drive</span>
+                                <Cloud className="w-3.5 h-3.5 mr-1 text-indigo-500" />
+                                <span>Drive</span>
                             </button>
                         )}
                         <button 
                             type="button"
                             onClick={() => onShare ? onShare(course) : (onCopy ? onCopy(course) : null)} 
-                            className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 rounded-lg text-xs sm:text-sm font-medium flex items-center transition-all active:scale-95"
+                            className="px-3 py-1.5 liquid-glass-btn text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-300 rounded-xl text-xs font-bold flex items-center cursor-pointer transition active:scale-95"
                             title="Partager ce cours (copier le lien direct)"
                         >
-                            <Share2 className="w-4 h-4 mr-1.5 text-blue-500 dark:text-blue-400" />
+                            <Share2 className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
                             <span>Partager</span>
                         </button>
                     </div>
@@ -6326,27 +6591,27 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
         function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse, onShareCourse, onSaveCourseToCloud, onTakeNotesCourse }) {
             const [isExpanded, setIsExpanded] = useState(chapterCourses.length <= 1);
             return (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-200">
+                <div className="liquid-glass-card rounded-3xl overflow-hidden shadow-md transition-all duration-200">
                     <button
                         type="button"
                         id={`chapter-header-${chapter.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}`}
                         aria-expanded={isExpanded}
-                        className="w-full text-left bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200/80 dark:border-slate-800 px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 flex justify-between items-center transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" 
+                        className="w-full text-left bg-white/40 dark:bg-slate-900/40 border-b border-white/60 dark:border-white/10 px-5 sm:px-6 py-4 cursor-pointer hover:bg-white/60 dark:hover:bg-white/10 flex justify-between items-center transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" 
                         onClick={() => setIsExpanded(!isExpanded)}
                     >
-                        <div className="flex items-center space-x-3 pr-4">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 transition-colors">{chapter}</h2>
-                            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        <div className="flex items-center space-x-3 pr-4 min-w-0">
+                            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white transition-colors truncate">{chapter}</h2>
+                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full liquid-glass-pill text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">
                                 {chapterCourses.length} {chapterCourses.length > 1 ? 'fiches' : 'fiche'}
                             </span>
                         </div>
-                        <div className="p-1 rounded-lg text-slate-500 dark:text-slate-400 bg-white/60 dark:bg-slate-700/50 transition-colors">
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 ease-out ${isExpanded ? 'rotate-180 text-blue-600 dark:text-blue-400' : 'rotate-0'}`} />
+                        <div className="p-1.5 rounded-xl text-slate-500 dark:text-slate-400 liquid-glass-btn transition-colors shrink-0">
+                            <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 ease-out ${isExpanded ? 'rotate-180 text-blue-600 dark:text-blue-400' : 'rotate-0'}`} />
                         </div>
                     </button>
                     <div className={`chapter-accordion-grid ${isExpanded ? 'expanded' : ''}`}>
                         <div className="chapter-accordion-inner">
-                            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <ul className="divide-y divide-white/60 dark:divide-white/10">
                                 {chapterCourses.map(course => (
                                     <CourseListItem 
                                         key={course.id} 
