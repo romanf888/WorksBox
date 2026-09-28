@@ -49,6 +49,30 @@
             document.write('<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"><\/script>');
         }
     </script>
+    <script>
+        // Configuration de Babel Standalone pour supprimer les avertissements de dé-optimisation (> 500 Ko)
+        if (window.Babel) {
+            window.Babel.setPresetOptions && window.Babel.setPresetOptions('react', { runtime: 'classic' });
+        }
+        (function() {
+            const origWarn = console.warn;
+            const origInfo = console.info;
+            const filterBabelMsg = (msg) => {
+                if (typeof msg === 'string' && (msg.includes('deoptimised the styling') || msg.includes('exceeds the max of 500KB'))) {
+                    return true;
+                }
+                return false;
+            };
+            console.warn = function(...args) {
+                if (args.some(filterBabelMsg)) return;
+                origWarn.apply(console, args);
+            };
+            console.info = function(...args) {
+                if (args.some(filterBabelMsg)) return;
+                origInfo.apply(console, args);
+            };
+        })();
+    </script>
     <script src="tailwind.js"></script>
     <script>
         if (!window.tailwind) {
@@ -104,7 +128,7 @@
         </div>
     </div>
 
-    <script type="text/babel" data-type="module">
+    <script type="text/babel" data-type="module" data-compact="false">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';

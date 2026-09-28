@@ -54,6 +54,31 @@
             document.write('<script src="https://unpkg.com/@babel/standalone@7.24.0/babel.min.js"><\/script>');
         }
     </script>
+    <script>
+        // Configuration de Babel Standalone pour supprimer les avertissements de dé-optimisation (> 500 Ko)
+        if (window.Babel) {
+            window.Babel.setPresetOptions && window.Babel.setPresetOptions('react', { runtime: 'classic' });
+        }
+        // Interception proactive du message d'avertissement console de Babel compact generator
+        (function() {
+            const origWarn = console.warn;
+            const origInfo = console.info;
+            const filterBabelMsg = (msg) => {
+                if (typeof msg === 'string' && (msg.includes('deoptimised the styling') || msg.includes('exceeds the max of 500KB'))) {
+                    return true;
+                }
+                return false;
+            };
+            console.warn = function(...args) {
+                if (args.some(filterBabelMsg)) return;
+                origWarn.apply(console, args);
+            };
+            console.info = function(...args) {
+                if (args.some(filterBabelMsg)) return;
+                origInfo.apply(console, args);
+            };
+        })();
+    </script>
     <script src="tailwind.js"></script>
     <script>
         if (!window.tailwind) {
@@ -281,6 +306,59 @@
             min-height: 0;
         }
 
+        /* WorksBox Note modern scrollbars */
+        .worksbox-ribbon-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+        }
+        .worksbox-ribbon-scroll::-webkit-scrollbar {
+            height: 4px;
+            width: 4px;
+        }
+        .worksbox-ribbon-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .worksbox-ribbon-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(148, 163, 184, 0.4);
+            border-radius: 4px;
+        }
+        .worksbox-ribbon-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(148, 163, 184, 0.7);
+        }
+
+        /* Mobile Platform Native Feeling & Safe Area Padding */
+        @supports (padding-bottom: env(safe-area-inset-bottom)) {
+            .mobile-safe-bottom {
+                padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+            }
+            .mobile-bottom-dock {
+                bottom: calc(0.75rem + env(safe-area-inset-bottom));
+            }
+            .mobile-content-pb {
+                padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)) !important;
+            }
+        }
+        @supports not (padding-bottom: env(safe-area-inset-bottom)) {
+            .mobile-bottom-dock {
+                bottom: 0.75rem;
+            }
+            .mobile-content-pb {
+                padding-bottom: 5.5rem !important;
+            }
+        }
+
+        /* Smooth momentum scrolling for mobile horizontal ribbons */
+        .mobile-touch-scroll {
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        /* Active touch scale animations for native feel */
+        .touch-action-feedback:active {
+            transform: scale(0.96);
+            transition: transform 0.1s ease;
+        }
+
         /* Generic Animation Helpers */
         @keyframes fadeIn {
             from { opacity: 0; }
@@ -388,7 +466,7 @@
         </div>
     </div>
 
-    <script type="text/babel" data-type="module">
+    <script type="text/babel" data-type="module" data-compact="false">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { 
             getAuth, 
@@ -616,6 +694,7 @@
         const FileDown = ({className}) => <Icon className={className}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></Icon>;
         const Layers = ({className}) => <Icon className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>;
         const Info = ({className}) => <Icon className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></Icon>;
+        const Menu = ({className}) => <Icon className={className}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></Icon>;
 
         // Logo WorksBox officiel avec dégradé et livre/cloud stylisé
         const WorksBoxLogo = ({ className = "w-8 h-8", style }) => (
@@ -996,6 +1075,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [authLoading, setAuthLoading] = useState(false);
           const [authError, setAuthError] = useState(null);
           const [previewData, setPreviewData] = useState(null);
+          const [showMobileMenu, setShowMobileMenu] = useState(false);
 
           // Onglets du profil : 'favorites' | 'cloud' | 'sharedCloud' | 'account'
           const [profileTab, setProfileTab] = useState('favorites');
@@ -2856,23 +2936,26 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               )}
 
               {settings.announcement && (
-                  <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur-md text-white text-sm font-bold py-2.5 px-4 flex justify-center items-center shadow-sm border-b border-amber-400/40">
-                      <Megaphone className="w-4 h-4 mr-2 animate-bounce" />{settings.announcement}
+                  <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur-md text-white text-xs sm:text-sm font-bold py-2 sm:py-2.5 px-3 sm:px-4 flex justify-center items-center shadow-sm border-b border-amber-400/40 text-center leading-snug">
+                      <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 shrink-0 animate-bounce" />
+                      <span className="line-clamp-2">{settings.announcement}</span>
                   </div>
               )}
 
-              {/* NAVIGATION PRINCIPALE LIQUID GLASS */}
+              {/* NAVIGATION PRINCIPALE LIQUID GLASS OPTIMISÉE MOBILE & DESKTOP */}
               <nav className="liquid-glass-nav sticky top-0 z-30 transition-all duration-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                  <div className="flex justify-between items-center h-16">
-                    <div className="flex items-center space-x-8">
-                        <div className="flex items-center space-x-3 cursor-pointer group active:scale-95 transition-all" onClick={goHome}>
+                <div className={`${currentView === 'noteEditor' ? 'w-full px-3 sm:px-6 lg:px-8' : 'max-w-7xl mx-auto px-3 sm:px-6 lg:px-8'} transition-all duration-300`}>
+                  <div className="flex justify-between items-center h-14 sm:h-16">
+                    {/* Brand / Logo */}
+                    <div className="flex items-center space-x-6 sm:space-x-8">
+                        <div className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer group active:scale-95 transition-all" onClick={goHome}>
                             <div className="relative">
-                                <WorksBoxLogo className="w-9 h-9 rounded-xl shadow-md group-hover:scale-105 transition-transform" />
+                                <WorksBoxLogo className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md group-hover:scale-105 transition-transform" />
                                 <div className="absolute inset-0 rounded-xl bg-blue-500/20 blur-sm -z-10 group-hover:bg-blue-400/30 transition-colors" />
                             </div>
-                            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">WorksBox</span>
+                            <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-300 bg-clip-text text-transparent">WorksBox</span>
                         </div>
+                        {/* Liens desktop */}
                         <div className="hidden lg:flex items-center space-x-1.5">
                             <button onClick={goHome} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${(currentView === 'home' || currentView === 'subject') ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><HomeIcon className="w-4 h-4 mr-1.5" /> Accueil</button>
                             <button onClick={openSoftwareHub} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${currentView === 'software' ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><Layers className="w-4 h-4 mr-1.5 text-blue-500 dark:text-blue-400" /> Logiciels</button>
@@ -2880,12 +2963,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             <button onClick={openCasioGuide} className={`text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center cursor-pointer ${currentView === 'casioGuide' ? 'bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-300 border border-blue-400/30 shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/5'}`}><HelpCircle className="w-4 h-4 mr-1.5" /> Tuto Casio</button>
                         </div>
                     </div>
-                    <div className="flex items-center space-x-2.5">
+
+                    {/* Actions de droite (Adaptées mobile : badge classe, thème, menu compact) */}
+                    <div className="flex items-center space-x-1.5 sm:space-x-2.5">
                         {/* Bouton de basculement Mode Clair / Sombre */}
                         <button 
                             id="nav-btn-theme-toggle" 
                             onClick={toggleTheme} 
-                            className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white liquid-glass-btn transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+                            className="p-2 sm:p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white liquid-glass-btn transition-all active:scale-95 flex items-center justify-center cursor-pointer shrink-0"
                             title={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
                             aria-label={isDark ? "Passer en mode clair" : "Passer en mode sombre"}
                         >
@@ -2896,16 +2981,32 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             )}
                         </button>
 
-                        <button id="nav-btn-school-class" onClick={() => setShowOnboarding(true)} className="flex items-center space-x-2 text-xs font-bold liquid-glass-btn text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl transition-all active:scale-95 cursor-pointer">
+                        {/* Établissement & Classe : Bouton interactif lisible sur mobile */}
+                        <button 
+                            id="nav-btn-school-class" 
+                            onClick={() => setShowOnboarding(true)} 
+                            className="hidden sm:flex items-center space-x-2 text-xs font-bold liquid-glass-btn text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl transition-all active:scale-95 cursor-pointer"
+                            title="Changer de lycée ou de classe"
+                        >
                             <SchoolIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                            <span className="hidden sm:inline truncate max-w-[130px]">{selectedSchool} • {selectedClass}</span>
+                            <span className="truncate max-w-[130px]">{selectedSchool} • {selectedClass}</span>
+                        </button>
+
+                        {/* Raccourci classe sur mobile très épuré */}
+                        <button 
+                            onClick={() => setShowOnboarding(true)} 
+                            className="sm:hidden flex items-center space-x-1 text-[11px] font-bold liquid-glass-btn text-blue-600 dark:text-blue-400 px-2.5 py-1.5 rounded-xl transition-all active:scale-95 cursor-pointer max-w-[110px]"
+                            title="Changer de classe"
+                        >
+                            <SchoolIcon className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate">{selectedClass || 'Classe'}</span>
                         </button>
 
                         {isUserAdmin && (
                             <a 
                                 id="nav-btn-admin-panel"
                                 href="admin.html"
-                                className="flex items-center space-x-1.5 text-xs font-black bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-3 py-2 rounded-xl border border-red-400/40 shadow-md shadow-red-900/30 transition-all active:scale-95"
+                                className="flex items-center space-x-1.5 text-[11px] sm:text-xs font-black bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border border-red-400/40 shadow-md shadow-red-900/30 transition-all active:scale-95 shrink-0"
                                 title="Accéder au panneau d'administration WorksBox"
                             >
                                 <Shield className="w-3.5 h-3.5 text-white" />
@@ -2914,11 +3015,12 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </a>
                         )}
 
+                        {/* Profil utilisateur ou Connexion (Desktop & Mobile) */}
                         {activeUser ? (
                             <button 
                                 id="nav-btn-user-profile"
                                 onClick={() => openProfile(profileTab || 'favorites')} 
-                                className={`flex items-center space-x-2 text-xs font-bold px-3 py-2 rounded-xl transition-all active:scale-95 cursor-pointer ${
+                                className={`flex items-center space-x-1.5 sm:space-x-2 text-xs font-bold px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl transition-all active:scale-95 cursor-pointer shrink-0 ${
                                     currentView === 'profile' 
                                         ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-400/50' 
                                         : 'liquid-glass-btn text-blue-600 dark:text-blue-400'
@@ -2932,27 +3034,34 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         {(activeUser.displayName || activeUser.email || 'E')[0].toUpperCase()}
                                     </div>
                                 )}
-                                <span className="hidden sm:inline max-w-[110px] truncate text-slate-700 dark:text-slate-200">{activeUser.displayName || activeUser.email?.split('@')[0]}</span>
-                                {activeUser.isLocal && (
-                                    <span className="hidden md:inline-block w-2 h-2 rounded-full bg-emerald-400" title="Profil élève actif"></span>
-                                )}
+                                <span className="hidden md:inline max-w-[110px] truncate text-slate-700 dark:text-slate-200">{activeUser.displayName || activeUser.email?.split('@')[0]}</span>
                             </button>
                         ) : (
                             <button 
                                 id="nav-btn-login"
                                 onClick={() => setShowAuthModal(true)} 
-                                className="flex items-center space-x-1.5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3.5 py-2 rounded-xl transition-all shadow-md shadow-blue-500/25 active:scale-95 cursor-pointer"
+                                className="hidden sm:flex items-center space-x-1.5 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all shadow-md shadow-blue-500/25 active:scale-95 cursor-pointer shrink-0"
                             >
-                                <UserIcon className="w-4 h-4" />
+                                <UserIcon className="w-3.5 h-3.5" />
                                 <span>Connexion</span>
                             </button>
                         )}
+
+                        {/* Bouton Menu Burger Mobile pour ouvrir les raccourcis et options */}
+                        <button
+                            onClick={() => setShowMobileMenu(true)}
+                            className="lg:hidden p-2 rounded-xl text-slate-700 dark:text-slate-200 liquid-glass-btn transition-all active:scale-95 flex items-center justify-center cursor-pointer shrink-0"
+                            title="Menu & Outils"
+                            aria-label="Menu"
+                        >
+                            <Menu className="w-4 h-4" />
+                        </button>
                     </div>
                   </div>
                 </div>
               </nav>
 
-              <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 lg:pb-8">
+              <main className={`${currentView === 'noteEditor' ? 'w-full px-2 sm:px-4 md:px-6 lg:px-8 pt-3 pb-12' : 'max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-5 sm:pt-8 mobile-content-pb lg:pb-8'} transition-all duration-300`}>
                 {isLoading ? (
                     <CourseListSkeleton view={currentView} selectedSubject={selectedSubject} />
                 ) : (
@@ -4266,7 +4375,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {currentView === 'noteEditor' && (
-                          <div key="view-noteEditor">
+                          <div key="view-noteEditor" className="w-full">
                             <WorksBoxNoteEditor 
                                 note={activeNote || { title: 'Nouvelle note', content: '<h1>Nouvelle note</h1><p>Commencez à rédiger vos notes ou cours ici...</p>', subject: activeSubjects?.[0]?.name || 'Général', folderName: 'WorksBox Cloud' }}
                                 activeSubjects={activeSubjects}
@@ -4293,7 +4402,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 )}
               </main>
 
-              <footer className="mt-20 border-t border-white/40 dark:border-white/10 py-8 text-center text-xs text-slate-500 dark:text-slate-400 max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors">
+              <footer className={`mt-20 border-t border-white/40 dark:border-white/10 py-8 text-center text-xs text-slate-500 dark:text-slate-400 ${currentView === 'noteEditor' ? 'w-full px-4 sm:px-8' : 'max-w-7xl mx-auto px-4'} flex flex-col sm:flex-row items-center justify-between gap-3 transition-colors`}>
                   <span>WorksBox — Cours & Ressources pour Lycées</span>
                   <div className="flex items-center space-x-4">
                       <button onClick={openTerms} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer">Conditions</button>
@@ -4442,13 +4551,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   </div>
               )}
 
-              {/* Barre de navigation mobile inférieure (Dock Liquid Glass) */}
-              <div className="lg:hidden fixed bottom-3 left-4 right-4 z-40 liquid-glass-nav rounded-2xl px-2 py-1.5 flex items-center justify-around text-slate-600 dark:text-slate-300 shadow-2xl border border-white/80 dark:border-white/10">
+              {/* Barre de navigation mobile inférieure (Dock Liquid Glass Ultra-Optimisé Mobile Native) */}
+              <div className="lg:hidden fixed mobile-bottom-dock left-3.5 right-3.5 z-40 liquid-glass-nav rounded-2xl px-2 py-1 flex items-center justify-around text-slate-600 dark:text-slate-300 shadow-2xl border border-white/80 dark:border-white/10">
+                  {/* Accueil */}
                   <button 
                       onClick={goHome} 
-                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl transition-all cursor-pointer touch-action-feedback ${
                           (currentView === 'home' || currentView === 'subject') 
-                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs' 
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs scale-105' 
                               : 'hover:text-blue-500'
                       }`}
                   >
@@ -4456,11 +4566,12 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       <span className="text-[10px]">Accueil</span>
                   </button>
 
+                  {/* Logiciels Hub */}
                   <button 
                       onClick={openSoftwareHub} 
-                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl transition-all cursor-pointer touch-action-feedback ${
                           currentView === 'software' 
-                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs' 
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs scale-105' 
                               : 'hover:text-blue-500'
                       }`}
                   >
@@ -4468,11 +4579,21 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       <span className="text-[10px] font-semibold">Logiciels</span>
                   </button>
 
+                  {/* Bouton Central Flottant (FAB) : Créer / Rédiger une note WorksBox Note immédiatement */}
+                  <button 
+                      onClick={() => createNewNote('Nouvelle note', activeSubjects?.[0]?.name || 'Général', '', '', cloudCurrentFolderId, cloudBreadcrumbs[cloudBreadcrumbs.length - 1]?.name)}
+                      className="flex flex-col items-center justify-center -mt-5 p-3 rounded-2xl bg-gradient-to-tr from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-lg shadow-blue-500/35 border-2 border-white dark:border-slate-900 active:scale-90 transition-transform cursor-pointer"
+                      title="Créer une note WorksBox Note"
+                  >
+                      <PenTool className="w-5 h-5" />
+                  </button>
+
+                  {/* Favoris */}
                   <button 
                       onClick={() => openProfile('favorites')} 
-                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+                      className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl transition-all cursor-pointer touch-action-feedback ${
                           currentView === 'profile' && profileTab === 'favorites' 
-                              ? 'bg-amber-500/15 text-amber-500 font-bold shadow-xs' 
+                              ? 'bg-amber-500/15 text-amber-500 font-bold shadow-xs scale-105' 
                               : 'hover:text-amber-500'
                       }`}
                   >
@@ -4480,6 +4601,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       <span className="text-[10px]">Favoris</span>
                   </button>
 
+                  {/* Espace Cloud & Profil */}
                   <button 
                       onClick={() => {
                           if (activeUser) {
@@ -4488,16 +4610,153 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               setShowAuthModal(true);
                           }
                       }} 
-                      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-all cursor-pointer ${
-                          currentView === 'profile' && (profileTab === 'profile' || profileTab === 'overview') 
-                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs' 
+                      className={`flex flex-col items-center justify-center py-1.5 px-2.5 rounded-xl transition-all cursor-pointer touch-action-feedback ${
+                          currentView === 'profile' && (profileTab === 'profile' || profileTab === 'overview' || profileTab === 'cloud') 
+                              ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400 font-bold shadow-xs scale-105' 
                               : 'hover:text-blue-500'
                       }`}
                   >
-                      <UserIcon className="w-5 h-5 mb-0.5" />
-                      <span className="text-[10px]">{activeUser ? 'Profil' : 'Connexion'}</span>
+                      {activeUser?.photoURL ? (
+                          <img src={activeUser.photoURL} alt="Avatar" className="w-5 h-5 rounded-full object-cover border border-blue-400 mb-0.5" />
+                      ) : (
+                          <UserIcon className="w-5 h-5 mb-0.5" />
+                      )}
+                      <span className="text-[10px] truncate max-w-[50px]">{activeUser ? (activeUser.displayName?.split(' ')[0] || 'Profil') : 'Connexion'}</span>
                   </button>
               </div>
+
+              {/* Tiroir Modal Mobile (Bottom Sheet) pour Accès Rapide & Outils Dédiés */}
+              {showMobileMenu && (
+                  <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+                      <div 
+                          className="fixed inset-0" 
+                          onClick={() => setShowMobileMenu(false)}
+                      />
+                      <div className="relative liquid-glass rounded-t-3xl shadow-2xl border-t border-white/80 dark:border-white/10 p-5 space-y-4 max-h-[85vh] overflow-y-auto z-10 animate-in slide-in-from-bottom duration-250 mobile-safe-bottom">
+                          {/* Barre de poignée (Drag handle) */}
+                          <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto" />
+                          
+                          <div className="flex items-center justify-between pb-3 border-b border-slate-200/60 dark:border-white/10">
+                              <div className="flex items-center space-x-2.5">
+                                  <WorksBoxLogo className="w-7 h-7 rounded-xl shadow-xs" />
+                                  <span className="font-extrabold text-base text-slate-900 dark:text-white">Menu WorksBox</span>
+                              </div>
+                              <button 
+                                  onClick={() => setShowMobileMenu(false)}
+                                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 liquid-glass-btn rounded-xl"
+                              >
+                                  <X className="w-4 h-4" />
+                              </button>
+                          </div>
+
+                          {/* Établissement et Classe active */}
+                          <div className="bg-blue-500/10 dark:bg-blue-400/10 border border-blue-500/20 rounded-2xl p-3.5 flex items-center justify-between">
+                              <div className="flex items-center space-x-2.5 min-w-0">
+                                  <SchoolIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                                  <div className="min-w-0">
+                                      <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">Établissement & Classe</p>
+                                      <p className="text-xs font-black text-slate-800 dark:text-white truncate">{selectedSchool} • {selectedClass}</p>
+                                  </div>
+                              </div>
+                              <button 
+                                  onClick={() => { setShowMobileMenu(false); setShowOnboarding(true); }}
+                                  className="px-2.5 py-1.5 bg-blue-600 text-white text-[11px] font-bold rounded-xl shadow-xs shrink-0"
+                              >
+                                  Changer
+                              </button>
+                          </div>
+
+                          {/* Grille de raccourcis rapides */}
+                          <div className="grid grid-cols-2 gap-2.5 pt-1">
+                              <button 
+                                  onClick={() => {
+                                      setShowMobileMenu(false);
+                                      createNewNote('Nouvelle note', activeSubjects?.[0]?.name || 'Général', '', '', cloudCurrentFolderId, cloudBreadcrumbs[cloudBreadcrumbs.length - 1]?.name);
+                                  }}
+                                  className="p-3.5 liquid-glass-card rounded-2xl flex flex-col items-start space-y-1.5 cursor-pointer touch-action-feedback border border-sky-400/30"
+                              >
+                                  <div className="w-8 h-8 rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                                      <PenTool className="w-4 h-4" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-white">WorksBox Note</span>
+                                  <span className="text-[10px] text-slate-400">Rédiger un cours</span>
+                              </button>
+
+                              <button 
+                                  onClick={() => {
+                                      setShowMobileMenu(false);
+                                      openSoftwareHub();
+                                  }}
+                                  className="p-3.5 liquid-glass-card rounded-2xl flex flex-col items-start space-y-1.5 cursor-pointer touch-action-feedback"
+                              >
+                                  <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                      <Layers className="w-4 h-4" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-white">Logiciels</span>
+                                  <span className="text-[10px] text-slate-400">Suite d'outils</span>
+                              </button>
+
+                              <button 
+                                  onClick={() => {
+                                      setShowMobileMenu(false);
+                                      openCasioGuide();
+                                  }}
+                                  className="p-3.5 liquid-glass-card rounded-2xl flex flex-col items-start space-y-1.5 cursor-pointer touch-action-feedback"
+                              >
+                                  <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                      <Calculator className="w-4 h-4" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-white">Tuto Casio</span>
+                                  <span className="text-[10px] text-slate-400">Programmes Graph 35+</span>
+                              </button>
+
+                              <button 
+                                  onClick={() => {
+                                      setShowMobileMenu(false);
+                                      openProfile('cloud');
+                                  }}
+                                  className="p-3.5 liquid-glass-card rounded-2xl flex flex-col items-start space-y-1.5 cursor-pointer touch-action-feedback"
+                              >
+                                  <div className="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                      <CloudIcon className="w-4 h-4" />
+                                  </div>
+                                  <span className="text-xs font-bold text-slate-800 dark:text-white">WorksBox Cloud</span>
+                                  <span className="text-[10px] text-slate-400">Espace 1 Go Drive</span>
+                              </button>
+                          </div>
+
+                          {/* Liens secondaires & Mentions */}
+                          <div className="pt-2 space-y-2">
+                              <button 
+                                  onClick={() => {
+                                      setShowMobileMenu(false);
+                                      openTerms();
+                                  }}
+                                  className="w-full px-3.5 py-2.5 rounded-xl liquid-glass-btn text-left text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between"
+                              >
+                                  <span className="flex items-center space-x-2">
+                                      <Shield className="w-4 h-4 text-blue-500" />
+                                      <span>Conditions Générales & Confidentialité</span>
+                                  </span>
+                                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                              </button>
+
+                              {isUserAdmin && (
+                                  <a 
+                                      href="admin.html"
+                                      className="w-full px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black flex items-center justify-between shadow-sm"
+                                  >
+                                      <span className="flex items-center space-x-2">
+                                          <Shield className="w-4 h-4 text-white" />
+                                          <span>Panneau d'Administration</span>
+                                      </span>
+                                      <ChevronRight className="w-3.5 h-3.5 text-white/80" />
+                                  </a>
+                              )}
+                          </div>
+                      </div>
+                  </div>
+              )}
 
               {toast && (
                   <Toast toast={toast} onClose={hideToast} />
@@ -4989,6 +5248,40 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             const [pageColor, setPageColor] = useState('#ffffff');
             const [pageWatermark, setPageWatermark] = useState('');
             const [showNotesDrawer, setShowNotesDrawer] = useState(false);
+            const [pageWidthMode, setPageWidthMode] = useState(() => {
+                try {
+                    return localStorage.getItem('worksbox_note_width_mode') || 'full';
+                } catch(e) {
+                    return 'full';
+                }
+            });
+            const [pageMargins, setPageMargins] = useState('normal'); // 'compact', 'normal', 'wide'
+            const [isFullscreen, setIsFullscreen] = useState(false);
+
+            useEffect(() => {
+                const handleFsChange = () => {
+                    setIsFullscreen(!!document.fullscreenElement);
+                };
+                document.addEventListener('fullscreenchange', handleFsChange);
+                return () => document.removeEventListener('fullscreenchange', handleFsChange);
+            }, []);
+
+            const toggleBrowserFullscreen = () => {
+                try {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                } catch(e) {}
+            };
+
+            const changePageWidthMode = (mode) => {
+                setPageWidthMode(mode);
+                try {
+                    localStorage.setItem('worksbox_note_width_mode', mode);
+                } catch(e) {}
+            };
             const editorRef = React.useRef(null);
             const saveDebounceRef = React.useRef(null);
             const recognitionRef = React.useRef(null);
@@ -5222,9 +5515,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             const tabs = ['Accueil', 'Insertion', 'Conception', 'Mise en page', 'Références', 'Publipostage', 'Révision', 'Affichage', 'Aide'];
 
             return (
-                <div className="space-y-3 view-transition pb-16 font-sans">
+                <div className="space-y-3 view-transition pb-16 font-sans w-full">
                     {/* BARRE SUPÉRIEURE WORD 365 (Nom du document & État de sauvegarde au-dessus) */}
-                    <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-3 sm:px-6 sm:py-3 shadow-md border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                    <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-3 sm:px-6 sm:py-3 shadow-md border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 w-full">
                         <div className="flex items-center space-x-3 min-w-0">
                             <button 
                                 onClick={onClose}
@@ -5290,8 +5583,59 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </div>
                         </div>
 
-                        {/* Actions Rapides Supérieures (Commentaires, Mode, Partager, Enregistrer) */}
-                        <div className="flex items-center justify-end space-x-2 flex-shrink-0">
+                        {/* Actions Rapides Supérieures (Pleine page, Plein écran, Commentaires, Mode, Partager) */}
+                        <div className="flex items-center justify-end space-x-2 flex-shrink-0 flex-wrap gap-y-1.5">
+                            {/* Sélecteur de largeur d'affichage Pleine Page / Large / A4 */}
+                            <div className="bg-slate-800/90 border border-slate-700/80 rounded-xl p-0.5 flex items-center space-x-0.5" title="Changer la disposition de page">
+                                <button
+                                    onClick={() => changePageWidthMode('full')}
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+                                        pageWidthMode === 'full' 
+                                            ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/40' 
+                                            : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+                                    }`}
+                                    title="Pleine page (100% de la largeur - Idéal pour travailler à l'aise)"
+                                >
+                                    <Maximize2 className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Pleine page</span>
+                                </button>
+                                <button
+                                    onClick={() => changePageWidthMode('wide')}
+                                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+                                        pageWidthMode === 'wide' 
+                                            ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/40' 
+                                            : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+                                    }`}
+                                    title="Largeur confort (Centré large)"
+                                >
+                                    <span className="hidden sm:inline">Large</span>
+                                    <span className="sm:hidden">L</span>
+                                </button>
+                                <button
+                                    onClick={() => changePageWidthMode('a4')}
+                                    className={`px-2 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer ${
+                                        pageWidthMode === 'a4' 
+                                            ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/40' 
+                                            : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+                                    }`}
+                                    title="Format feuille A4 classique"
+                                >
+                                    <span>A4</span>
+                                </button>
+                            </div>
+
+                            {/* Bouton Plein Écran Navigateur */}
+                            <button
+                                onClick={toggleBrowserFullscreen}
+                                className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                                    isFullscreen ? 'bg-sky-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                                }`}
+                                title={isFullscreen ? "Quitter le plein écran (Échap)" : "Mode plein écran navigateur"}
+                            >
+                                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                                <span className="hidden xl:inline">{isFullscreen ? 'Réduire' : 'Plein écran'}</span>
+                            </button>
+
                             <button 
                                 onClick={() => setShowComments(!showComments)}
                                 className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer ${
@@ -5307,7 +5651,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             <select 
                                 value={editorMode}
                                 onChange={(e) => setEditorMode(e.target.value)}
-                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 outline-none cursor-pointer"
+                                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 outline-none cursor-pointer"
                             >
                                 <option value="edit">✏️ Modification</option>
                                 <option value="review">📝 Révision</option>
@@ -5325,30 +5669,40 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                     </div>
 
                     {/* BARRE D'ONGLETS DU RUBAN OFFICE */}
-                    <div className="bg-slate-800/90 text-slate-300 rounded-t-2xl px-3 pt-2 border border-b-0 border-slate-700 flex flex-wrap items-center gap-1">
-                        <button 
-                            onClick={() => setActiveTab('Fichier')}
-                            className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-t-lg transition flex items-center space-x-1.5 ${
-                                activeTab === 'Fichier'
-                                    ? 'bg-blue-600 text-white shadow'
-                                    : 'bg-blue-700/80 hover:bg-blue-600 text-white'
-                            }`}
-                        >
-                            <span>Fichier</span>
-                        </button>
-                        {tabs.map(tab => (
+                    <div className="bg-slate-800/90 text-slate-300 rounded-t-2xl px-3 pt-2 border border-b-0 border-slate-700 flex items-center justify-between gap-1 overflow-x-auto worksbox-ribbon-scroll">
+                        <div className="flex items-center gap-1 min-w-max">
                             <button 
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`px-3.5 py-2 text-xs font-bold transition rounded-t-lg ${
-                                    activeTab === tab 
-                                        ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-extrabold border-b-2 border-blue-600'
-                                        : 'hover:bg-slate-700/60 text-slate-300'
+                                onClick={() => setActiveTab('Fichier')}
+                                className={`px-4 py-2 text-xs font-black uppercase tracking-wider rounded-t-lg transition flex items-center space-x-1.5 cursor-pointer ${
+                                    activeTab === 'Fichier'
+                                        ? 'bg-blue-600 text-white shadow'
+                                        : 'bg-blue-700/80 hover:bg-blue-600 text-white'
                                 }`}
                             >
-                                {tab}
+                                <span>Fichier</span>
                             </button>
-                        ))}
+                            {tabs.map(tab => (
+                                <button 
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-3.5 py-2 text-xs font-bold transition rounded-t-lg cursor-pointer ${
+                                        activeTab === tab 
+                                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-extrabold border-b-2 border-blue-600'
+                                            : 'hover:bg-slate-700/60 text-slate-300'
+                                    }`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="hidden lg:flex items-center space-x-3 text-[11px] text-slate-400 pr-3 flex-shrink-0">
+                            <span className="flex items-center space-x-1">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span>Mode : <strong className="text-white">{pageWidthMode === 'full' ? 'Pleine page' : pageWidthMode === 'wide' ? 'Largeur confort' : 'Page A4'}</strong></span>
+                            </span>
+                            <span>•</span>
+                            <span>{wordCount} mots</span>
+                        </div>
                     </div>
 
                     {/* VUE BACKSTAGE : ONGLET FICHIER (CHOISIR NOM, EMPLACEMENT CLOUD, NOUVEAU, OUVRIR, EXPORTER) */}
@@ -5556,7 +5910,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                     {/* CONTENU DU RUBAN SELON L'ONGLET ACTIF (ACCUEIL, INSERTION, CONCEPTION, ETC.) */}
                     {activeTab !== 'Fichier' && (
-                        <div className="bg-white dark:bg-slate-900 rounded-b-2xl border border-slate-200 dark:border-slate-800 p-2.5 shadow-sm backdrop-blur-md sticky top-16 z-20 overflow-x-auto">
+                        <div className="bg-white dark:bg-slate-900 rounded-b-2xl border border-slate-200 dark:border-slate-800 p-2.5 shadow-sm backdrop-blur-md sticky top-16 z-20 overflow-x-auto worksbox-ribbon-scroll w-full">
                             {/* ONGLET ACCUEIL (RUBAN WORD COMPLET DU SCREENSHOT) */}
                             {activeTab === 'Accueil' && (
                                 <div className="flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-200 min-w-max">
@@ -5805,19 +6159,40 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                             {/* ONGLET AFFICHAGE */}
                             {activeTab === 'Affichage' && (
-                                <div className="flex items-center space-x-3 text-xs text-slate-700 dark:text-slate-300 min-w-max">
-                                    <span className="font-bold text-slate-400">Zoom du document :</span>
-                                    {[75, 90, 100, 125, 150].map(z => (
-                                        <button key={z} onClick={() => setPageZoom(z)} className={`px-2.5 py-1 rounded-lg font-bold ${pageZoom === z ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>
-                                            {z}%
+                                <div className="flex items-center space-x-4 text-xs text-slate-700 dark:text-slate-300 min-w-max flex-wrap gap-y-2">
+                                    <div className="flex items-center space-x-1.5">
+                                        <span className="font-bold text-slate-400">Disposition :</span>
+                                        <button onClick={() => changePageWidthMode('full')} className={`px-2.5 py-1.5 rounded-lg font-bold transition flex items-center space-x-1 cursor-pointer ${pageWidthMode === 'full' ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/40' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200'}`}>
+                                            <Maximize2 className="w-3.5 h-3.5" />
+                                            <span>Pleine page</span>
                                         </button>
-                                    ))}
+                                        <button onClick={() => changePageWidthMode('wide')} className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${pageWidthMode === 'wide' ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/40' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200'}`}>
+                                            <span>Confort</span>
+                                        </button>
+                                        <button onClick={() => changePageWidthMode('a4')} className={`px-2.5 py-1.5 rounded-lg font-bold transition cursor-pointer ${pageWidthMode === 'a4' ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400/40' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200'}`}>
+                                            <span>Page A4</span>
+                                        </button>
+                                    </div>
+                                    <div className="h-4 w-px bg-slate-300 dark:bg-slate-700"></div>
+                                    <div className="flex items-center space-x-1.5">
+                                        <span className="font-bold text-slate-400">Zoom :</span>
+                                        {[75, 90, 100, 125, 150].map(z => (
+                                            <button key={z} onClick={() => setPageZoom(z)} className={`px-2 py-1 rounded-lg font-bold cursor-pointer ${pageZoom === z ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>
+                                                {z}%
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="h-4 w-px bg-slate-300 dark:bg-slate-700"></div>
+                                    <button onClick={toggleBrowserFullscreen} className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg font-bold flex items-center space-x-1.5 cursor-pointer">
+                                        {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-sky-500" /> : <Maximize2 className="w-3.5 h-3.5 text-sky-500" />}
+                                        <span>{isFullscreen ? 'Quitter plein écran' : 'Plein écran navigateur'}</span>
+                                    </button>
                                 </div>
                             )}
 
                             {/* AUTRES ONGLETS (PUBLIPOSTAGE, RÉVISION, MISE EN PAGE, AIDE) */}
                             {['Mise en page', 'Publipostage', 'Révision', 'Aide'].includes(activeTab) && (
-                                <div className="flex items-center space-x-3 text-xs text-slate-700 dark:text-slate-300 min-w-max">
+                                <div className="flex items-center space-x-3 text-xs text-slate-700 dark:text-slate-300 min-w-max flex-wrap gap-y-2">
                                     {activeTab === 'Publipostage' && (
                                         <>
                                             <button onClick={() => insertCallout('def')} className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950 font-bold rounded-lg text-blue-600">Modèle Fiche Révision Bac</button>
@@ -5832,9 +6207,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         </div>
                                     )}
                                     {activeTab === 'Mise en page' && (
-                                        <div className="flex items-center space-x-2">
-                                            <span className="font-bold text-slate-400">Orientation :</span>
-                                            <button className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded font-bold">📄 Portrait (A4)</button>
+                                        <div className="flex items-center space-x-3">
+                                            <div className="flex items-center space-x-1.5">
+                                                <span className="font-bold text-slate-400">Largeur :</span>
+                                                <button onClick={() => changePageWidthMode('full')} className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${pageWidthMode === 'full' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>🖥️ Pleine page</button>
+                                                <button onClick={() => changePageWidthMode('wide')} className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${pageWidthMode === 'wide' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>📐 Confort</button>
+                                                <button onClick={() => changePageWidthMode('a4')} className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${pageWidthMode === 'a4' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>📄 A4</button>
+                                            </div>
+                                            <div className="h-4 w-px bg-slate-300 dark:bg-slate-700"></div>
+                                            <div className="flex items-center space-x-1.5">
+                                                <span className="font-bold text-slate-400">Marges :</span>
+                                                <button onClick={() => setPageMargins('compact')} className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${pageMargins === 'compact' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>Étroites</button>
+                                                <button onClick={() => setPageMargins('normal')} className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${pageMargins === 'normal' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>Normales</button>
+                                                <button onClick={() => setPageMargins('wide')} className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${pageMargins === 'wide' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'}`}>Larges</button>
+                                            </div>
                                         </div>
                                     )}
                                     {activeTab === 'Aide' && (
@@ -5847,9 +6233,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         </div>
                     )}
 
-                    {/* FEUILLE DE RÉDACTION DOCUMENT WORD (STYLE FEUILLE A4 RÉALISTE) */}
+                    {/* FEUILLE DE RÉDACTION DOCUMENT WORD (STYLE FEUILLE A4 RÉALISTE OU PLEINE PAGE) */}
                     {activeTab !== 'Fichier' && (
-                        <div className="bg-slate-100 dark:bg-slate-950/70 p-2 sm:p-6 rounded-3xl border border-slate-200 dark:border-slate-800/80 flex justify-center items-start gap-6 relative min-h-[700px]">
+                        <div className={`bg-slate-100 dark:bg-slate-950/70 p-2 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800/80 flex ${pageWidthMode === 'full' ? 'justify-stretch' : 'justify-center'} items-start gap-4 sm:gap-6 relative min-h-[calc(100vh-220px)] w-full`}>
                             {/* FEUILLE WORD */}
                             <div 
                                 onClick={() => {
@@ -5863,7 +6249,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     transformOrigin: 'top center',
                                     cursor: editorMode !== 'read' ? 'text' : 'default'
                                 }}
-                                className="w-full max-w-4xl rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 p-8 sm:p-14 min-h-[750px] flex flex-col justify-between relative transition-transform cursor-text"
+                                className={`w-full ${
+                                    pageWidthMode === 'full' 
+                                        ? 'max-w-full' 
+                                        : pageWidthMode === 'wide' 
+                                            ? 'max-w-6xl' 
+                                            : 'max-w-4xl'
+                                } rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 ${
+                                    pageMargins === 'compact' 
+                                        ? 'p-3 sm:p-8 md:p-10' 
+                                        : pageMargins === 'wide' 
+                                            ? 'p-6 sm:p-16 md:p-20' 
+                                            : 'p-4 sm:p-12 md:p-14'
+                                } min-h-[calc(100vh-270px)] flex flex-col justify-between relative transition-all duration-200 cursor-text`}
                             >
                                 {pageWatermark && (
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10 select-none">
@@ -5877,7 +6275,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     onInput={handleEditorInput}
                                     suppressContentEditableWarning={true}
                                     tabIndex={0}
-                                    className="outline-none text-slate-900 dark:text-slate-900 text-sm sm:text-base leading-relaxed min-h-[600px] w-full block focus:outline-none"
+                                    className="outline-none text-slate-900 dark:text-slate-900 text-sm sm:text-base leading-relaxed min-h-[calc(100vh-380px)] w-full block focus:outline-none"
                                     style={{ 
                                         wordBreak: 'break-word', 
                                         fontFamily: fontFamily,
@@ -5891,12 +6289,16 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                                 {/* Pied de page Word */}
                                 <div className="pt-6 mt-8 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between text-xs text-slate-400 dark:text-slate-500 gap-3">
-                                    <div>
+                                    <div className="flex items-center space-x-2">
                                         <span>Page 1 / 1</span>
                                         <span className="mx-2">•</span>
                                         <span>{wordCount} mots</span>
                                         <span className="mx-2">•</span>
                                         <span>{charCount} caractères</span>
+                                        <span className="mx-2 hidden sm:inline">•</span>
+                                        <span className="hidden sm:inline bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-bold px-2 py-0.5 rounded-full text-[10px]">
+                                            {pageWidthMode === 'full' ? 'Affichage Pleine Page' : pageWidthMode === 'wide' ? 'Affichage Large' : 'Format Page A4'}
+                                        </span>
                                     </div>
                                     <div className="flex items-center space-x-3">
                                         <span>Français (France)</span>

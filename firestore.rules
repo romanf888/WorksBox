@@ -57,5 +57,17 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // WorksBox Chat - Messages & Salons
+    match /artifacts/{appId}/public/data/chatMessages/{messageId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.senderId);
+    }
+
+    match /artifacts/{appId}/public/data/chatChannels/{channelId} {
+      allow read: if true;
+      allow write: if isAdmin() || isSignedIn();
+    }
   }
 }
