@@ -423,28 +423,7 @@
             quotaBytes: 5368709120 // 5 Go par défaut
         };
 
-        const DEFAULT_SHARED_CLOUD_FILES = [
-            {
-                id: 'shared-bac-sti2d-2025',
-                name: 'Annales BAC STI2D - Sujet Zéro Mathématiques & Physique.pdf',
-                category: 'BAC',
-                description: 'Sujet officiel complet avec corrigé détaillé préparé pour les épreuves terminales.',
-                size: 4718592, // ~4.5 Mo
-                uploadedBy: 'Admin WorksBox',
-                uploadedAt: '2025-02-15',
-                url: 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view'
-            },
-            {
-                id: 'shared-bts-sio-cyber',
-                name: 'Guide Pratique Sécurité Réseau & Cryptographie - BTS SIO.pdf',
-                category: 'BTS',
-                description: 'Fiche mémo et exercices types sur les protocoles TLS, certificats X.509 et analyse Wireshark.',
-                size: 8388608, // ~8 Mo
-                uploadedBy: 'Admin WorksBox',
-                uploadedAt: '2025-02-20',
-                url: 'https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view'
-            }
-        ];
+        const DEFAULT_SHARED_CLOUD_FILES = [];
 
         const deduplicateCourses = (list) => {
             if (!Array.isArray(list)) return [];
@@ -536,9 +515,16 @@
             const [sharedCloudFiles, setSharedCloudFiles] = useState(() => {
                 try {
                     const saved = localStorage.getItem('worksbox_shared_files');
-                    if (saved) return JSON.parse(saved);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed)) {
+                            // Nettoyage de tout fichier d'exemple ou prédéfini hérité
+                            const cleaned = parsed.filter(f => f && f.id && !f.id.startsWith('sample-') && !f.id.startsWith('shared-bac-') && !f.id.startsWith('shared-bts-'));
+                            return cleaned;
+                        }
+                    }
                 } catch(e) {}
-                return DEFAULT_SHARED_CLOUD_FILES;
+                return [];
             });
             const [sharedCategoryFilter, setSharedCategoryFilter] = useState('Tout');
             const [sharedSearchQuery, setSharedSearchQuery] = useState('');
@@ -694,10 +680,7 @@
                         const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                         setSharedCloudFiles(list);
                     } else {
-                        const hasInit = localStorage.getItem('wb_shared_cloud_initialized');
-                        if (hasInit) {
-                            setSharedCloudFiles([]);
-                        }
+                        setSharedCloudFiles([]);
                     }
                 }, err => console.warn('SharedCloud files snap err:', err));
 
@@ -3082,9 +3065,9 @@
                                 </div>
 
                                 {/* Liste articles */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                     {articles.map((art, artIdx) => (
-                                        <div key={`${art.id || 'art'}_${artIdx}`} className={`bg-white rounded-2xl border p-5 shadow-xs flex flex-col justify-between ${art.pinned ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'}`}>
+                                        <div key={`${art.id || 'art'}_${artIdx}`} className={`bg-white rounded-2xl border p-5 shadow-xs flex flex-col h-fit ${art.pinned ? 'border-amber-400 ring-2 ring-amber-200' : 'border-gray-200'}`}>
                                             <div>
                                                 <div className="flex justify-between items-start mb-2">
                                                     <span className="text-xs text-gray-400">{art.date}</span>

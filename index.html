@@ -781,72 +781,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             quotaBytes: 5 * 1024 * 1024 * 1024 // 5 Go par défaut
         };
 
-        const DEFAULT_SHARED_CLOUD_FILES = [
-            {
-                id: "shared-doc-1",
-                name: "Annales_BAC_STI2D_Sujet_Zero_Mathematiques_Physique.pdf",
-                size: 4850000,
-                mimeType: "application/pdf",
-                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                category: "Annales BAC & BTS",
-                description: "Sujet officiel complet avec barème et corrigé détaillé pour les épreuves écrites.",
-                school: "Lycée François Bazin",
-                classe: "Terminale STI2D",
-                uploaderName: "Admin WorksBox",
-                uploaderEmail: "roman.ferriere4@gmail.com",
-                downloadsCount: 142,
-                createdAt: "2026-09-20T10:00:00Z"
-            },
-            {
-                id: "shared-doc-2",
-                name: "Pack_Logiciels_Utilitaires_Casio_Graph35EII.zip",
-                size: 14200000,
-                mimeType: "application/zip",
-                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                category: "Logiciels & Utilitaires",
-                description: "Ensemble des logiciels officiels Casio FA-124 et utilitaires de conversion de cours pour calculatrice.",
-                school: "Tous les lycées",
-                classe: "Toutes les classes",
-                uploaderName: "Admin WorksBox",
-                uploaderEmail: "roman.ferriere4@gmail.com",
-                downloadsCount: 289,
-                createdAt: "2026-09-18T14:30:00Z"
-            },
-            {
-                id: "shared-doc-3",
-                name: "Formulaire_Officiel_Formules_Essentielles_Terminale.pdf",
-                size: 2150000,
-                mimeType: "application/pdf",
-                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                category: "Fiches récapitulatives",
-                description: "Synthèse de toutes les formules de maths et physique-chimie autorisées aux examens.",
-                school: "Lycée François Bazin",
-                classe: "Terminale STI2D",
-                uploaderName: "Admin WorksBox",
-                uploaderEmail: "roman.ferriere4@gmail.com",
-                downloadsCount: 310,
-                createdAt: "2026-09-15T09:15:00Z"
-            },
-            {
-                id: "shared-doc-4",
-                name: "Programmes_Casio_Maths_Physique_Pack_Complet.g1m",
-                size: 650000,
-                mimeType: "application/octet-stream",
-                url: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                downloadUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-                category: "Programmes Casio",
-                description: "Pack prêt à copier dans @MainMem/PROGRAM pour calculatrice Casio Graph 35+EII.",
-                school: "Tous les lycées",
-                classe: "Toutes les classes",
-                uploaderName: "Admin WorksBox",
-                uploaderEmail: "roman.ferriere4@gmail.com",
-                downloadsCount: 475,
-                createdAt: "2026-09-12T16:45:00Z"
-            }
-        ];
+        const DEFAULT_SHARED_CLOUD_FILES = [];
 
         function App() {
           const [currentView, setCurrentView] = useState('home');
@@ -1199,17 +1134,21 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               }
           };
 
-          // Connexion Google Drive avec mémorisation permanente et connexion fluide
+          // Connexion Google Drive automatique et transparente
           const connectGoogleDrive = async () => {
               if (!auth) {
                   showToast("Service d'authentification non disponible", "warning", "warning");
-                  return;
+                  return null;
+              }
+              if (!activeUser || activeUser.isLocal) {
+                  setShowAuthModal(true);
+                  showToast("Veuillez vous connecter avec Google pour activer votre espace Cloud.", "info", "info");
+                  return null;
               }
               setCloudLoading(true);
               try {
                   const provider = new GoogleAuthProvider();
                   provider.addScope('https://www.googleapis.com/auth/drive.file');
-                  // Utilise l'email de l'élève s'il est déjà connecté pour une liaison directe en 1 clic
                   if (activeUser?.email) {
                       provider.setCustomParameters({ login_hint: activeUser.email });
                   }
@@ -1217,13 +1156,25 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
                   if (token) {
                       updateDriveToken(token);
-                      showToast("Google Drive connecté ! Votre espace est désormais mémorisé.", "success", "check");
+                      showToast("Google Drive connecté avec succès !", "success", "check");
                       await loadWorksBoxCloudFiles(token, false);
+                      return token;
                   } else {
-                      showToast("Compte Google connecté mais jeton Drive non fourni.", "warning", "warning");
+                      showToast("Connexion réussie mais jeton Drive non fourni.", "warning", "warning");
+                      return null;
                   }
               } catch (err) {
-                  showToast("Erreur connexion Drive : " + (err.message || err), "warning", "warning");
+                  const errCode = err?.code || '';
+                  const errMsg = err?.message || String(err);
+                  if (errCode === 'auth/popup-closed-by-user' || errMsg.includes('popup-closed')) {
+                      // Fenêtre fermée par l'utilisateur
+                  } else if (errCode === 'auth/popup-blocked' || errMsg.includes('popup-blocked')) {
+                      showToast("Fenêtre bloquée : veuillez autoriser les pop-ups dans votre navigateur.", "warning", "warning");
+                      setShowAuthModal(true);
+                  } else {
+                      showToast("Connexion Drive : " + errMsg, "warning", "warning");
+                  }
+                  return null;
               } finally {
                   setCloudLoading(false);
               }
@@ -1231,10 +1182,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           // Téléversement d'un fichier avec contrôle strict du quota 1 Go et barre de chargement temps réel
           const uploadFileToCloud = async (file) => {
-              if (!driveToken) {
-                  showToast("Veuillez d'abord connecter votre Google Drive", "warning", "warning");
-                  connectGoogleDrive();
+              if (!activeUser || activeUser.isLocal) {
+                  setShowAuthModal(true);
+                  showToast("Connectez-vous avec Google pour téléverser sur votre Cloud.", "info", "info");
                   return;
+              }
+              let token = driveToken;
+              if (!token) {
+                  token = await connectGoogleDrive();
+                  if (!token) return;
               }
               if (!file) return;
 
@@ -1257,8 +1213,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               });
 
               try {
-                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
-                  await uploadFileToGoogleDrive(file, driveToken, folderId, (prog) => {
+                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(token);
+                  await uploadFileToGoogleDrive(file, token, folderId, (prog) => {
                       setUploadProgress({
                           active: true,
                           fileName: file.name,
@@ -1271,7 +1227,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   });
 
                   showToast(`« ${file.name} » ajouté avec succès à votre Cloud !`, "success", "check");
-                  await loadWorksBoxCloudFiles(driveToken);
+                  await loadWorksBoxCloudFiles(token);
                   setTimeout(() => {
                       setUploadProgress(null);
                   }, 2200);
@@ -1287,9 +1243,6 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       errorMsg: e.message,
                       target: 'personal'
                   });
-                  if (e.message && e.message.includes('reconnecter')) {
-                      connectGoogleDrive();
-                  }
                   setTimeout(() => {
                       setUploadProgress(null);
                   }, 4000);
@@ -1300,10 +1253,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           // Sauvegarde en 1 clic d'un cours de WorksBox vers le Drive personnel de l'élève avec barre de chargement
           const saveCourseToCloudDrive = async (course) => {
-              if (!driveToken) {
-                  showToast("Veuillez connecter votre compte Google Drive", "warning", "warning");
-                  connectGoogleDrive();
+              if (!activeUser || activeUser.isLocal) {
+                  setShowAuthModal(true);
+                  showToast("Connectez-vous avec Google pour enregistrer ce cours dans votre Drive.", "info", "info");
                   return;
+              }
+              let token = driveToken;
+              if (!token) {
+                  token = await connectGoogleDrive();
+                  if (!token) return;
               }
               if (!course) return;
 
@@ -1322,13 +1280,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               });
 
               try {
-                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
+                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(token);
                   const fileContent = `========================================\nWORKSBOX • RESSOURCE PÉDAGOGIQUE\n========================================\n\nTitre : ${course.title}\nMatière : ${course.subject}\nChapitre : ${course.chapter || 'Général'}\nLycée : ${course.school || selectedSchool}\nClasse : ${course.classe || selectedClass}\n\nLiens d'accès direct :\n- Document PDF : ${course.digitalLink || 'Non disponible'}\n- Calculatrice Casio : ${course.casioLink || 'Non disponible'}\n- Vidéo : ${course.videoLink || 'Non disponible'}\n- Audio : ${course.audioLink || 'Non disponible'}\n\nEnregistré dans votre espace WorksBox Cloud le ${new Date().toLocaleDateString('fr-FR')}.\nRetrouvez tous vos cours sur WorksBox !\n`;
 
                   const textBlob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
                   const textFile = new File([textBlob], fileName, { type: 'text/plain;charset=utf-8' });
                   
-                  await uploadFileToGoogleDrive(textFile, driveToken, folderId, (prog) => {
+                  await uploadFileToGoogleDrive(textFile, token, folderId, (prog) => {
                       setUploadProgress({
                           active: true,
                           fileName: fileName,
@@ -1341,13 +1299,10 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   });
 
                   showToast(`« ${course.title} » sauvegardé dans votre Drive !`, "success", "check");
-                  await loadWorksBoxCloudFiles(driveToken);
+                  await loadWorksBoxCloudFiles(token);
                   setTimeout(() => setUploadProgress(null), 2200);
               } catch (e) {
                   showToast("Erreur sauvegarde : " + e.message, "warning", "warning");
-                  if (e.message && e.message.includes('reconnecter')) {
-                      connectGoogleDrive();
-                  }
                   setTimeout(() => setUploadProgress(null), 3000);
               } finally {
                   setCloudUploading(false);
@@ -1432,10 +1387,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           // Copier un fichier du Cloud Partagé dans son Google Drive personnel
           const saveSharedFileToPersonalCloud = async (sharedFile) => {
-              if (!driveToken) {
-                  showToast("Connectez votre Google Drive pour copier ce fichier dans votre espace personnel", "warning", "warning");
-                  connectGoogleDrive();
+              if (!activeUser || activeUser.isLocal) {
+                  setShowAuthModal(true);
+                  showToast("Connectez-vous avec Google pour copier ce document dans votre Drive.", "info", "info");
                   return;
+              }
+              let token = driveToken;
+              if (!token) {
+                  token = await connectGoogleDrive();
+                  if (!token) return;
               }
               if (!sharedFile) return;
 
@@ -1454,13 +1414,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               });
 
               try {
-                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(driveToken);
+                  const folderId = cloudFolderId || await getOrCreateWorksBoxFolder(token);
                   const content = `========================================\nWORKSBOX • DOCUMENT DU CLOUD PARTAGÉ\n========================================\n\nTitre : ${sharedFile.name}\nCatégorie : ${sharedFile.category || 'Général'}\nÉtablissement : ${sharedFile.school || 'Tous'}\nClasse : ${sharedFile.classe || 'Toutes'}\nDescription : ${sharedFile.description || 'Ressource partagée'}\nMis à disposition par : ${sharedFile.uploaderName || 'Administration'}\nLien d'accès officiel : ${sharedFile.downloadUrl || sharedFile.url || ''}\n\nEnregistré dans votre espace WorksBox Cloud personnel le ${new Date().toLocaleDateString('fr-FR')}.\n`;
 
                   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
                   const fileObj = new File([blob], fileNameWithExt, { type: 'text/plain;charset=utf-8' });
 
-                  await uploadFileToGoogleDrive(fileObj, driveToken, folderId, (prog) => {
+                  await uploadFileToGoogleDrive(fileObj, token, folderId, (prog) => {
                       setUploadProgress({
                           active: true,
                           fileName: fileNameWithExt,
@@ -1473,7 +1433,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   });
 
                   showToast(`« ${sharedFile.name} » copié dans votre Cloud personnel !`, "success", "check");
-                  await loadWorksBoxCloudFiles(driveToken);
+                  await loadWorksBoxCloudFiles(token);
                   setTimeout(() => setUploadProgress(null), 2200);
               } catch (e) {
                   showToast("Erreur lors de la copie : " + e.message, "warning", "warning");
@@ -1600,11 +1560,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const activeUser = user || localUser;
           const isUserAdmin = checkIsAdmin(activeUser);
 
-          // Nettoyage de tout compte élève implicite hérité pour s'assurer que le visiteur commence sans compte
+          // Nettoyage de tout compte élève implicite hérité et de tout fichier d'exemple résiduel
           useEffect(() => {
               if (!user && !localUser) {
                   localStorage.removeItem('worksbox_local_user');
               }
+              try {
+                  const cachedShared = localStorage.getItem('worksbox_shared_files');
+                  if (cachedShared) {
+                      const parsed = JSON.parse(cachedShared);
+                      if (Array.isArray(parsed) && parsed.some(f => f?.id?.startsWith('sample-') || f?.id?.startsWith('shared-bac-') || f?.id?.startsWith('shared-bts-'))) {
+                          localStorage.removeItem('worksbox_shared_files');
+                      }
+                  }
+              } catch(e) {}
           }, []);
 
           const [selectedSchool, setSelectedSchool] = useState(() => localStorage.getItem('wb_selected_school') || '');
@@ -1998,21 +1967,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 loaded.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
                 setSharedCloudFiles(loaded);
               } else {
-                const hasInit = localStorage.getItem('wb_shared_cloud_initialized');
-                if (hasInit) {
-                  setSharedCloudFiles([]);
-                } else {
-                  setSharedCloudFiles(DEFAULT_SHARED_CLOUD_FILES);
-                }
+                setSharedCloudFiles([]);
               }
             }, (err) => {
               console.warn('SharedCloudFiles snapshot error:', err);
-              const hasInit = localStorage.getItem('wb_shared_cloud_initialized');
-              if (hasInit) {
-                setSharedCloudFiles([]);
-              } else {
-                setSharedCloudFiles(DEFAULT_SHARED_CLOUD_FILES);
-              }
+              setSharedCloudFiles([]);
             });
 
             // Synchronisation en direct de la configuration du Cloud Partagé (nom, description, quota, statut)
@@ -2529,26 +2488,27 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             {filteredArticles.length > 0 && (
                                 <div className="space-y-4">
                                     <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center"><Newspaper className="w-5 h-5 mr-2 text-red-500"/> Actualités & Annonces</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                         {filteredArticles.map(art => {
                                             const embedUrl = getYouTubeEmbedUrl(art.videoUrl);
+                                            const hasMedia = !!(art.imageUrl || embedUrl);
                                             return (
-                                                <div key={art.id} className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border flex flex-col justify-between ${art.pinned ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20' : 'border-slate-200 dark:border-slate-800'}`}>
+                                                <div key={art.id} className={`bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border flex flex-col h-fit ${art.pinned ? 'border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20' : 'border-slate-200 dark:border-slate-800'}`}>
                                                     <div>
                                                         <div className="flex justify-between items-center mb-3">
                                                             <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{new Date(art.date).toLocaleDateString('fr-FR')}</span>
                                                             {art.pinned && <span className="bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-700">Épinglé</span>}
                                                         </div>
                                                         <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{art.title}</h4>
-                                                        <p className="text-slate-600 dark:text-slate-300 text-sm whitespace-pre-line mb-4">{art.content}</p>
+                                                        <p className={`text-slate-600 dark:text-slate-300 text-sm whitespace-pre-line ${hasMedia ? 'mb-4' : 'mb-0'}`}>{art.content}</p>
                                                     </div>
                                                     {art.imageUrl && (
-                                                        <div className="mb-4 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 max-h-72">
+                                                        <div className="mt-4 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 max-h-72">
                                                             <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover" onError={(e)=>{e.target.style.display='none'}} />
                                                         </div>
                                                     )}
                                                     {embedUrl && (
-                                                        <div className="mb-4 aspect-video w-full rounded-xl overflow-hidden shadow-sm bg-slate-900">
+                                                        <div className="mt-4 aspect-video w-full rounded-xl overflow-hidden shadow-sm bg-slate-900">
                                                             <iframe src={embedUrl} className="w-full h-full border-0" allowFullScreen title="YouTube Video"></iframe>
                                                         </div>
                                                     )}
@@ -2738,47 +2698,37 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     </div>
                                 </div>
 
-                                {/* Statut Google Drive Cloud */}
-                                <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 w-full md:w-auto shrink-0">
+                                {/* Widget WorksBox Cloud */}
+                                <div className="bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-3.5 sm:p-4 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3 w-full md:w-auto shrink-0">
                                     <div className="flex items-center space-x-3">
-                                        <div className={`p-2.5 rounded-xl ${driveToken ? 'bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'}`}>
+                                        <div className="p-2.5 rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-950 dark:text-sky-400">
                                             <Cloud className="w-5 h-5" />
                                         </div>
                                         <div>
-                                            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WorksBox Cloud (1 Go)</span>
+                                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">WorksBox Cloud (1 Go)</span>
                                             <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                                {driveToken ? 'Lié & Actif' : (activeUser && !activeUser.isLocal ? 'Prêt à synchroniser' : 'Non synchronisé')}
+                                                {activeUser && !activeUser.isLocal 
+                                                    ? `${((cloudStorageUsed / (1024 * 1024))).toFixed(1)} Mo / 1 Go` 
+                                                    : 'Inclus avec compte Google'}
                                             </span>
                                         </div>
                                     </div>
-                                    {!driveToken ? (
+                                    {activeUser && !activeUser.isLocal ? (
                                         <button 
-                                            onClick={activeUser && !activeUser.isLocal ? connectGoogleDrive : () => setShowAuthModal(true)}
+                                            onClick={() => setProfileTab('cloud')}
+                                            className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-xs rounded-xl border border-sky-200 dark:border-sky-800 transition whitespace-nowrap cursor-pointer flex items-center space-x-1"
+                                        >
+                                            <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                                            <span>Mon Cloud</span>
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => setShowAuthModal(true)}
                                             className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-xs transition active:scale-95 flex items-center space-x-1.5 whitespace-nowrap cursor-pointer"
                                         >
                                             <GoogleIcon className="w-3.5 h-3.5" />
-                                            <span>{activeUser && !activeUser.isLocal ? 'Synchroniser Drive' : 'Connexion Google'}</span>
+                                            <span>Connexion</span>
                                         </button>
-                                    ) : (
-                                        <div className="flex items-center space-x-1.5">
-                                            <button 
-                                                onClick={() => setProfileTab('cloud')}
-                                                className="px-3.5 py-2 bg-sky-50 dark:bg-sky-950/80 hover:bg-sky-100 text-sky-700 dark:text-sky-300 font-bold text-xs rounded-xl border border-sky-200 dark:border-sky-800 transition whitespace-nowrap cursor-pointer flex items-center space-x-1"
-                                            >
-                                                <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                                                <span>Gérer mon Cloud</span>
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    updateDriveToken(null);
-                                                    showToast("Google Drive délié.", "info", "info");
-                                                }}
-                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 rounded-xl transition cursor-pointer"
-                                                title="Délier Google Drive"
-                                            >
-                                                <LogOut className="w-3.5 h-3.5" />
-                                            </button>
-                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -2791,7 +2741,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                                         profileTab === 'favorites' 
                                             ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/40' 
-                                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                             : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                                     }`}
                                 >
                                     <Star className="w-4 h-4" filled={profileTab === 'favorites'} />
@@ -2805,12 +2755,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                                 <button 
                                     id="tab-profile-cloud"
-                                    onClick={() => {
-                                        setProfileTab('cloud');
-                                        if (!driveToken && activeUser && !activeUser.isLocal) {
-                                            connectGoogleDrive();
-                                        }
-                                    }}
+                                    onClick={() => setProfileTab('cloud')}
                                     className={`flex items-center space-x-2 px-5 py-3 rounded-2xl text-sm font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                                         profileTab === 'cloud' 
                                             ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20 ring-2 ring-sky-400/40' 
@@ -2819,13 +2764,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 >
                                     <Cloud className="w-4 h-4" />
                                     <span>WorksBox Cloud</span>
-                                    {driveToken && (
-                                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
-                                            profileTab === 'cloud' ? 'bg-white/20 text-white' : 'bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300'
-                                        }`}>
-                                            {cloudFiles.length}
-                                        </span>
-                                    )}
+                                    <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${
+                                        profileTab === 'cloud' ? 'bg-white/20 text-white' : 'bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300'
+                                    }`}>
+                                        {cloudFiles.length}
+                                    </span>
                                 </button>
 
                                 <button 
@@ -2974,29 +2917,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         <div className="flex flex-wrap items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 gap-3">
                                             <span>Espace restant disponible : <strong className="text-slate-800 dark:text-slate-200 font-bold">{Math.max(0, ((MAX_CLOUD_QUOTA_BYTES - cloudStorageUsed) / (1024 * 1024))).toFixed(1)} Mo</strong></span>
                                             <div className="flex items-center space-x-3">
-                                                {driveToken && (
-                                                    <div className="flex items-center space-x-2">
-                                                        <button 
-                                                            onClick={() => loadWorksBoxCloudFiles(driveToken, false)}
-                                                            disabled={cloudLoading}
-                                                            className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
-                                                            title="Synchroniser avec Google Drive"
-                                                        >
-                                                            <RefreshCw className={`w-3.5 h-3.5 ${cloudLoading ? 'animate-spin' : ''}`} />
-                                                            <span>Actualiser</span>
-                                                        </button>
-                                                        <button 
-                                                            onClick={() => {
-                                                                updateDriveToken(null);
-                                                                showToast("Google Drive délié", "info", "info");
-                                                            }}
-                                                            className="px-2.5 py-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl text-xs font-bold transition cursor-pointer"
-                                                            title="Délier ce compte Drive"
-                                                        >
-                                                            Délier
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                <button 
+                                                    onClick={() => loadWorksBoxCloudFiles(driveToken, false)}
+                                                    disabled={cloudLoading}
+                                                    className="px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer"
+                                                    title="Actualiser vos documents"
+                                                >
+                                                    <RefreshCw className={`w-3.5 h-3.5 ${cloudLoading ? 'animate-spin' : ''}`} />
+                                                    <span>Actualiser</span>
+                                                </button>
                                                 <input 
                                                     type="file" 
                                                     id="cloud-file-uploader" 
@@ -3011,14 +2940,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                 />
                                                 <button 
                                                     onClick={() => {
-                                                        if (!driveToken) {
-                                                            connectGoogleDrive();
+                                                        if (!activeUser || activeUser.isLocal) {
+                                                            setShowAuthModal(true);
                                                         } else {
                                                             document.getElementById('cloud-file-uploader')?.click();
                                                         }
                                                     }}
                                                     disabled={cloudUploading}
-                                                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-sm transition active:scale-95 flex items-center space-x-2"
+                                                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold rounded-xl shadow-sm transition active:scale-95 flex items-center space-x-2 cursor-pointer"
                                                 >
                                                     {cloudUploading ? (
                                                         <>
@@ -3118,27 +3047,23 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                             </div>
                                         )}
 
-                                        {!driveToken ? (
+                                        {(!activeUser || activeUser.isLocal) ? (
                                             <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-10 text-center space-y-4">
                                                 <div className="w-16 h-16 bg-sky-50 dark:bg-sky-950 text-sky-600 dark:text-sky-400 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
                                                     <Cloud className="w-8 h-8" />
                                                 </div>
                                                 <h4 className="text-base font-bold text-slate-800 dark:text-slate-200">
-                                                    {activeUser && !activeUser.isLocal
-                                                        ? "Synchronisation de votre WorksBox Cloud Google Drive"
-                                                        : "Connectez-vous avec Google pour activer votre espace 1 Go"}
+                                                    Connectez-vous avec Google pour accéder à votre espace WorksBox Cloud (1 Go)
                                                 </h4>
                                                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                                                    {activeUser && !activeUser.isLocal
-                                                        ? `Votre compte Google (${activeUser.email}) est connecté. Cliquez ci-dessous pour valider l'accès direct à votre dossier dédié WorksBox Cloud (1 Go de stockage inclus).`
-                                                        : "Vos fichiers sont privés, hébergés en toute sécurité sur votre compte Google dans le dossier dédié WorksBox Cloud (1 Go inclus)."}
+                                                    Vos fichiers et cours sont automatiquement synchronisés et hébergés en toute sécurité sur votre compte Google dans le dossier dédié WorksBox Cloud (1 Go inclus).
                                                 </p>
                                                 <button 
-                                                    onClick={activeUser && !activeUser.isLocal ? connectGoogleDrive : () => setShowAuthModal(true)}
+                                                    onClick={() => setShowAuthModal(true)}
                                                     className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-sm transition active:scale-95 inline-flex items-center space-x-2 cursor-pointer"
                                                 >
                                                     <GoogleIcon className="w-4 h-4" />
-                                                    <span>{activeUser && !activeUser.isLocal ? "Synchroniser mon WorksBox Cloud (1 Go)" : "Se connecter avec Google (Drive 1 Go inclus)"}</span>
+                                                    <span>Se connecter avec Google (Drive 1 Go inclus)</span>
                                                 </button>
                                             </div>
                                         ) : cloudLoading ? (
@@ -3451,20 +3376,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         </div>
                                     </div>
 
-                                    {/* Liaison Google pour les élèves locaux */}
+                                    {/* Connexion Google pour les élèves en session locale */}
                                     {activeUser?.isLocal && (
                                         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                             <div>
-                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block">Synchronisation</span>
-                                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Associer un compte Google</h3>
-                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Conservez vos favoris et votre Cloud sur tous vos téléphones et ordinateurs.</p>
+                                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide block">Compte Google</span>
+                                                <h3 className="text-base font-bold text-slate-900 dark:text-white">Connexion Google</h3>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Activez votre espace WorksBox Cloud (1 Go) et synchronisez vos favoris en toute sécurité.</p>
                                             </div>
                                             <button 
                                                 onClick={() => setShowAuthModal(true)}
                                                 className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition shadow-sm whitespace-nowrap flex items-center space-x-2"
                                             >
                                                 <GoogleIcon className="w-4 h-4" />
-                                                <span>Lier Google</span>
+                                                <span>Se connecter avec Google</span>
                                             </button>
                                         </div>
                                     )}
@@ -4037,14 +3962,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             {isLocal && (
                                 <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-800 rounded-2xl flex items-center justify-between">
                                     <div className="text-xs text-slate-700 dark:text-slate-300 mr-2">
-                                        <span className="font-bold block text-slate-900 dark:text-white">Synchroniser avec Google ?</span>
-                                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Liez votre compte Google à ce profil.</span>
+                                        <span className="font-bold block text-slate-900 dark:text-white">Compte Google</span>
+                                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Passez au compte Google pour le Cloud 1 Go.</span>
                                     </div>
                                     <button
                                         onClick={onUpgradeToGoogle}
                                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold whitespace-nowrap transition-all shadow-sm"
                                     >
-                                        Lier Google
+                                        Connexion Google
                                     </button>
                                 </div>
                             )}
