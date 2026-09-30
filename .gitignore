@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+.npm
+
+# Secrets and environment
+.env
+.env.local
+.env.*.local
+
+# Firebase internal applet config (prevents Secret Scanning alerts on GitHub)
+firebase-applet-config.json
+firebase_applet_config.xml
+
+# Logs & temp
+*.log
+.DS_Store
+dist/
+build/
