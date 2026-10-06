@@ -8,9 +8,10 @@
         "id": { "type": "string", "maxLength": 128 },
         "email": { "type": "string", "maxLength": 256 },
         "displayName": { "type": "string", "maxLength": 128 },
-        "photoURL": { "type": "string", "maxLength": 512 },
+        "photoURL": { "type": "string", "maxLength": 100000 },
         "selectedSchool": { "type": "string", "maxLength": 128 },
         "selectedClass": { "type": "string", "maxLength": 128 },
+        "setupCompleted": { "type": "boolean" },
         "favorites": { "type": "array" },
         "createdAt": { "type": "string" },
         "updatedAt": { "type": "string" }

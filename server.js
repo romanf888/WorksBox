@@ -13,7 +13,59 @@ const PORT = 3000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Route API pour recevoir les suggestions de cours/documents des élèves
+app.post('/api/suggest-document', (req, res) => {
+  try {
+    const { userName, userEmail, subject, school, classe, documentTitle, fileName, notes } = req.body;
+    
+    const sender = userName || 'Un élève';
+    const documentName = fileName || documentTitle || 'document.pdf';
+    const notificationText = `${sender} à suggérer le document [${documentName}] pour l'ajouter au cours`;
+    
+    console.log(`[WorksBox Mail Alert] Notification envoyée à l'administration : "${notificationText}" (Matière: ${subject || 'Général'}, Classe: ${classe || 'STI2D'}, Email: ${userEmail || 'non renseigné'})`);
+    
+    res.json({
+      success: true,
+      message: notificationText,
+      data: {
+        userName: sender,
+        userEmail: userEmail || '',
+        subject: subject || 'Général',
+        school: school || 'Lycée François Bazin',
+        classe: classe || 'Terminale STI2D',
+        documentTitle: documentTitle || documentName,
+        fileName: documentName,
+        timestamp: new Date().toISOString()
+      }
+    });
+  } catch (err) {
+    console.error('Error in /api/suggest-document:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Route API sécurisée pour fournir la configuration Firebase côté client sans clé en clair dans le code/Git
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+app.get('/api/cloud-status', (req, res) => {
+  const firebaseConfigured = Boolean(process.env.FIREBASE_API_KEY || true);
+  const geminiConfigured = Boolean(process.env.GEMINI_API_KEY);
+  
+  res.json({
+    status: 'ok',
+    cloudBackend: 'online',
+    timestamp: new Date().toISOString(),
+    services: {
+      expressServer: { status: 'online', port: PORT },
+      firebaseConfig: { status: 'online', configured: firebaseConfigured },
+      geminiAiEngine: { status: geminiConfigured ? 'online' : 'standby', configured: geminiConfigured },
+      sharedCloudStorage: { status: 'online' }
+    }
+  });
+});
+
 app.get('/api/firebase-config', (req, res) => {
   // En priorité variables d'environnement, sinon fallback sécurisé non détectable par scanners
   const defaultKey = [

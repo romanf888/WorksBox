@@ -219,7 +219,7 @@
             "Allemand", "Français", "Histoire Géographie", "SVT", "Sciences Numériques et Technologiques",
             "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Conception et Industrialisation", "Usinage et FAO"
         ];
-        const TAGS = ['Cours', 'TP', 'TD', 'Fiche', 'Formulaire', 'Exercices', 'Vidéo', 'Audio', 'Diaporama', 'Casio'];
+        const TAGS = ['Cours', 'TP', 'TD', 'Fiche', 'Formulaire', 'Exercices', 'Vidéo', 'Audio', 'Diaporama', 'Casio', 'NumWorks'];
         const DEFAULT_TAG_COLORS = {
             'Cours': '#2563eb',
             'TP': '#059669',
@@ -230,7 +230,8 @@
             'Vidéo': '#dc2626',
             'Audio': '#0891b2',
             'Diaporama': '#4f46e5',
-            'Casio': '#475569'
+            'Casio': '#475569',
+            'NumWorks': '#d97706'
         };
 
         const DEFAULT_SCHOOL_CLASSES = {
@@ -414,8 +415,9 @@
           }
         ];
 
-        const DEFAULT_TERMS_FALLBACK = `Bienvenue sur WorksBox, la plateforme pour récupérer ses cours ou recevoir une version calculatrice.`;
+        const DEFAULT_TERMS_FALLBACK = `Bienvenue sur WorksBox, la plateforme pour récupérer ses cours ou recevoir une version calculatrice (Casio & NumWorks).`;
         const DEFAULT_CASIO_FALLBACK = `Comment mettre des cours sur calculatrice Casio Graph 35+EII ?\n\n1. Branchez votre calculatrice via USB en mode Clé USB (F1).\n2. Dans le lecteur, ouvrez @MainMem puis PROGRAM.\n3. Copiez vos fichiers .txt ou .g1m.\n4. Sur la calculatrice, allez dans PROGR (F2).`;
+        const DEFAULT_NUMWORKS_FALLBACK = `Comment mettre des cours sur calculatrice NumWorks ?\n\n1. Branchez votre NumWorks par câble USB-C à votre ordinateur.\n2. Ouvrez l'Atelier en ligne : https://my.numworks.com/python sur Chrome ou Edge.\n3. Importez vos scripts Python (.py) ou formulaires téléchargés sur WorksBox.\n4. Cliquez sur 'Envoyer vers ma calculatrice'. Retrouvez votre cours dans l'application Python !`;
 
         // Icons
         const Icon = ({ children, className = "w-5 h-5" }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{children}</svg>;
@@ -528,6 +530,7 @@
                 } catch(e) {}
                 return [];
             });
+            const [documentSuggestions, setDocumentSuggestions] = useState([]);
             const [settings, setSettings] = useState(() => {
                 try {
                     const s = localStorage.getItem('worksbox_settings');
@@ -543,7 +546,8 @@
                     tagColors: DEFAULT_TAG_COLORS,
                     announcement: '',
                     termsContent: DEFAULT_TERMS_FALLBACK,
-                    casioGuideContent: DEFAULT_CASIO_FALLBACK
+                    casioGuideContent: DEFAULT_CASIO_FALLBACK,
+                    numworksGuideContent: DEFAULT_NUMWORKS_FALLBACK
                 };
             });
 
@@ -746,12 +750,23 @@
                     }
                 }, err => console.warn('SharedCloud files snap err:', err));
 
+                const unsubSuggestions = onSnapshot(collection(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'documentSuggestions'), (snap) => {
+                    if (!snap.empty) {
+                        const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                        list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                        setDocumentSuggestions(list);
+                    } else {
+                        setDocumentSuggestions([]);
+                    }
+                }, err => console.warn('Suggestions snap err:', err));
+
                 return () => { 
                     unsubSettings(); 
                     unsubCourses(); 
                     unsubArticles(); 
                     unsubSharedConfig(); 
                     unsubSharedFiles(); 
+                    unsubSuggestions();
                 };
             }, [isAuthorizedAdmin]);
 
@@ -1366,12 +1381,14 @@
                         tag: courseData.tag || 'Cours',
                         digitalLink: (courseData.digitalLink || '').trim(),
                         casioLink: (courseData.casioLink || '').trim(),
+                        numworksLink: (courseData.numworksLink || '').trim(),
                         videoLink: (courseData.videoLink || '').trim(),
                         audioLink: (courseData.audioLink || '').trim(),
                         imageLink: (courseData.imageLink || '').trim(),
                         isVisible: courseData.isVisible !== false,
                         viewsDigital: Number(courseData.viewsDigital) || 0,
                         viewsCasio: Number(courseData.viewsCasio) || 0,
+                        viewsNumworks: Number(courseData.viewsNumworks) || 0,
                         updatedAt: new Date().toISOString()
                     };
 
@@ -1849,11 +1866,15 @@
                     const item = { ...next[index], [field]: value };
                     
                     if (field === 'mediaType') {
-                        const rawUrl = item.digitalLink || item.videoLink || item.audioLink || item.casioLink || item.imageLink || '';
+                        const rawUrl = item.digitalLink || item.videoLink || item.audioLink || item.casioLink || item.numworksLink || item.imageLink || '';
                         if (value === 'casio') {
                             item.casioLink = rawUrl;
                             item.digitalLink = '';
                             item.tag = 'Casio';
+                        } else if (value === 'numworks') {
+                            item.numworksLink = rawUrl;
+                            item.digitalLink = '';
+                            item.tag = 'NumWorks';
                         } else if (value === 'video') {
                             item.videoLink = rawUrl;
                             item.digitalLink = rawUrl;
@@ -1905,6 +1926,7 @@
                         clean.isVisible = true;
                         clean.viewsDigital = 0;
                         clean.viewsCasio = 0;
+                        clean.viewsNumworks = 0;
                         
                         let newId = `imported-${Date.now()}-${count}`;
                         if (dataDb) {
@@ -2296,6 +2318,17 @@
                                             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'articles' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
                                         >
                                             Articles
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('suggestions')}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1 ${activeTab === 'suggestions' ? 'bg-amber-600 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
+                                        >
+                                            <span>Suggestions</span>
+                                            {documentSuggestions.length > 0 && (
+                                                <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full">
+                                                    {documentSuggestions.length}
+                                                </span>
+                                            )}
                                         </button>
                                         <button
                                             onClick={() => setActiveTab('pages')}
@@ -2757,10 +2790,12 @@
                                                                                 <div className="flex items-center space-x-2 text-xs text-gray-400 mt-0.5">
                                                                                     {course.digitalLink && <span className="text-blue-600 font-semibold">📄 Document</span>}
                                                                                     {course.casioLink && <span className="text-gray-700 font-semibold">📟 Casio</span>}
+                                                                                    {course.numworksLink && <span className="text-amber-600 font-semibold">🐍 NumWorks</span>}
                                                                                     {course.videoLink && <span className="text-red-600 font-semibold">🎥 Vidéo</span>}
                                                                                     {course.audioLink && <span className="text-cyan-600 font-semibold">🎧 Audio</span>}
                                                                                     <span>• {course.viewsDigital || 0} vues numériques</span>
                                                                                     <span>• {course.viewsCasio || 0} vues Casio</span>
+                                                                                    <span>• {course.viewsNumworks || 0} vues NumWorks</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -3207,6 +3242,146 @@
                                         className="w-full border border-gray-200 rounded-xl p-3 text-sm font-mono text-gray-800 focus:outline-none"
                                     />
                                 </div>
+
+                                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-xs space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-bold text-gray-900 text-lg">Tutoriel Calculatrice NumWorks</h3>
+                                        <button
+                                            onClick={() => {
+                                                const val = document.getElementById('numworks-input').value;
+                                                handleUpdateSettings('numworksGuideContent', val);
+                                            }}
+                                            className="bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs px-4 py-2 rounded-xl transition"
+                                        >
+                                            Enregistrer le Guide
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        id="numworks-input"
+                                        rows="8"
+                                        defaultValue={settings.numworksGuideContent || DEFAULT_NUMWORKS_FALLBACK}
+                                        className="w-full border border-gray-200 rounded-xl p-3 text-sm font-mono text-gray-800 focus:outline-none"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* TAB: SUGGESTIONS */}
+                        {activeTab === 'suggestions' && (
+                            <div className="space-y-6 max-w-5xl mx-auto">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-xs">
+                                    <div>
+                                        <h2 className="text-xl font-black text-gray-900 flex items-center space-x-2">
+                                            <span>📄 Suggestions de Documents par les Élèves</span>
+                                            <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">
+                                                {documentSuggestions.length}
+                                            </span>
+                                        </h2>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Retrouvez les cours, TP et fiches suggérés par les utilisateurs via la section "Vous ne trouvez pas le cours".
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {documentSuggestions.length === 0 ? (
+                                    <div className="bg-white rounded-2xl p-12 text-center border border-gray-200 text-gray-500 space-y-2">
+                                        <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                                            <UploadCloudIcon className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="font-extrabold text-gray-800 text-base">Aucune suggestion en attente</h3>
+                                        <p className="text-xs text-gray-400 max-w-md mx-auto">
+                                            Lorsqu'un élève propose un cours via le bouton "Vous possédez le document", la demande apparaîtra ici en temps réel.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {documentSuggestions.map((sug) => (
+                                            <div key={sug.id} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-xs hover:border-amber-400 transition-all space-y-4">
+                                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                                                    <div className="flex items-center space-x-2.5">
+                                                        <span className="px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-xs font-black">
+                                                            {sug.subject || 'Général'}
+                                                        </span>
+                                                        <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold">
+                                                            {sug.classe || 'STI2D'}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400 font-medium">
+                                                            • {sug.school || 'Lycée François Bazin'}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[11px] font-semibold text-gray-400">
+                                                        Proposé le {sug.createdAt ? new Date(sug.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Récemment'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="md:col-span-2 space-y-2">
+                                                        <h4 className="text-base font-extrabold text-gray-900 flex items-center space-x-2">
+                                                            <span>{sug.documentTitle || sug.fileName}</span>
+                                                        </h4>
+                                                        <div className="text-xs text-gray-600 space-y-1">
+                                                            <p><strong>Élève :</strong> {sug.senderName || 'Anonyme'} {sug.senderEmail ? `(${sug.senderEmail})` : ''}</p>
+                                                            <p><strong>Fichier :</strong> {sug.fileName} {sug.fileSize ? `(${(sug.fileSize / 1024).toFixed(0)} Ko)` : ''}</p>
+                                                            {sug.notes && (
+                                                                <p className="bg-amber-50/80 p-2.5 rounded-xl border border-amber-200/60 text-amber-900 mt-2 italic">
+                                                                    « {sug.notes} »
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-col justify-center space-y-2 border-t md:border-t-0 md:border-l border-gray-100 pt-3 md:pt-0 md:pl-4">
+                                                        {sug.fileDataUrl && (
+                                                            <a
+                                                                href={sug.fileDataUrl}
+                                                                download={sug.fileName || 'document.pdf'}
+                                                                className="w-full px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1.5 cursor-pointer"
+                                                            >
+                                                                <DownloadIcon className="w-3.5 h-3.5" />
+                                                                <span>Télécharger le fichier</span>
+                                                            </a>
+                                                        )}
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingCourse({
+                                                                    title: sug.documentTitle || sug.fileName || '',
+                                                                    subject: sug.subject || 'Mathématiques',
+                                                                    school: sug.school || 'Lycée François Bazin',
+                                                                    classe: sug.classe || 'Terminale STI2D',
+                                                                    chapter: sug.chapter || 'Chapitre 1',
+                                                                    tag: 'Cours',
+                                                                    digitalLink: sug.fileDataUrl || '',
+                                                                    isVisible: true
+                                                                });
+                                                                setIsUploadOpen(true);
+                                                            }}
+                                                            className="w-full px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow-xs transition flex items-center justify-center space-x-1.5 cursor-pointer"
+                                                        >
+                                                            <CheckIcon className="w-3.5 h-3.5" />
+                                                            <span>Ajouter au cours</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={async () => {
+                                                                if (dataDb && sug.id) {
+                                                                    try {
+                                                                        await deleteDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'documentSuggestions', sug.id));
+                                                                        showToast('Suggestion supprimée.');
+                                                                    } catch (err) {
+                                                                        console.error(err);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="w-full px-3 py-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 font-bold text-xs rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer"
+                                                        >
+                                                            <TrashIcon className="w-3.5 h-3.5" />
+                                                            <span>Supprimer</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -3215,13 +3390,14 @@
                             const totalCourses = courses.length;
                             const totalDigital = courses.reduce((a, b) => a + (b.viewsDigital || 0), 0);
                             const totalCasio = courses.reduce((a, b) => a + (b.viewsCasio || 0), 0);
-                            const topCourses = [...courses].sort((a, b) => ((b.viewsDigital || 0) + (b.viewsCasio || 0)) - ((a.viewsDigital || 0) + (a.viewsCasio || 0))).slice(0, 10);
+                            const totalNumworks = courses.reduce((a, b) => a + (b.viewsNumworks || 0), 0);
+                            const topCourses = [...courses].sort((a, b) => ((b.viewsDigital || 0) + (b.viewsCasio || 0) + (b.viewsNumworks || 0)) - ((a.viewsDigital || 0) + (a.viewsCasio || 0) + (a.viewsNumworks || 0))).slice(0, 10);
 
                             return (
                                 <div className="space-y-6 max-w-5xl mx-auto">
                                     <h2 className="text-2xl font-extrabold text-gray-900">Statistiques de Consultation</h2>
                                     
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
                                             <span className="text-xs font-bold text-gray-400 uppercase">Total des Cours</span>
                                             <div className="text-3xl font-extrabold text-red-900 mt-2">{totalCourses}</div>
@@ -3234,6 +3410,10 @@
                                             <span className="text-xs font-bold text-gray-400 uppercase">Téléchargements Casio</span>
                                             <div className="text-3xl font-extrabold text-emerald-600 mt-2">{totalCasio}</div>
                                         </div>
+                                        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+                                            <span className="text-xs font-bold text-gray-400 uppercase">Téléchargements NumWorks</span>
+                                            <div className="text-3xl font-extrabold text-amber-600 mt-2">{totalNumworks}</div>
+                                        </div>
                                     </div>
 
                                     <div className="bg-white rounded-2xl border border-gray-200 shadow-xs p-5">
@@ -3244,8 +3424,9 @@
                                                     <th className="py-2">Titre</th>
                                                     <th className="py-2">Matière</th>
                                                     <th className="py-2">Classe</th>
-                                                    <th className="py-2 text-right">Vues Numériques</th>
-                                                    <th className="py-2 text-right">Vues Casio</th>
+                                                    <th className="py-2 text-right">PDF</th>
+                                                    <th className="py-2 text-right">Casio</th>
+                                                    <th className="py-2 text-right">NumWorks</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
@@ -3256,6 +3437,7 @@
                                                         <td className="py-2.5 text-gray-500 text-xs">{c.classe}</td>
                                                         <td className="py-2.5 text-right font-semibold text-blue-600">{c.viewsDigital || 0}</td>
                                                         <td className="py-2.5 text-right font-semibold text-emerald-600">{c.viewsCasio || 0}</td>
+                                                        <td className="py-2.5 text-right font-semibold text-amber-600">{c.viewsNumworks || 0}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
