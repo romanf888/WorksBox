@@ -2349,6 +2349,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       };
 
                       await setDoc(userRef, profilePayload, { merge: true });
+
+                      try {
+                          const logId = `log-auth-${Date.now()}`;
+                          const logRef = doc(userDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'activityLogs', logId);
+                          await setDoc(logRef, {
+                              id: logId,
+                              type: 'AUTH',
+                              action: `Connexion & Profil configuré pour « ${profileData.displayName} » (${profileData.selectedClass})`,
+                              userEmail: targetEmail || '',
+                              timestamp: new Date().toISOString()
+                          });
+                      } catch (_) {}
+
                       setUserProfile(profilePayload);
                       setFavorites(mergedFavs);
                       if (profileData.selectedSchool) {
@@ -5041,6 +5054,16 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 notes: cleanNotes,
                                 createdAt: new Date().toISOString(),
                                 status: 'pending'
+                            });
+
+                            const logId = `log-sug-${Date.now()}`;
+                            const logRef = doc(dataDb, 'artifacts', lyceeShareAppId, 'public', 'data', 'activityLogs', logId);
+                            await setDoc(logRef, {
+                                id: logId,
+                                type: 'SUGGESTION',
+                                action: `Document suggéré : « ${cleanTitle || docName} » (${subject || 'Général'} - ${classe || 'STI2D'})`,
+                                userEmail: userEmail || activeUser?.email || '',
+                                timestamp: new Date().toISOString()
                             });
                         } catch (fsErr) {
                             console.warn('Firestore suggestion save note:', fsErr);
