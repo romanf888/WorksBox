@@ -1246,11 +1246,9 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               console.warn("Erreur Google Drive API :", msg);
               if (
                   msg.includes('578872424130') || 
-                  msg.includes('drive.googleapis.com') || 
                   msg.includes('has not been used in project') || 
                   msg.includes('accessNotConfigured') || 
-                  msg.includes('disabled') ||
-                  msg.includes('PERMISSION_DENIED')
+                  (msg.includes('disabled') && msg.includes('drive.googleapis.com'))
               ) {
                   setDriveApiError({
                       isApiDisabled: true,
@@ -1442,16 +1440,21 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   if (!filesRes.ok) {
                       if (filesRes.status === 401) {
                           updateDriveToken(null);
-                          const refreshed = await connectGoogleDrive(true);
+                          const refreshed = await connectGoogleDrive(!isSilent ? false : true);
                           if (refreshed) return loadWorksBoxCloudFiles(refreshed, isSilent, targetFolderId);
                           return;
                       }
-                      if (filesRes.status === 404 && effectiveFolderId) {
+                      // Gestion des dossiers supprimés sur Google Drive (erreur 400 Bad Request ou 404 Not Found)
+                      if ((filesRes.status === 400 || filesRes.status === 404) && effectiveFolderId) {
+                          console.warn("Dossier Google Drive non trouvé ou supprimé, réinitialisation du dossier racine...");
                           setCloudFolderId(null);
+                          setCloudCurrentFolderId(null);
+                          setCloudBreadcrumbs([{ id: 'root', name: 'WorksBox Cloud' }]);
                           try { localStorage.removeItem('worksbox_cloud_folder_id'); } catch(e) {}
                           const newRoot = await getOrCreateWorksBoxFolder(activeToken);
                           if (newRoot) {
                               setCloudFolderId(newRoot);
+                              try { localStorage.setItem('worksbox_cloud_folder_id', newRoot); } catch(e) {}
                               return loadWorksBoxCloudFiles(activeToken, isSilent, newRoot);
                           }
                       }
@@ -1465,7 +1468,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   const filesData = await filesRes.json();
                   const filesList = (filesData.files || []).filter(f => !f.trashed);
                   
-                  // Mise à jour stricte de l'état et de la mémoire locale
+                  // Mise à jour stricte de l'état et de la mémoire locale WorksBox Cloud
                   setCloudFiles(filesList);
                   setDriveApiError(null);
 
@@ -1477,14 +1480,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       localStorage.setItem('worksbox_cached_cloud_storage_used', totalUsed.toString());
                   } catch(e) {}
 
-                  // Nettoyer les notes locales orphelines dont le fichier a été supprimé sur Google Drive
+                  // Nettoyer définitivement les notes locales dont le fichier a été supprimé sur Google Drive
                   const driveFileIds = new Set(filesList.map(f => f.id));
                   setNotesList(prev => {
                       let changed = false;
                       const updated = prev.map(note => {
                           if (note.driveFileId && !driveFileIds.has(note.driveFileId)) {
                               changed = true;
-                              return { ...note, driveFileId: null };
+                              return { 
+                                  ...note, 
+                                  driveFileId: null, 
+                                  driveDeleted: true, 
+                                  syncWithDrive: false 
+                              };
                           }
                           return note;
                       });
@@ -1494,6 +1502,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       }
                       return prev;
                   });
+                  if (activeNote && activeNote.driveFileId && !driveFileIds.has(activeNote.driveFileId)) {
+                      setActiveNote(prev => prev ? { 
+                          ...prev, 
+                          driveFileId: null, 
+                          driveDeleted: true, 
+                          syncWithDrive: false 
+                      } : null);
+                  }
 
                   if (!isSilent) {
                       if (filesList.length === 0) {
@@ -1517,20 +1533,42 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               try {
                   localStorage.removeItem('worksbox_cached_cloud_files');
                   localStorage.removeItem('worksbox_cached_cloud_storage_used');
+                  localStorage.removeItem('worksbox_cloud_folder_id');
+                  setCloudFolderId(null);
+                  setCloudCurrentFolderId(null);
+                  setCloudBreadcrumbs([{ id: 'root', name: 'WorksBox Cloud' }]);
                   setCloudFiles([]);
                   setCloudStorageUsed(0);
-                  showToast("Mémoire locale nettoyée. Synchronisation avec Google Drive...", "info", "info");
+                  setDriveApiError(null);
+
+                  // Nettoyer de la mémoire des notes tout lien vers des fichiers supprimés
+                  setNotesList(prev => {
+                      const updated = prev.map(note => ({
+                          ...note,
+                          driveFileId: null,
+                          driveDeleted: true,
+                          syncWithDrive: false
+                      }));
+                      try { localStorage.setItem('worksbox_notes_list', JSON.stringify(updated)); } catch(e) {}
+                      return updated;
+                  });
+                  if (activeNote) {
+                      setActiveNote(prev => prev ? { ...prev, driveFileId: null, driveDeleted: true, syncWithDrive: false } : null);
+                  }
+
+                  showToast("Mémoire WorksBox Cloud vidée. Synchronisation avec Google Drive...", "info", "info");
                   let token = driveToken;
                   if (!token) {
                       try { token = localStorage.getItem('worksbox_drive_token'); } catch(e) {}
                   }
                   if (!token && activeUser && !activeUser.isLocal) {
-                      token = await connectGoogleDrive(true);
+                      token = await connectGoogleDrive(false);
                   }
                   if (token) {
                       await loadWorksBoxCloudFiles(token, false);
+                      showToast("✓ Mémoire nettoyée et Google Drive parfaitement synchronisé !", "success", "check");
                   } else {
-                      showToast("Mémoire nettoyée (0 élément).", "success", "check");
+                      showToast("Mémoire locale nettoyée avec succès (0 fichier).", "success", "check");
                   }
               } catch(e) {
                   showToast("Erreur réinitialisation : " + e.message, "warning", "warning");
@@ -1666,7 +1704,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           const fileId = noteToDelete.driveFileId;
                           setCloudFiles(prev => {
                               const updated = prev.filter(f => f.id !== fileId);
-                              try { localStorage.setItem('worksbox_cached_cloud_files', JSON.stringify(updated)); } catch(e) {}
+                              const removed = prev.find(f => f.id === fileId);
+                              const newSize = Math.max(0, cloudStorageUsed - (parseInt(removed?.size, 10) || 0));
+                              setCloudStorageUsed(newSize);
+                              try {
+                                  localStorage.setItem('worksbox_cached_cloud_files', JSON.stringify(updated));
+                                  localStorage.setItem('worksbox_cached_cloud_storage_used', newSize.toString());
+                              } catch(e) {}
                               return updated;
                           });
                           let token = driveToken || localStorage.getItem('worksbox_drive_token');
@@ -1749,6 +1793,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       const blob = new Blob([htmlDocument], { type: 'text/html;charset=utf-8' });
                       const file = new File([blob], fileName, { type: 'text/html;charset=utf-8' });
 
+                      // Si la note a été supprimée de Drive ou si la synchronisation est désactivée, ne jamais la renvoyer vers Drive
+                      if (noteToSave.driveDeleted || noteToSave.syncWithDrive === false) {
+                          setNoteAutosaveStatus('local');
+                          setNoteLastSavedTime(new Date());
+                          return;
+                      }
+
                       if (noteToSave.driveFileId) {
                           const updateRes = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${noteToSave.driveFileId}?uploadType=media`, {
                               method: 'PATCH',
@@ -1767,11 +1818,17 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           // Si le fichier a été supprimé sur Google Drive (404 Not Found ou 410 Gone) :
                           // Ne JAMAIS le recréer automatiquement sur Google Drive !
                           if (updateRes.status === 404 || updateRes.status === 410) {
-                              const unlinked = { ...timestampedNote, driveFileId: null };
+                              const unlinked = { ...timestampedNote, driveFileId: null, driveDeleted: true, syncWithDrive: false };
                               setActiveNote(unlinked);
                               setNotesList(prev => {
                                   const u = prev.map(n => n.id === unlinked.id ? unlinked : n);
                                   try { localStorage.setItem('worksbox_notes_list', JSON.stringify(u)); } catch(e) {}
+                                  return u;
+                              });
+                              // Supprimer immédiatement de la mémoire cache Cloud pour éviter toute réapparition
+                              setCloudFiles(prev => {
+                                  const u = prev.filter(f => f.id !== noteToSave.driveFileId);
+                                  try { localStorage.setItem('worksbox_cached_cloud_files', JSON.stringify(u)); } catch(e) {}
                                   return u;
                               });
                               setNoteAutosaveStatus('local');
@@ -1780,9 +1837,16 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           }
                       }
                       
+                      // Ne téléverser sur Google Drive que si la note a expressément la synchronisation activée
+                      if (!noteToSave.syncWithDrive && !noteToSave.driveFileId) {
+                          setNoteAutosaveStatus('local');
+                          setNoteLastSavedTime(new Date());
+                          return;
+                      }
+
                       const uploadRes = await uploadFileToGoogleDrive(file, driveToken, parentId);
                       if (uploadRes && uploadRes.id) {
-                          const updatedWithDriveId = { ...timestampedNote, driveFileId: uploadRes.id };
+                          const updatedWithDriveId = { ...timestampedNote, driveFileId: uploadRes.id, syncWithDrive: true, driveDeleted: false };
                           setActiveNote(updatedWithDriveId);
                           setNotesList(prev => {
                               const u = prev.map(n => n.id === updatedWithDriveId.id ? updatedWithDriveId : n);
@@ -2225,19 +2289,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               localStorage.setItem('worksbox_cached_cloud_storage_used', newSize.toString());
                           } catch(e) {}
 
-                          // Si le fichier était une note locale, détacher driveFileId pour éviter qu'autosave ne le recrée
+                          // Si le fichier était une note locale, marquer définitivement comme supprimé de Drive pour éviter toute résurrection
                           setNotesList(prev => {
                               const updatedNotes = prev.map(n => {
-                                  if (n.driveFileId === fileId || (fileName && fileName.includes(n.title))) {
-                                      return { ...n, driveFileId: null };
+                                  if (n.driveFileId === fileId || (fileName && (fileName.includes(n.title) || fileName.includes(n.id)))) {
+                                      return { ...n, driveFileId: null, driveDeleted: true, syncWithDrive: false };
                                   }
                                   return n;
                               });
                               try { localStorage.setItem('worksbox_notes_list', JSON.stringify(updatedNotes)); } catch(e) {}
                               return updatedNotes;
                           });
-                          if (activeNote && (activeNote.driveFileId === fileId || (fileName && fileName.includes(activeNote.title)))) {
-                              setActiveNote(prev => prev ? { ...prev, driveFileId: null } : null);
+                          if (activeNote && (activeNote.driveFileId === fileId || (fileName && (fileName.includes(activeNote.title) || fileName.includes(activeNote.id))))) {
+                              setActiveNote(prev => prev ? { ...prev, driveFileId: null, driveDeleted: true, syncWithDrive: false } : null);
                           }
 
                           // Suppression réelle sur l'API Google Drive
