@@ -116,7 +116,6 @@
             document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
         }
     </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -1905,7 +1904,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               showToast(`Note téléchargée en .${ext}`, "success", "download");
           };
 
-          // Connexion Google Drive automatique et transparente
+          // Connexion Google Drive automatique et transparente via Firebase Auth
           const connectGoogleDrive = async (isSilent = false) => {
               if (!auth) {
                   if (!isSilent) showToast("Service d'authentification non disponible", "warning", "warning");
@@ -1918,52 +1917,28 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   }
                   return null;
               }
-              if (!isSilent) setCloudLoading(true);
-              const client_id = '961116015003-g6sg1rs3hqm7rlt550h7ibe82dp02a61.apps.googleusercontent.com';
-              if (window.google?.accounts?.oauth2) {
-                  return new Promise((resolve) => {
-                      try {
-                          const tokenClient = window.google.accounts.oauth2.initTokenClient({
-                              client_id: client_id,
-                              scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
-                              hint: activeUser?.email || '',
-                              callback: async (response) => {
-                                  setCloudLoading(false);
-                                  if (response.error) {
-                                      if (!isSilent && response.error !== 'access_denied') {
-                                          showToast("Erreur Drive : " + (response.error_description || response.error), "warning", "warning");
-                                      }
-                                      resolve(null);
-                                      return;
-                                  }
-                                  if (response.access_token) {
-                                      updateDriveToken(response.access_token);
-                                      if (!isSilent) showToast("Google Drive synchronisé avec succès !", "success", "check");
-                                      await loadWorksBoxCloudFiles(response.access_token, isSilent);
-                                      resolve(response.access_token);
-                                  } else {
-                                      resolve(null);
-                                  }
-                              },
-                              error_callback: () => {
-                                  setCloudLoading(false);
-                                  resolve(null);
-                              }
-                          });
-                          tokenClient.requestAccessToken({ prompt: '' });
-                          return;
-                      } catch (err) {
-                          console.warn('GSI client failed, trying Firebase Auth fallback:', err);
-                      }
-                  });
+
+              // Réutiliser le jeton existant s'il est déjà en mémoire ou dans le localStorage
+              let existingToken = driveToken;
+              if (!existingToken) {
+                  try { existingToken = localStorage.getItem('worksbox_drive_token'); } catch(e) {}
+              }
+              if (existingToken) {
+                  return existingToken;
               }
 
+              // En mode silencieux (ex: au chargement), ne pas ouvrir de popup intempestif
+              if (isSilent) {
+                  return null;
+              }
+
+              setCloudLoading(true);
               try {
                   const provider = new GoogleAuthProvider();
                   provider.addScope('https://www.googleapis.com/auth/drive.file');
                   provider.addScope('https://www.googleapis.com/auth/drive');
                   if (activeUser?.email) {
-                      provider.setCustomParameters({ login_hint: activeUser.email });
+                      provider.setCustomParameters({ login_hint: activeUser.email, prompt: 'select_account' });
                   }
                   const cred = await signInWithPopup(auth, provider);
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
@@ -2833,10 +2808,6 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             const savedToken = localStorage.getItem('worksbox_drive_token');
             if (savedToken) {
               loadWorksBoxCloudFiles(savedToken, true).catch(() => {});
-            } else if (activeUser && !activeUser.isLocal && window.google?.accounts?.oauth2) {
-              connectGoogleDrive(true).then((tok) => {
-                if (tok) loadWorksBoxCloudFiles(tok, true).catch(() => {});
-              });
             }
           }, [activeUser]);
 

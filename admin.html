@@ -110,7 +110,6 @@
             document.write('<script src="https://cdn.tailwindcss.com"><\/script>');
         }
     </script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         *, ::before, ::after { box-sizing: border-box; }
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; margin: 0; }
@@ -604,50 +603,13 @@
                     return Promise.resolve(existing);
                 }
                 return new Promise((resolve) => {
-                    const client_id = '961116015003-g6sg1rs3hqm7rlt550h7ibe82dp02a61.apps.googleusercontent.com';
-                    if (window.google?.accounts?.oauth2) {
-                        try {
-                            const tokenClient = window.google.accounts.oauth2.initTokenClient({
-                                client_id: client_id,
-                                scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
-                                hint: currentUser?.email || 'roman.ferriere4@gmail.com',
-                                callback: (response) => {
-                                    if (response.error) {
-                                        console.warn('GSI OAuth Token Error:', response);
-                                        resolve(null);
-                                        return;
-                                    }
-                                    if (response.access_token) {
-                                        setGoogleAccessToken(response.access_token);
-                                        try {
-                                            sessionStorage.setItem('worksbox_gdrive_token', response.access_token);
-                                            localStorage.setItem('worksbox_gdrive_token', response.access_token);
-                                        } catch(e) {}
-                                        resolve(response.access_token);
-                                    } else {
-                                        resolve(null);
-                                    }
-                                },
-                                error_callback: () => resolve(null)
-                            });
-                            try {
-                                tokenClient.requestAccessToken({ prompt: '' });
-                            } catch (reqErr) {
-                                console.warn('GSI requestAccessToken blocked:', reqErr);
-                                resolve(null);
-                            }
-                            return;
-                        } catch (err) {
-                            console.warn('GSI Token Client init failed, trying Firebase Auth fallback:', err);
-                        }
-                    }
-
                     if (!dataAuth) {
                         return resolve(null);
                     }
                     const provider = new GoogleAuthProvider();
                     provider.addScope('https://www.googleapis.com/auth/drive.file');
                     provider.addScope('https://www.googleapis.com/auth/drive');
+                    provider.setCustomParameters({ prompt: 'select_account' });
                     signInWithPopup(dataAuth, provider).then((res) => {
                         const credential = GoogleAuthProvider.credentialFromResult(res);
                         if (credential && credential.accessToken) {
@@ -660,7 +622,8 @@
                         } else {
                             resolve(null);
                         }
-                    }).catch(() => {
+                    }).catch((err) => {
+                        console.warn("Erreur connexion Drive admin:", err);
                         resolve(null);
                     });
                 });
