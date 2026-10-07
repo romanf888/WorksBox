@@ -536,6 +536,7 @@
             const [userSearchQuery, setUserSearchQuery] = useState('');
             const [logsCategoryFilter, setLogsCategoryFilter] = useState('Tous');
             const [logsSearchQuery, setLogsSearchQuery] = useState('');
+            const [openCategoryDropdown, setOpenCategoryDropdown] = useState(null); // 'content' | 'students' | 'system' | null
             const [settings, setSettings] = useState(() => {
                 try {
                     const s = localStorage.getItem('worksbox_settings');
@@ -552,9 +553,191 @@
                     announcement: '',
                     termsContent: DEFAULT_TERMS_FALLBACK,
                     casioGuideContent: DEFAULT_CASIO_FALLBACK,
-                    numworksGuideContent: DEFAULT_NUMWORKS_FALLBACK
+                    numworksGuideContent: DEFAULT_NUMWORKS_FALLBACK,
+                    subjectDriveFolders: {}
                 };
             });
+
+            // Google Drive Integration State
+            const [googleAccessToken, setGoogleAccessToken] = useState(() => {
+                try {
+                    return sessionStorage.getItem('worksbox_gdrive_token') || null;
+                } catch(e) { return null; }
+            });
+            const [modalSubject, setModalSubject] = useState('');
+            const [digitalLinkVal, setDigitalLinkVal] = useState('');
+            const [casioLinkVal, setCasioLinkVal] = useState('');
+            const [modalUploadingField, setModalUploadingField] = useState(null); // 'digital' | 'casio' | null
+            const [modalUploadProgress, setModalUploadProgress] = useState(0);
+            const [modalUploadMessage, setModalUploadMessage] = useState('');
+            const [quickDriveModalOpen, setQuickDriveModalOpen] = useState(false);
+            const [quickDriveSubject, setQuickDriveSubject] = useState('');
+            const [quickDriveUploading, setQuickDriveUploading] = useState(false);
+            const [quickDriveProgress, setQuickDriveProgress] = useState(0);
+            const [quickDriveMessage, setQuickDriveMessage] = useState('');
+            const [quickDriveUploadedFile, setQuickDriveUploadedFile] = useState(null);
+
+            // Helper pour extraire l'ID de dossier d'un lien Google Drive
+            const getFolderIdFromUrl = (url) => {
+                if (!url) return null;
+                const clean = url.trim();
+                if (clean.includes('/folders/')) {
+                    const parts = clean.split('/folders/');
+                    return parts[1].split('?')[0].split('/')[0];
+                }
+                if (clean.includes('id=')) {
+                    const match = clean.match(/id=([a-zA-Z0-9_-]+)/);
+                    if (match) return match[1];
+                }
+                if (/^[a-zA-Z0-9_-]{15,}$/.test(clean)) {
+                    return clean;
+                }
+                return null;
+            };
+
+            // Connexion Google Drive pour obtenir le jeton OAuth avec les scopes Drive
+            const handleConnectGoogleDrive = async () => {
+                if (!dataAuth) {
+                    showToast('Firebase Auth non initialisé', 'error');
+                    return null;
+                }
+                try {
+                    const provider = new GoogleAuthProvider();
+                    provider.addScope('https://www.googleapis.com/auth/drive.file');
+                    const res = await signInWithPopup(dataAuth, provider);
+                    const credential = GoogleAuthProvider.credentialFromResult(res);
+                    if (credential && credential.accessToken) {
+                        setGoogleAccessToken(credential.accessToken);
+                        try {
+                            sessionStorage.setItem('worksbox_gdrive_token', credential.accessToken);
+                        } catch(e) {}
+                        showToast('✓ Connecté avec succès à Google Drive !');
+                        return credential.accessToken;
+                    }
+                } catch (e) {
+                    const errCode = e?.code || '';
+                    const errMsg = e?.message || String(e);
+                    if (errCode === 'auth/popup-closed-by-user' || errMsg.includes('popup-closed')) {
+                        console.info('Connexion Google Drive annulée par l\'utilisateur.');
+                        showToast('Connexion à Google Drive annulée', 'info');
+                    } else if (errCode === 'auth/popup-blocked' || errMsg.includes('popup-blocked')) {
+                        showToast('Popup bloquée par le navigateur. Veuillez autoriser les popups.', 'warning');
+                    } else {
+                        console.error('Google Drive Auth Error:', e);
+                        showToast('Erreur de connexion Google Drive : ' + errMsg, 'error');
+                    }
+                }
+                return null;
+            };
+
+            // Mettre à jour le dossier Google Drive associé à une matière
+            const handleUpdateSubjectDriveFolder = async (subjName, folderUrl) => {
+                const currentFolders = settings.subjectDriveFolders || {};
+                const updatedFolders = {
+                    ...currentFolders,
+                    [subjName]: (folderUrl || '').trim()
+                };
+                const newSettings = {
+                    ...settings,
+                    subjectDriveFolders: updatedFolders
+                };
+                setSettings(newSettings);
+                try {
+                    localStorage.setItem('worksbox_settings', JSON.stringify(newSettings));
+                } catch(e) {}
+                if (dataDb) {
+                    try {
+                        await setDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'settings', 'global'), {
+                            subjectDriveFolders: updatedFolders
+                        }, { merge: true });
+                        showToast(`Lien Google Drive enregistré pour ${subjName} !`);
+                    } catch(e) {
+                        console.error(e);
+                        showToast('Erreur sauvegarde Drive : ' + e.message, 'error');
+                    }
+                }
+            };
+
+            // Fonction de téléversement direct vers Google Drive
+            const uploadFileToGoogleDrive = async ({ file, subject, onProgress }) => {
+                let token = googleAccessToken || sessionStorage.getItem('worksbox_gdrive_token');
+                if (!token) {
+                    token = await handleConnectGoogleDrive();
+                    if (!token) throw new Error("Accès à Google Drive non autorisé.");
+                }
+
+                const subjectFolders = settings.subjectDriveFolders || {};
+                const folderUrlOrId = subjectFolders[subject] || '';
+                const folderId = getFolderIdFromUrl(folderUrlOrId);
+
+                if (onProgress) onProgress(15, 'Préparation du fichier pour Google Drive...');
+
+                const metadata = {
+                    name: file.name,
+                    mimeType: file.type || 'application/octet-stream'
+                };
+                if (folderId) {
+                    metadata.parents = [folderId];
+                }
+
+                const formData = new FormData();
+                formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                formData.append('file', file);
+
+                if (onProgress) onProgress(45, 'Téléversement direct en cours...');
+
+                const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink', {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    console.error('Drive Upload Error:', errText);
+                    if (res.status === 401) {
+                        sessionStorage.removeItem('worksbox_gdrive_token');
+                        setGoogleAccessToken(null);
+                        const newToken = await handleConnectGoogleDrive();
+                        if (newToken) {
+                            return uploadFileToGoogleDrive({ file, subject, onProgress });
+                        }
+                    }
+                    throw new Error('Échec du téléversement Google Drive : ' + errText);
+                }
+
+                const driveData = await res.json();
+                if (onProgress) onProgress(80, 'Rendre le fichier accessible en lecture...');
+
+                // Partage public en lecture
+                try {
+                    await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions`, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            role: 'reader',
+                            type: 'anyone'
+                        })
+                    });
+                } catch(e) {
+                    console.warn('Could not set permissions:', e);
+                }
+
+                if (onProgress) onProgress(100, 'Téléversement terminé avec succès !');
+
+                const viewUrl = driveData.webViewLink || `https://drive.google.com/file/d/${driveData.id}/view`;
+                return {
+                    id: driveData.id,
+                    name: driveData.name,
+                    webViewLink: viewUrl,
+                    webContentLink: driveData.webContentLink || viewUrl
+                };
+            };
 
             // Modals
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -671,8 +854,15 @@
                 setIsAuthLoading(true);
                 try {
                     const provider = new GoogleAuthProvider();
-                    provider.setCustomParameters({ prompt: 'select_account' });
+                    provider.addScope('https://www.googleapis.com/auth/drive.file');
                     const res = await signInWithPopup(dataAuth, provider);
+                    const credential = GoogleAuthProvider.credentialFromResult(res);
+                    if (credential && credential.accessToken) {
+                        setGoogleAccessToken(credential.accessToken);
+                        try {
+                            sessionStorage.setItem('worksbox_gdrive_token', credential.accessToken);
+                        } catch(e) {}
+                    }
                     if (!checkIsAdmin(res.user)) {
                         setCurrentUser(res.user);
                         setAuthError(`Le compte « ${res.user.email} » n'est pas autorisé à administrer WorksBox.`);
@@ -681,8 +871,17 @@
                         showToast(`Bienvenue Roman (${res.user.email}) !`);
                     }
                 } catch (err) {
-                    console.error('Google Sign In Error:', err);
-                    setAuthError(err.message || 'Erreur lors de la connexion Google.');
+                    const errCode = err?.code || '';
+                    const errMsg = err?.message || String(err);
+                    if (errCode === 'auth/popup-closed-by-user' || errMsg.includes('popup-closed')) {
+                        console.info('Connexion Google annulée par l\'utilisateur.');
+                        setAuthError('Connexion Google annulée.');
+                    } else if (errCode === 'auth/popup-blocked' || errMsg.includes('popup-blocked')) {
+                        setAuthError('La fenêtre de connexion a été bloquée par le navigateur. Veuillez autoriser les popups.');
+                    } else {
+                        console.error('Google Sign In Error:', err);
+                        setAuthError(errMsg || 'Erreur lors de la connexion Google.');
+                    }
                 } finally {
                     setIsAuthLoading(false);
                 }
@@ -1392,6 +1591,16 @@
                     setRenameModal(null);
                     showToast(`Matière renommée globalement en « ${clean} » !`);
                 }
+            };
+
+            const openCourseModal = (course = null) => {
+                setEditingCourse(course);
+                const initialSubj = course?.subject || selectedSubject || currentAssociatedSubjects[0] || subjectsList[0] || 'Général';
+                setModalSubject(initialSubj);
+                setDigitalLinkVal(course?.digitalLink || '');
+                setCasioLinkVal(course?.casioLink || '');
+                setModalUploadingField(null);
+                setIsUploadOpen(true);
             };
 
             // Courses CRUD
@@ -2323,74 +2532,180 @@
                                 </div>
 
                                 <div className="flex items-center space-x-2 sm:space-x-3 flex-wrap sm:flex-nowrap gap-y-2">
-                                    <nav className="flex items-center space-x-1 bg-red-950/40 p-1 rounded-xl border border-red-800/60 shrink-0">
-                                        <button
-                                            onClick={() => { setActiveTab('home'); setSelectedSubject(null); }}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'home' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
+                                    <nav className="flex items-center space-x-1.5 bg-red-950/50 p-1 rounded-xl border border-red-800/70 shrink-0 relative">
+                                        {/* CATEGORY 1: CONTENU */}
+                                        <div 
+                                            className="relative group"
+                                            onMouseEnter={() => setOpenCategoryDropdown('content')}
+                                            onMouseLeave={() => setOpenCategoryDropdown(null)}
                                         >
-                                            Cours
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('sharedCloud')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1 ${activeTab === 'sharedCloud' ? 'bg-indigo-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
-                                        >
-                                            <UsersIcon className="w-3.5 h-3.5" />
-                                            <span>Cloud Partagé</span>
-                                            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-bold">
-                                                {sharedCloudFiles.length}
-                                            </span>
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('articles')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'articles' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
-                                        >
-                                            Articles
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('suggestions')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1 ${activeTab === 'suggestions' ? 'bg-amber-600 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
-                                        >
-                                            <span>Suggestions</span>
-                                            {documentSuggestions.length > 0 && (
-                                                <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full">
-                                                    {documentSuggestions.length}
-                                                </span>
+                                            <button
+                                                onClick={() => setOpenCategoryDropdown(openCategoryDropdown === 'content' ? null : 'content')}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                                                    ['home', 'sharedCloud', 'articles'].includes(activeTab) 
+                                                        ? 'bg-red-700 text-white shadow-xs' 
+                                                        : 'text-red-200 hover:text-white hover:bg-red-800/50'
+                                                }`}
+                                            >
+                                                <span>📚 Contenu</span>
+                                                <span className="text-[10px] opacity-70">▾</span>
+                                            </button>
+
+                                            {openCategoryDropdown === 'content' && (
+                                                <div className="absolute left-0 top-full pt-1 w-56 z-40 animate-in fade-in zoom-in-95 duration-150">
+                                                    <div className="bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl p-2 space-y-1 text-slate-100">
+                                                        <button
+                                                            onClick={() => { setActiveTab('home'); setSelectedSubject(null); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'home' ? 'bg-red-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold">📄 Cours & Matières</div>
+                                                                <div className="text-[10px] text-slate-400">Catalogue des cours par classe</div>
+                                                            </div>
+                                                            <span className="text-[10px] bg-red-950 px-1.5 py-0.5 rounded font-bold text-red-300">{courses.length}</span>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => { setActiveTab('sharedCloud'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'sharedCloud' ? 'bg-indigo-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold flex items-center space-x-1">
+                                                                    <span>☁️ Cloud Partagé</span>
+                                                                </div>
+                                                                <div className="text-[10px] text-slate-400">Ressources officielles établissement</div>
+                                                            </div>
+                                                            <span className="text-[10px] bg-indigo-950 px-1.5 py-0.5 rounded font-bold text-indigo-300">{sharedCloudFiles.length}</span>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => { setActiveTab('articles'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'articles' ? 'bg-red-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold">📰 Articles & Actus</div>
+                                                                <div className="text-[10px] text-slate-400">Annonces & articles publiés</div>
+                                                            </div>
+                                                            <span className="text-[10px] bg-red-950 px-1.5 py-0.5 rounded font-bold text-red-300">{articles.length}</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('users')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1 ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
+                                        </div>
+
+                                        {/* CATEGORY 2: ÉLÈVES */}
+                                        <div 
+                                            className="relative group"
+                                            onMouseEnter={() => setOpenCategoryDropdown('students')}
+                                            onMouseLeave={() => setOpenCategoryDropdown(null)}
                                         >
-                                            <UsersIcon className="w-3.5 h-3.5" />
-                                            <span>Utilisateurs</span>
-                                            <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-bold">
-                                                {registeredUsers.length}
-                                            </span>
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('logs')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1 ${activeTab === 'logs' ? 'bg-purple-600 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
-                                        >
-                                            <FileTextIcon className="w-3.5 h-3.5" />
-                                            <span>Logs & Activité</span>
-                                            {activityLogs.length > 0 && (
-                                                <span className="text-[10px] bg-white/20 px-1.5 py-0.5 rounded-full font-bold">
-                                                    {activityLogs.length}
-                                                </span>
+                                            <button
+                                                onClick={() => setOpenCategoryDropdown(openCategoryDropdown === 'students' ? null : 'students')}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                                                    ['suggestions', 'users'].includes(activeTab) 
+                                                        ? 'bg-amber-600 text-white shadow-xs' 
+                                                        : 'text-red-200 hover:text-white hover:bg-red-800/50'
+                                                }`}
+                                            >
+                                                <span>👥 Élèves</span>
+                                                {documentSuggestions.length > 0 && (
+                                                    <span className="text-[10px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full">
+                                                        {documentSuggestions.length}
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] opacity-70">▾</span>
+                                            </button>
+
+                                            {openCategoryDropdown === 'students' && (
+                                                <div className="absolute left-0 top-full pt-1 w-60 z-40 animate-in fade-in zoom-in-95 duration-150">
+                                                    <div className="bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl p-2 space-y-1 text-slate-100">
+                                                        <button
+                                                            onClick={() => { setActiveTab('suggestions'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'suggestions' ? 'bg-amber-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold flex items-center space-x-1.5">
+                                                                    <span>💡 Suggestions de documents</span>
+                                                                </div>
+                                                                <div className="text-[10px] text-slate-400">Demandes & cours envoyés</div>
+                                                            </div>
+                                                            {documentSuggestions.length > 0 && (
+                                                                <span className="text-[10px] bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-black">
+                                                                    {documentSuggestions.length}
+                                                                </span>
+                                                            )}
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => { setActiveTab('users'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'users' ? 'bg-blue-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold">👤 Utilisateurs Inscrits</div>
+                                                                <div className="text-[10px] text-slate-400">Comptes d'élèves enregistrés</div>
+                                                            </div>
+                                                            <span className="text-[10px] bg-blue-950 px-1.5 py-0.5 rounded font-bold text-blue-300">{registeredUsers.length}</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('pages')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'pages' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
+                                        </div>
+
+                                        {/* CATEGORY 3: SYSTÈME & STATS */}
+                                        <div 
+                                            className="relative group"
+                                            onMouseEnter={() => setOpenCategoryDropdown('system')}
+                                            onMouseLeave={() => setOpenCategoryDropdown(null)}
                                         >
-                                            CGU & Tuto
-                                        </button>
-                                        <button
-                                            onClick={() => setActiveTab('stats')}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === 'stats' ? 'bg-red-700 text-white shadow-xs' : 'text-red-200 hover:text-white hover:bg-red-800/50'}`}
-                                        >
-                                            Stats
-                                        </button>
+                                            <button
+                                                onClick={() => setOpenCategoryDropdown(openCategoryDropdown === 'system' ? null : 'system')}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                                                    ['logs', 'stats', 'pages'].includes(activeTab) 
+                                                        ? 'bg-purple-700 text-white shadow-xs' 
+                                                        : 'text-red-200 hover:text-white hover:bg-red-800/50'
+                                                }`}
+                                            >
+                                                <span>⚙️ Système</span>
+                                                <span className="text-[10px] opacity-70">▾</span>
+                                            </button>
+
+                                            {openCategoryDropdown === 'system' && (
+                                                <div className="absolute right-0 sm:left-0 top-full pt-1 w-60 z-40 animate-in fade-in zoom-in-95 duration-150">
+                                                    <div className="bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl p-2 space-y-1 text-slate-100">
+                                                        <button
+                                                            onClick={() => { setActiveTab('logs'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'logs' ? 'bg-purple-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold">📜 Logs & Activités</div>
+                                                                <div className="text-[10px] text-slate-400">Journal des connexions & actions</div>
+                                                            </div>
+                                                            <span className="text-[10px] bg-purple-950 px-1.5 py-0.5 rounded font-bold text-purple-300">{activityLogs.length}</span>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => { setActiveTab('stats'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'stats' ? 'bg-red-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold">📊 Statistiques</div>
+                                                                <div className="text-[10px] text-slate-400">Consultations & téléchargements</div>
+                                                            </div>
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => { setActiveTab('pages'); setOpenCategoryDropdown(null); }}
+                                                            className={`w-full p-2.5 rounded-xl text-left transition flex items-center justify-between cursor-pointer ${activeTab === 'pages' ? 'bg-red-800 text-white font-black' : 'hover:bg-slate-800 text-slate-200'}`}
+                                                        >
+                                                            <div>
+                                                                <div className="text-xs font-bold">📑 CGU & Tutoriels</div>
+                                                                <div className="text-[10px] text-slate-400">Guides Casio/NumWorks & CGU</div>
+                                                            </div>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </nav>
 
                                     <button
@@ -2429,7 +2744,7 @@
                                         </button>
                                     ) : (
                                         <button
-                                            onClick={() => { setEditingCourse(null); setIsUploadOpen(true); }}
+                                            onClick={() => openCourseModal(null)}
                                             className="flex items-center space-x-1.5 bg-white hover:bg-red-50 text-red-900 px-3 py-1.5 rounded-xl font-bold shadow-xs transition text-xs active:scale-95 shrink-0 cursor-pointer"
                                         >
                                             <PlusIcon className="w-3.5 h-3.5 text-red-900" />
@@ -2745,10 +3060,7 @@
                                                     <span>Importer Drive dans {selectedSubject}</span>
                                                 </button>
                                                 <button
-                                                    onClick={() => {
-                                                        setEditingCourse({ subject: selectedSubject, school: assocSchool, classe: assocClass });
-                                                        setIsUploadOpen(true);
-                                                    }}
+                                                    onClick={() => openCourseModal({ subject: selectedSubject, school: assocSchool, classe: assocClass })}
                                                     className="bg-red-900 hover:bg-red-800 text-white text-sm font-bold px-4 py-2 rounded-xl shadow-sm transition flex items-center space-x-1.5"
                                                 >
                                                     <PlusIcon className="w-4 h-4" />
@@ -2762,10 +3074,7 @@
                                                 <FolderIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                                 <p className="text-gray-500 font-medium">Aucun cours dans cette matière pour le moment.</p>
                                                 <button
-                                                    onClick={() => {
-                                                        setEditingCourse({ subject: selectedSubject, school: assocSchool, classe: assocClass });
-                                                        setIsUploadOpen(true);
-                                                    }}
+                                                    onClick={() => openCourseModal({ subject: selectedSubject, school: assocSchool, classe: assocClass })}
                                                     className="mt-4 bg-red-900 text-white font-bold text-sm px-4 py-2 rounded-xl"
                                                 >
                                                     + Ajouter le premier cours
@@ -2859,7 +3168,7 @@
                                                                                 <span>{course.isVisible !== false ? 'Public' : 'Brouillon'}</span>
                                                                             </button>
                                                                             <button
-                                                                                onClick={() => { setEditingCourse(course); setIsUploadOpen(true); }}
+                                                                                onClick={() => openCourseModal(course)}
                                                                                 className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
                                                                                 title="Modifier"
                                                                             >
@@ -3890,26 +4199,62 @@
                                                     + Ajouter matière
                                                 </button>
                                             </div>
-                                            <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden max-h-72 overflow-y-auto">
-                                                {subjectsList.map(subj => (
-                                                    <div key={subj} className="p-3 flex items-center justify-between text-sm bg-white">
-                                                        <span className="font-bold text-gray-800">{subj}</span>
-                                                        <div className="space-x-2">
-                                                            <button
-                                                                onClick={() => setRenameModal({ oldName: subj, newName: subj })}
-                                                                className="text-xs text-blue-600 hover:underline font-semibold"
-                                                            >
-                                                                Renommer
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteSubject(subj)}
-                                                                className="text-xs text-red-600 hover:underline font-semibold"
-                                                            >
-                                                                Supprimer
-                                                            </button>
+                                            <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden max-h-96 overflow-y-auto">
+                                                {subjectsList.map(subj => {
+                                                    const folderUrl = (settings.subjectDriveFolders || {})[subj] || '';
+                                                    return (
+                                                        <div key={subj} className="p-3 bg-white space-y-2">
+                                                            <div className="flex items-center justify-between text-sm">
+                                                                <div className="flex items-center space-x-2">
+                                                                    <span className="font-bold text-gray-800">{subj}</span>
+                                                                    {folderUrl ? (
+                                                                        <span className="inline-flex items-center space-x-1 text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                                                                            <span>✓ Dossier Drive raccordé</span>
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center space-x-1 text-[10px] bg-amber-100 text-amber-800 font-medium px-2 py-0.5 rounded-full">
+                                                                            <span>⚠️ Aucun dossier Drive</span>
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex items-center space-x-2">
+                                                                    {folderUrl && (
+                                                                        <a
+                                                                            href={folderUrl}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="text-xs text-emerald-700 hover:text-emerald-800 font-bold flex items-center space-x-1 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200"
+                                                                        >
+                                                                            <span>📁 Ouvrir Drive</span>
+                                                                        </a>
+                                                                    )}
+                                                                    <button
+                                                                        onClick={() => setRenameModal({ oldName: subj, newName: subj })}
+                                                                        className="text-xs text-blue-600 hover:underline font-semibold"
+                                                                    >
+                                                                        Renommer
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteSubject(subj)}
+                                                                        className="text-xs text-red-600 hover:underline font-semibold"
+                                                                    >
+                                                                        Supprimer
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2 pt-1 border-t border-gray-100 text-xs">
+                                                                <span className="text-gray-500 font-medium shrink-0">📂 Lien du dossier Google Drive :</span>
+                                                                <input
+                                                                    type="url"
+                                                                    value={folderUrl}
+                                                                    onChange={(e) => handleUpdateSubjectDriveFolder(subj, e.target.value)}
+                                                                    placeholder="https://drive.google.com/drive/folders/1ABC..."
+                                                                    className="flex-1 border border-gray-200 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-red-900 focus:outline-none bg-gray-50/50"
+                                                                />
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     )}
@@ -4216,12 +4561,15 @@
                     {/* MODAL: AJOUTER / MODIFIER COURS */}
                     {isUploadOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-                            <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto p-6">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3 className="font-bold text-lg text-gray-900">
-                                        {editingCourse?.id ? 'Modifier le cours' : 'Ajouter un nouveau cours'}
-                                    </h3>
-                                    <button onClick={() => setIsUploadOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold">✕</button>
+                            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-gray-200 overflow-hidden max-h-[92vh] overflow-y-auto p-6">
+                                <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-gray-900">
+                                            {editingCourse?.id ? 'Modifier le cours' : 'Ajouter un nouveau cours'}
+                                        </h3>
+                                        <span className="text-xs text-gray-500">Téléversement direct sur Google Drive par matière</span>
+                                    </div>
+                                    <button onClick={() => setIsUploadOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-xl">✕</button>
                                 </div>
 
                                 <form onSubmit={(e) => {
@@ -4257,7 +4605,8 @@
                                             </div>
                                             <select
                                                 name="subject"
-                                                defaultValue={editingCourse?.subject || selectedSubject || currentAssociatedSubjects[0] || subjectsList[0]}
+                                                value={modalSubject}
+                                                onChange={(e) => setModalSubject(e.target.value)}
                                                 className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white font-medium"
                                             >
                                                 {currentAssociatedSubjects.length > 0 && (
@@ -4280,6 +4629,149 @@
                                                 {TAGS.map(t => <option key={t} value={t}>{t}</option>)}
                                             </select>
                                         </div>
+                                    </div>
+
+                                    {/* ZONE BLOC GOOGLE DRIVE D'UPLOAD PAR MATIÈRE */}
+                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 p-4 rounded-2xl space-y-3">
+                                        <div className="flex items-center justify-between flex-wrap gap-2">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-xl">📂</span>
+                                                <div>
+                                                    <div className="text-xs font-bold text-slate-800">
+                                                        Google Drive pour la matière : <span className="text-blue-900 font-extrabold">« {modalSubject} »</span>
+                                                    </div>
+                                                    <div className="text-[10px] text-slate-500">
+                                                        {(settings.subjectDriveFolders || {})[modalSubject] 
+                                                            ? 'Chaque fichier téléversé ira directement dans ce dossier Drive' 
+                                                            : 'Indiquez le lien de dossier Google Drive pour cette matière'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {(settings.subjectDriveFolders || {})[modalSubject] ? (
+                                                <a 
+                                                    href={(settings.subjectDriveFolders || {})[modalSubject]} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="text-[11px] font-extrabold text-blue-700 hover:text-blue-800 hover:underline flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs"
+                                                >
+                                                    <span>Dossier Drive raccordé ↗</span>
+                                                </a>
+                                            ) : (
+                                                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full border border-amber-200">
+                                                    ⚠️ Aucun dossier Drive
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Champ rapide pour enregistrer le lien du dossier si manquant */}
+                                        {!((settings.subjectDriveFolders || {})[modalSubject]) && (
+                                            <div className="flex items-center space-x-2 pt-1 bg-white p-2 rounded-xl border border-blue-200">
+                                                <input
+                                                    type="url"
+                                                    placeholder={`Coller le lien du dossier Google Drive pour ${modalSubject}...`}
+                                                    className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                                                    onBlur={(e) => {
+                                                        if (e.target.value) handleUpdateSubjectDriveFolder(modalSubject, e.target.value);
+                                                    }}
+                                                />
+                                                <span className="text-[10px] text-blue-800 font-bold shrink-0">Saisir dossier</span>
+                                            </div>
+                                        )}
+
+                                        {/* BOUTONS D'UPLOAD DIRECT VERS DRIVE */}
+                                        <div className="pt-2 border-t border-blue-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                            {/* PDF UPLOAD */}
+                                            <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-2 shadow-2xs">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-bold text-slate-800 text-[11px]">📄 Document PDF</span>
+                                                    {digitalLinkVal && <span className="text-[10px] font-bold text-emerald-600">✓ Prêt</span>}
+                                                </div>
+                                                <label className="flex items-center justify-center space-x-2 py-2 px-3 bg-red-900 hover:bg-red-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
+                                                    <span>📤 Upload PDF sur Drive</span>
+                                                    <input 
+                                                        type="file" 
+                                                        accept=".pdf" 
+                                                        className="hidden" 
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files && e.target.files[0];
+                                                            if (!file) return;
+                                                            try {
+                                                                setModalUploadingField('digital');
+                                                                setModalUploadProgress(10);
+                                                                setModalUploadMessage('Connexion à Google Drive...');
+                                                                const result = await uploadFileToGoogleDrive({
+                                                                    file,
+                                                                    subject: modalSubject,
+                                                                    onProgress: (pct, msg) => {
+                                                                        setModalUploadProgress(pct);
+                                                                        setModalUploadMessage(msg);
+                                                                    }
+                                                                });
+                                                                setDigitalLinkVal(result.webViewLink);
+                                                                showToast(`✓ PDF téléversé directement dans le dossier Drive de ${modalSubject} !`);
+                                                            } catch(err) {
+                                                                showToast('Erreur d\'upload Drive : ' + err.message, 'error');
+                                                            } finally {
+                                                                setModalUploadingField(null);
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+
+                                            {/* CALCULATOR FILE UPLOAD */}
+                                            <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-2 shadow-2xs">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-bold text-slate-800 text-[11px]">📟 Fichier Calculatrice</span>
+                                                    {casioLinkVal && <span className="text-[10px] font-bold text-emerald-600">✓ Prêt</span>}
+                                                </div>
+                                                <label className="flex items-center justify-center space-x-2 py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
+                                                    <span>📤 Upload Calculatrice sur Drive</span>
+                                                    <input 
+                                                        type="file" 
+                                                        accept=".8xv,.g1m,.py,.cat,.txt,.pdf,.zip" 
+                                                        className="hidden" 
+                                                        onChange={async (e) => {
+                                                            const file = e.target.files && e.target.files[0];
+                                                            if (!file) return;
+                                                            try {
+                                                                setModalUploadingField('casio');
+                                                                setModalUploadProgress(10);
+                                                                setModalUploadMessage('Connexion à Google Drive...');
+                                                                const result = await uploadFileToGoogleDrive({
+                                                                    file,
+                                                                    subject: modalSubject,
+                                                                    onProgress: (pct, msg) => {
+                                                                        setModalUploadProgress(pct);
+                                                                        setModalUploadMessage(msg);
+                                                                    }
+                                                                });
+                                                                setCasioLinkVal(result.webViewLink);
+                                                                showToast(`✓ Fichier calculatrice téléversé dans le dossier Drive de ${modalSubject} !`);
+                                                            } catch(err) {
+                                                                showToast('Erreur d\'upload Drive : ' + err.message, 'error');
+                                                            } finally {
+                                                                setModalUploadingField(null);
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {/* STATUS BARRE DE PROGRESSION */}
+                                        {modalUploadingField && (
+                                            <div className="bg-white p-3 rounded-xl border border-blue-200 space-y-1.5 animate-in fade-in">
+                                                <div className="flex justify-between text-xs font-bold text-slate-700">
+                                                    <span>{modalUploadMessage}</span>
+                                                    <span>{modalUploadProgress}%</span>
+                                                </div>
+                                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                                    <div className="bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 h-full transition-all duration-300" style={{ width: `${modalUploadProgress}%` }}></div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="grid grid-cols-3 gap-3">
@@ -4343,19 +4835,21 @@
                                         <label className="text-xs font-bold text-gray-600 uppercase block mb-1">Lien Document / Drive (PDF)</label>
                                         <input
                                             name="digitalLink"
-                                            defaultValue={editingCourse?.digitalLink || ''}
+                                            value={digitalLinkVal}
+                                            onChange={(e) => setDigitalLinkVal(e.target.value)}
                                             placeholder="https://drive.google.com/file/d/.../view"
-                                            className="w-full border border-gray-300 rounded-xl px-3 py-2"
+                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 font-mono text-xs"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="text-xs font-bold text-gray-600 uppercase block mb-1">Lien Calculatrice Casio (.g1m ou .txt)</label>
+                                        <label className="text-xs font-bold text-gray-600 uppercase block mb-1">Lien Calculatrice (.8xv, .py, .g1m, .txt)</label>
                                         <input
                                             name="casioLink"
-                                            defaultValue={editingCourse?.casioLink || ''}
+                                            value={casioLinkVal}
+                                            onChange={(e) => setCasioLinkVal(e.target.value)}
                                             placeholder="https://drive.google.com/file/d/.../view"
-                                            className="w-full border border-gray-300 rounded-xl px-3 py-2"
+                                            className="w-full border border-gray-300 rounded-xl px-3 py-2 font-mono text-xs"
                                         />
                                     </div>
 
