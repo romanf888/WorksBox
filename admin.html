@@ -596,8 +596,13 @@
                 return null;
             };
 
-            // Connexion Google Drive pour obtenir le jeton OAuth avec les scopes Drive
+            // Connexion Google Drive automatique liée au compte
             const handleConnectGoogleDrive = () => {
+                const existing = googleAccessToken || sessionStorage.getItem('worksbox_gdrive_token') || localStorage.getItem('worksbox_gdrive_token');
+                if (existing) {
+                    if (!googleAccessToken) setGoogleAccessToken(existing);
+                    return Promise.resolve(existing);
+                }
                 return new Promise((resolve) => {
                     const client_id = '961116015003-g6sg1rs3hqm7rlt550h7ibe82dp02a61.apps.googleusercontent.com';
                     if (window.google?.accounts?.oauth2) {
@@ -605,14 +610,10 @@
                             const tokenClient = window.google.accounts.oauth2.initTokenClient({
                                 client_id: client_id,
                                 scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive',
+                                hint: currentUser?.email || 'roman.ferriere4@gmail.com',
                                 callback: (response) => {
                                     if (response.error) {
                                         console.warn('GSI OAuth Token Error:', response);
-                                        if (response.error !== 'access_denied') {
-                                            showToast('Erreur OAuth Google Drive: ' + (response.error_description || response.error), 'error');
-                                        } else {
-                                            showToast('Connexion à Google Drive annulée', 'info');
-                                        }
                                         resolve(null);
                                         return;
                                     }
@@ -620,24 +621,19 @@
                                         setGoogleAccessToken(response.access_token);
                                         try {
                                             sessionStorage.setItem('worksbox_gdrive_token', response.access_token);
+                                            localStorage.setItem('worksbox_gdrive_token', response.access_token);
                                         } catch(e) {}
-                                        showToast('✓ Connecté avec succès à Google Drive !');
                                         resolve(response.access_token);
                                     } else {
                                         resolve(null);
                                     }
                                 },
-                                error_callback: (err) => {
-                                    console.warn('GSI Error:', err);
-                                    showToast('Fenêtre bloquée par le navigateur. Veuillez autoriser les pop-ups pour WorksBox.', 'warning');
-                                    resolve(null);
-                                }
+                                error_callback: () => resolve(null)
                             });
                             try {
                                 tokenClient.requestAccessToken({ prompt: '' });
                             } catch (reqErr) {
                                 console.warn('GSI requestAccessToken blocked:', reqErr);
-                                showToast('Fenêtre de connexion bloquée par le navigateur. Veuillez autoriser les pop-ups.', 'warning');
                                 resolve(null);
                             }
                             return;
@@ -647,7 +643,6 @@
                     }
 
                     if (!dataAuth) {
-                        showToast('Firebase Auth non initialisé', 'error');
                         return resolve(null);
                     }
                     const provider = new GoogleAuthProvider();
@@ -659,22 +654,13 @@
                             setGoogleAccessToken(credential.accessToken);
                             try {
                                 sessionStorage.setItem('worksbox_gdrive_token', credential.accessToken);
+                                localStorage.setItem('worksbox_gdrive_token', credential.accessToken);
                             } catch(e) {}
-                            showToast('✓ Connecté avec succès à Google Drive !');
                             resolve(credential.accessToken);
                         } else {
                             resolve(null);
                         }
-                    }).catch((e) => {
-                        const errCode = e?.code || '';
-                        const errMsg = e?.message || String(e);
-                        if (errCode === 'auth/popup-closed-by-user' || errMsg.includes('popup-closed')) {
-                            showToast('Connexion à Google Drive annulée', 'info');
-                        } else if (errCode === 'auth/popup-blocked' || errMsg.includes('popup-blocked')) {
-                            showToast('Popup bloquée par le navigateur. Veuillez autoriser les popups.', 'warning');
-                        } else {
-                            showToast('Erreur connexion Drive: ' + errMsg, 'error');
-                        }
+                    }).catch(() => {
                         resolve(null);
                     });
                 });
@@ -913,6 +899,8 @@
                         setGoogleAccessToken(credential.accessToken);
                         try {
                             sessionStorage.setItem('worksbox_gdrive_token', credential.accessToken);
+                            localStorage.setItem('worksbox_gdrive_token', credential.accessToken);
+                            localStorage.setItem('worksbox_gdrive_token_saved_at', Date.now().toString());
                         } catch(e) {}
                     }
                     if (!checkIsAdmin(res.user)) {
@@ -4683,64 +4671,32 @@
                                         </div>
                                     </div>
 
-                                    {/* ZONE BLOC GOOGLE DRIVE D'UPLOAD PAR MATIÈRE */}
-                                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/90 p-4 rounded-2xl space-y-3">
-                                        <div className="flex items-center justify-between flex-wrap gap-2">
-                                            <div className="flex items-center space-x-2">
-                                                <span className="text-xl">📂</span>
-                                                <div>
-                                                    <div className="text-xs font-bold text-slate-800">
-                                                        Google Drive pour la matière : <span className="text-blue-900 font-extrabold">« {modalSubject} »</span>
-                                                    </div>
-                                                    <div className="text-[10px] text-slate-500">
-                                                        {(settings.subjectDriveFolders || {})[modalSubject] 
-                                                            ? 'Chaque fichier téléversé ira directement dans ce dossier Drive' 
-                                                            : 'Indiquez le lien de dossier Google Drive pour cette matière'}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {(settings.subjectDriveFolders || {})[modalSubject] ? (
+                                    {/* ATTACHEMENT DES FICHIERS DE COURS */}
+                                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-slate-700">Fichiers & Documents du cours</span>
+                                            {(settings.subjectDriveFolders || {})[modalSubject] && (
                                                 <a 
                                                     href={(settings.subjectDriveFolders || {})[modalSubject]} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer" 
-                                                    className="text-[11px] font-extrabold text-blue-700 hover:text-blue-800 hover:underline flex items-center space-x-1 bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs"
+                                                    className="text-[11px] font-semibold text-blue-700 hover:underline"
                                                 >
-                                                    <span>Dossier Drive raccordé ↗</span>
+                                                    Dossier Drive ↗
                                                 </a>
-                                            ) : (
-                                                <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full border border-amber-200">
-                                                    ⚠️ Aucun dossier Drive
-                                                </span>
                                             )}
                                         </div>
 
-                                        {/* Champ rapide pour enregistrer le lien du dossier si manquant */}
-                                        {!((settings.subjectDriveFolders || {})[modalSubject]) && (
-                                            <div className="flex items-center space-x-2 pt-1 bg-white p-2 rounded-xl border border-blue-200">
-                                                <input
-                                                    type="url"
-                                                    placeholder={`Coller le lien du dossier Google Drive pour ${modalSubject}...`}
-                                                    className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                                                    onBlur={(e) => {
-                                                        if (e.target.value) handleUpdateSubjectDriveFolder(modalSubject, e.target.value);
-                                                    }}
-                                                />
-                                                <span className="text-[10px] text-blue-800 font-bold shrink-0">Saisir dossier</span>
-                                            </div>
-                                        )}
-
-                                        {/* BOUTONS D'UPLOAD DIRECT VERS DRIVE */}
-                                        <div className="pt-2 border-t border-blue-200/60 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                                        {/* BOUTONS D'UPLOAD DIRECT */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                                             {/* PDF UPLOAD */}
-                                            <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-2 shadow-2xs">
+                                            <div className="bg-white p-3 rounded-xl border border-slate-200/90 space-y-2 shadow-2xs">
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-bold text-slate-800 text-[11px]">📄 Document PDF</span>
                                                     {digitalLinkVal && <span className="text-[10px] font-bold text-emerald-600">✓ Prêt</span>}
                                                 </div>
-                                                <label className="flex items-center justify-center space-x-2 py-2 px-3 bg-red-900 hover:bg-red-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
-                                                    <span>📤 Upload PDF sur Drive</span>
+                                                <label className="flex items-center justify-center space-x-1.5 py-2 px-3 bg-red-900 hover:bg-red-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
+                                                    <span>📤 Joindre PDF</span>
                                                     <input 
                                                         type="file" 
                                                         accept=".pdf" 
@@ -4751,7 +4707,7 @@
                                                             try {
                                                                 setModalUploadingField('digital');
                                                                 setModalUploadProgress(10);
-                                                                setModalUploadMessage('Téléversement sur Google Drive...');
+                                                                setModalUploadMessage('Téléversement...');
                                                                 const result = await uploadFileToGoogleDrive({
                                                                     file,
                                                                     subject: modalSubject,
@@ -4761,9 +4717,9 @@
                                                                     }
                                                                 });
                                                                 setDigitalLinkVal(result.webViewLink);
-                                                                showToast(`✓ PDF téléversé directement dans le dossier Drive de ${modalSubject} !`);
+                                                                showToast(`✓ PDF téléversé avec succès !`);
                                                             } catch(err) {
-                                                                showToast('Erreur d\'upload Drive : ' + err.message, 'error');
+                                                                showToast('Erreur d\'upload : ' + err.message, 'error');
                                                             } finally {
                                                                 setModalUploadingField(null);
                                                             }
@@ -4773,13 +4729,13 @@
                                             </div>
 
                                             {/* CALCULATOR FILE UPLOAD */}
-                                            <div className="bg-white p-3 rounded-xl border border-blue-100 space-y-2 shadow-2xs">
+                                            <div className="bg-white p-3 rounded-xl border border-slate-200/90 space-y-2 shadow-2xs">
                                                 <div className="flex items-center justify-between">
                                                     <span className="font-bold text-slate-800 text-[11px]">📟 Fichier Calculatrice</span>
                                                     {casioLinkVal && <span className="text-[10px] font-bold text-emerald-600">✓ Prêt</span>}
                                                 </div>
-                                                <label className="flex items-center justify-center space-x-2 py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
-                                                    <span>📤 Upload Calculatrice sur Drive</span>
+                                                <label className="flex items-center justify-center space-x-1.5 py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
+                                                    <span>📤 Joindre Calculatrice</span>
                                                     <input 
                                                         type="file" 
                                                         accept=".8xv,.g1m,.py,.cat,.txt,.pdf,.zip" 
@@ -4790,7 +4746,7 @@
                                                             try {
                                                                 setModalUploadingField('casio');
                                                                 setModalUploadProgress(10);
-                                                                setModalUploadMessage('Téléversement sur Google Drive...');
+                                                                setModalUploadMessage('Téléversement...');
                                                                 const result = await uploadFileToGoogleDrive({
                                                                     file,
                                                                     subject: modalSubject,
@@ -4800,9 +4756,9 @@
                                                                     }
                                                                 });
                                                                 setCasioLinkVal(result.webViewLink);
-                                                                showToast(`✓ Fichier calculatrice téléversé dans le dossier Drive de ${modalSubject} !`);
+                                                                showToast(`✓ Fichier calculatrice téléversé avec succès !`);
                                                             } catch(err) {
-                                                                showToast('Erreur d\'upload Drive : ' + err.message, 'error');
+                                                                showToast('Erreur d\'upload : ' + err.message, 'error');
                                                             } finally {
                                                                 setModalUploadingField(null);
                                                             }
