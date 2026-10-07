@@ -161,7 +161,7 @@
 
     <script type="text/babel" data-type="module" data-compact="false">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, browserPopupRedirectResolver } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         const { useState, useEffect, useMemo, useRef } = React;
@@ -561,7 +561,7 @@
             // Google Drive Integration State
             const [googleAccessToken, setGoogleAccessToken] = useState(() => {
                 try {
-                    return sessionStorage.getItem('worksbox_gdrive_token') || null;
+                    return localStorage.getItem('worksbox_gdrive_token') || sessionStorage.getItem('worksbox_gdrive_token') || null;
                 } catch(e) { return null; }
             });
             const [modalSubject, setModalSubject] = useState('');
@@ -610,7 +610,7 @@
                     provider.addScope('https://www.googleapis.com/auth/drive.file');
                     provider.addScope('https://www.googleapis.com/auth/drive');
                     provider.setCustomParameters({ prompt: 'select_account' });
-                    signInWithPopup(dataAuth, provider).then((res) => {
+                    signInWithPopup(dataAuth, provider, browserPopupRedirectResolver).then((res) => {
                         const credential = GoogleAuthProvider.credentialFromResult(res);
                         if (credential && credential.accessToken) {
                             setGoogleAccessToken(credential.accessToken);
@@ -659,12 +659,12 @@
 
             // Fonction de téléversement direct vers Google Drive
             const uploadFileToGoogleDrive = async ({ file, subject, onProgress }) => {
-                let token = googleAccessToken || sessionStorage.getItem('worksbox_gdrive_token');
+                let token = googleAccessToken || localStorage.getItem('worksbox_gdrive_token') || sessionStorage.getItem('worksbox_gdrive_token');
                 if (!token) {
                     token = await handleConnectGoogleDrive();
                 }
                 if (!token) {
-                    showToast("Connexion à Google Drive requise. Veuillez vous reconnecter.", "warning");
+                    showToast("Connexion à Google Drive requise. Vous pouvez également coller le lien Drive directement ci-dessous.", "warning");
                     throw new Error("Connexion Google Drive non autorisée.");
                 }
 
@@ -856,7 +856,7 @@
                     const provider = new GoogleAuthProvider();
                     provider.addScope('https://www.googleapis.com/auth/drive.file');
                     provider.addScope('https://www.googleapis.com/auth/drive');
-                    const res = await signInWithPopup(dataAuth, provider);
+                    const res = await signInWithPopup(dataAuth, provider, browserPopupRedirectResolver);
                     const credential = GoogleAuthProvider.credentialFromResult(res);
                     if (credential && credential.accessToken) {
                         setGoogleAccessToken(credential.accessToken);
