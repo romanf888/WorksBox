@@ -1568,8 +1568,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   if (!filesRes.ok) {
                       if (filesRes.status === 401) {
                           updateDriveToken(null);
-                          const refreshed = await connectGoogleDrive(!isSilent ? false : true);
-                          if (refreshed) return loadWorksBoxCloudFiles(refreshed, isSilent, targetFolderId);
+                          console.warn("Session Google Drive expirée. Reconnexion manuelle requise.");
                       }
                       // Gestion des dossiers supprimés sur Google Drive (erreur 400 Bad Request ou 404 Not Found)
                       if ((filesRes.status === 400 || filesRes.status === 404) && effectiveFolderId) {
