@@ -2959,9 +2959,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   provider.addScope('profile');
                   provider.addScope('email');
                   provider.addScope('https://www.googleapis.com/auth/drive.file');
-                  provider.addScope('https://www.googleapis.com/auth/drive');
                   provider.setCustomParameters({ prompt: 'select_account' });
-                  const cred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+                  const cred = await signInWithPopup(auth, provider);
                   const currentUser = cred.user;
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
                   if (token) {
@@ -3036,9 +3035,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           message: 'La connexion Google n\'est pas finalisée dans Firebase Console. Dans le projet lycee-share > Authentication > Sign-in method > Google : cochez "Activer", choisissez l\'Email de support du projet, puis cliquez sur "Enregistrer".'
                       });
                   } else if (errorCode === 'auth/popup-closed-by-user') {
+                      const isRemoteHost = window.location.hostname && !['localhost', '127.0.0.1'].includes(window.location.hostname);
                       setAuthError({
                           code: errorCode,
-                          message: 'La fenêtre de connexion Google a été fermée avant la fin de l\'authentification.'
+                          isUnauthorizedDomain: isRemoteHost,
+                          domain: window.location.hostname,
+                          message: isRemoteHost
+                              ? `La fenêtre s'est fermée. Si elle affichait "The requested action is invalid", ajoutez "${window.location.hostname}" dans les Domaines Autorisés de Firebase Console (projet lycee-share).`
+                              : 'La fenêtre de connexion Google a été fermée avant la fin de l\'authentification.'
                       });
                   } else if (errorCode === 'auth/popup-blocked') {
                       setAuthError({
@@ -7100,10 +7104,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 return saved || '';
             });
             const [copiedDomain, setCopiedDomain] = useState(false);
-            const isUnauthorizedDomain = error && (
-                (typeof error === 'object' && error.code === 'auth/unauthorized-domain') ||
+            const [showDomainHelp, setShowDomainHelp] = useState(false);
+            const isUnauthorizedDomain = ((error && (
+                (typeof error === 'object' && (error.code === 'auth/unauthorized-domain' || error.isUnauthorizedDomain)) ||
                 (typeof error === 'string' && error.includes('unauthorized-domain'))
-            );
+            )) || showDomainHelp);
             const isOperationNotAllowed = error && (
                 (typeof error === 'object' && error.code === 'auth/operation-not-allowed') ||
                 (typeof error === 'string' && error.includes('operation-not-allowed'))
@@ -7304,6 +7309,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <Cloud className="w-3.5 h-3.5 text-sky-500" />
                                 <span>Lie automatiquement votre compte et votre WorksBox Cloud</span>
                             </p>
+                            {currentHost && !['localhost', '127.0.0.1'].includes(currentHost) && !isUnauthorizedDomain && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDomainHelp(true)}
+                                    className="w-full text-center text-[11px] text-amber-600 dark:text-amber-400 hover:underline font-medium pt-1 cursor-pointer"
+                                >
+                                    Erreur "The requested action is invalid" ? Cliquez pour autoriser ce domaine
+                                </button>
+                            )}
                         </div>
 
                         {/* Séparateur */}
