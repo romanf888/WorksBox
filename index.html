@@ -2101,7 +2101,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   if (activeUser?.email) {
                       provider.setCustomParameters({ login_hint: activeUser.email, prompt: 'select_account' });
                   }
-                  const cred = await signInWithPopup(auth, provider);
+                  const cred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
                   if (token) {
                       updateDriveToken(token);
@@ -2960,7 +2960,22 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   provider.addScope('email');
                   provider.addScope('https://www.googleapis.com/auth/drive.file');
                   provider.setCustomParameters({ prompt: 'select_account' });
-                  const cred = await signInWithPopup(auth, provider);
+                  
+                  let cred;
+                  try {
+                      cred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+                  } catch (popupErr) {
+                      const pCode = popupErr?.code || '';
+                      if (pCode === 'auth/popup-closed-by-user' || pCode === 'auth/popup-blocked') {
+                          throw popupErr;
+                      }
+                      // Repli sur le profil Google standard sans scope Drive étendu en cas de restriction
+                      console.warn('Tentative Google Sign-In avec profil standard...', popupErr);
+                      const standardProvider = new GoogleAuthProvider();
+                      standardProvider.setCustomParameters({ prompt: 'select_account' });
+                      cred = await signInWithPopup(auth, standardProvider, browserPopupRedirectResolver);
+                  }
+
                   const currentUser = cred.user;
                   const token = GoogleAuthProvider.credentialFromResult(cred)?.accessToken;
                   if (token) {
@@ -2989,7 +3004,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                   selectedClass: newClass,
                                   favorites: mergedFavs,
                                   setupCompleted: true,
-                                  driveLinked: true,
+                                  driveLinked: !!token || existingData.driveLinked,
                                   createdAt: existingData.createdAt || new Date().toISOString(),
                                   updatedAt: new Date().toISOString()
                               };
@@ -3035,19 +3050,14 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                           message: 'La connexion Google n\'est pas finalisée dans Firebase Console. Dans le projet lycee-share > Authentication > Sign-in method > Google : cochez "Activer", choisissez l\'Email de support du projet, puis cliquez sur "Enregistrer".'
                       });
                   } else if (errorCode === 'auth/popup-closed-by-user') {
-                      const isRemoteHost = window.location.hostname && !['localhost', '127.0.0.1'].includes(window.location.hostname);
                       setAuthError({
                           code: errorCode,
-                          isUnauthorizedDomain: isRemoteHost,
-                          domain: window.location.hostname,
-                          message: isRemoteHost
-                              ? `La fenêtre s'est fermée. Si elle affichait "The requested action is invalid", ajoutez "${window.location.hostname}" dans les Domaines Autorisés de Firebase Console (projet lycee-share).`
-                              : 'La fenêtre de connexion Google a été fermée avant la fin de l\'authentification.'
+                          message: 'La fenêtre de connexion Google a été fermée avant la fin de l\'authentification.'
                       });
                   } else if (errorCode === 'auth/popup-blocked') {
                       setAuthError({
                           code: errorCode,
-                          message: 'La popup de connexion a été bloquée par le navigateur. Veuillez autoriser les fenêtres surgissantes.'
+                          message: 'La popup de connexion a été bloquée par le navigateur. Veuillez autoriser les fenêtres surgissantes ou ouvrir dans un nouvel onglet.'
                       });
                   } else {
                       setAuthError({
