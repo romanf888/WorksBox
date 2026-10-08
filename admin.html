@@ -249,7 +249,7 @@
                 "Physique Chimie", "Sciences Numériques et Technologiques", "Anglais", "Allemand"
             ],
             "Lycée Gaspard Monge__BTS SIO 1": [
-                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques", "Anglais"
+                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques"
             ]
         };
 
@@ -266,7 +266,7 @@
                 "Anglais", "Mathématiques", "Conception et Industrialisation", "Usinage et FAO"
             ],
             "BTS SIO 1": [
-                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques", "Anglais"
+                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques"
             ],
             "Seconde Générale/Technologique": [
                 "Mathématiques", "Français", "Histoire-Géographie et EMC", "SVT", 
@@ -358,22 +358,6 @@
             isVisible: true
           },
           // BTS SIO 1
-          {
-            id: "sample-bts-anglais-1",
-            title: "Professional English: IT Support, Cybersecurity & Tech Reporting",
-            subject: "Anglais",
-            chapter: "Unit 1: IT Infrastructures & Helpdesk",
-            school: "Lycée Gaspard Monge",
-            classe: "BTS SIO 1",
-            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-            tag: "Cours",
-            chapterOrder: 1,
-            courseOrder: 1,
-            viewsDigital: 40,
-            viewsCasio: 18,
-            isVisible: true
-          },
           {
             id: "sample-bts-cyber-1",
             title: "Sécurisation des accès, cryptographie et analyse de vulnérabilités",
@@ -558,6 +542,7 @@
                 } catch(e) { return null; }
             });
             const [modalSubject, setModalSubject] = useState('');
+            const [modalSubSubject, setModalSubSubject] = useState('');
             const [digitalLinkVal, setDigitalLinkVal] = useState('');
             const [casioLinkVal, setCasioLinkVal] = useState('');
             const [modalUploadingField, setModalUploadingField] = useState(null); // 'digital' | 'casio' | null
@@ -650,22 +635,18 @@
                 }
             };
 
-            // Fonction de téléversement direct vers Google Drive
+            // Fonction de téléversement direct vers Google Drive avec repli automatique
             const uploadFileToGoogleDrive = async ({ file, subject, onProgress }) => {
                 let token = googleAccessToken || localStorage.getItem('worksbox_gdrive_token') || sessionStorage.getItem('worksbox_gdrive_token');
                 if (!token) {
                     token = await handleConnectGoogleDrive();
-                }
-                if (!token) {
-                    showToast("Connexion à Google Drive requise. Vous pouvez également coller le lien Drive directement ci-dessous.", "warning");
-                    throw new Error("Connexion Google Drive non autorisée.");
                 }
 
                 const subjectFolders = settings.subjectDriveFolders || {};
                 const folderUrlOrId = subjectFolders[subject] || '';
                 const folderId = getFolderIdFromUrl(folderUrlOrId);
 
-                if (onProgress) onProgress(15, 'Préparation du fichier pour Google Drive...');
+                if (onProgress) onProgress(15, 'Préparation du fichier...');
 
                 const metadata = {
                     name: file.name,
@@ -675,61 +656,108 @@
                     metadata.parents = [folderId];
                 }
 
-                const formData = new FormData();
-                formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                formData.append('file', file);
+                let uploadSuccess = false;
+                let driveData = null;
 
-                if (onProgress) onProgress(45, 'Téléversement direct en cours...');
+                if (token) {
+                    try {
+                        const formData = new FormData();
+                        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                        formData.append('file', file);
 
-                const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink', {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: formData
-                });
+                        if (onProgress) onProgress(45, 'Téléversement vers Google Drive...');
 
-                if (!res.ok) {
-                    const errText = await res.text();
-                    console.error('Drive Upload Error:', errText);
-                    if (res.status === 401) {
-                        sessionStorage.removeItem('worksbox_gdrive_token');
-                        setGoogleAccessToken(null);
-                        showToast("Session Google Drive expirée. Veuillez cliquer sur « 🔄 Reconnecter Drive ».", "warning");
-                        throw new Error("Session Google Drive expirée. Veuillez reconnecter votre compte Drive ci-dessus.");
+                        let res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink', {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}` },
+                            body: formData
+                        });
+
+                        // S'il y a une erreur 403/404 avec le dossier cible, réessayer sans 'parents' (racine de Google Drive)
+                        if (!res.ok && folderId) {
+                            console.warn('Échec d\'envoi dans le dossier spécifique. Tentative d\'envoi à la racine de Google Drive...');
+                            delete metadata.parents;
+                            const formDataRoot = new FormData();
+                            formDataRoot.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                            formDataRoot.append('file', file);
+                            res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink', {
+                                method: 'POST',
+                                headers: { Authorization: `Bearer ${token}` },
+                                body: formDataRoot
+                            });
+                        }
+
+                        // S'il y a un problème de jeton/scope expiré, renouveler le jeton Google
+                        if (!res.ok && (res.status === 401 || res.status === 403)) {
+                            sessionStorage.removeItem('worksbox_gdrive_token');
+                            localStorage.removeItem('worksbox_gdrive_token');
+                            setGoogleAccessToken(null);
+                            if (onProgress) onProgress(25, 'Renouvellement du jeton Google Drive...');
+                            const newToken = await handleConnectGoogleDrive();
+                            if (newToken) {
+                                return uploadFileToGoogleDrive({ file, subject, onProgress });
+                            }
+                        }
+
+                        if (res.ok) {
+                            driveData = await res.json();
+                            uploadSuccess = true;
+                        } else {
+                            const errText = await res.text();
+                            console.warn('Google Drive API Error:', res.status, errText);
+                        }
+                    } catch (err) {
+                        console.warn('Network / Drive upload error:', err);
                     }
-                    throw new Error('Échec du téléversement Google Drive : ' + errText);
                 }
 
-                const driveData = await res.json();
-                if (onProgress) onProgress(80, 'Rendre le fichier accessible en lecture...');
+                // Si l'upload Google Drive a réussi
+                if (uploadSuccess && driveData) {
+                    if (onProgress) onProgress(80, 'Configuration des accès publics...');
+                    try {
+                        await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions`, {
+                            method: 'POST',
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ role: 'reader', type: 'anyone' })
+                        });
+                    } catch(e) {
+                        console.warn('Non-fatal permission error:', e);
+                    }
 
-                // Partage public en lecture
-                try {
-                    await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions`, {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            role: 'reader',
-                            type: 'anyone'
-                        })
+                    if (onProgress) onProgress(100, 'Téléversement Drive réussi !');
+                    const viewUrl = driveData.webViewLink || `https://drive.google.com/file/d/${driveData.id}/view`;
+                    return {
+                        id: driveData.id,
+                        name: driveData.name,
+                        webViewLink: viewUrl,
+                        webContentLink: driveData.webContentLink || viewUrl
+                    };
+                }
+
+                // Repli direct / autonome : si Google Drive refuse ou échoue, convertir en Data URL autonome pour les fichiers < 15 Mo
+                if (file.size <= 15 * 1024 * 1024) {
+                    if (onProgress) onProgress(70, 'Génération du lien autonome sécurisé...');
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            if (onProgress) onProgress(100, 'Document sauvegardé avec succès !');
+                            showToast(`Document "${file.name}" conservé en mode autonome.`, 'info');
+                            resolve({
+                                id: 'local-' + Date.now(),
+                                name: file.name,
+                                webViewLink: reader.result,
+                                webContentLink: reader.result
+                            });
+                        };
+                        reader.onerror = () => reject(new Error('Échec du téléversement du fichier.'));
+                        reader.readAsDataURL(file);
                     });
-                } catch(e) {
-                    console.warn('Could not set permissions:', e);
                 }
 
-                if (onProgress) onProgress(100, 'Téléversement terminé avec succès !');
-
-                const viewUrl = driveData.webViewLink || `https://drive.google.com/file/d/${driveData.id}/view`;
-                return {
-                    id: driveData.id,
-                    name: driveData.name,
-                    webViewLink: viewUrl,
-                    webContentLink: driveData.webContentLink || viewUrl
-                };
+                throw new Error("Le fichier dépasse 15 Mo et Google Drive a refusé l'accès. Veuillez utiliser un fichier plus léger ou vérifier vos autorisations Google Drive.");
             };
 
             // Modals
@@ -794,6 +822,15 @@
             const [newClassInput, setNewClassInput] = useState('');
             const [newSubjectInput, setNewSubjectInput] = useState('');
 
+            // Sélection et filtrage par sous-dossiers
+            const [selectedCourseIds, setSelectedCourseIds] = useState([]);
+            const [selectedSubFolderFilter, setSelectedSubFolderFilter] = useState('ALL');
+
+            useEffect(() => {
+                setSelectedCourseIds([]);
+                setSelectedSubFolderFilter('ALL');
+            }, [selectedSubject]);
+
             // Système d'associations
             const [assocTabSchool, setAssocTabSchool] = useState('Lycée François Bazin');
             const [assocTabClass, setAssocTabClass] = useState('Terminale STI2D');
@@ -849,6 +886,8 @@
                     const provider = new GoogleAuthProvider();
                     provider.addScope('profile');
                     provider.addScope('email');
+                    provider.addScope('https://www.googleapis.com/auth/drive.file');
+                    provider.addScope('https://www.googleapis.com/auth/drive');
                     provider.setCustomParameters({ prompt: 'select_account' });
                     const res = await signInWithPopup(dataAuth, provider, browserPopupRedirectResolver);
                     const credential = GoogleAuthProvider.credentialFromResult(res);
@@ -1233,6 +1272,24 @@
                 return getSubjectsForClass(assocSchool, assocClass);
             }, [assocSchool, assocClass, settings.schoolClassSubjects, settings.classSubjects]);
 
+            const allAvailableSubjects = useMemo(() => {
+                const map = new Map();
+                subjectsList.forEach(s => {
+                    if (s) map.set(s.trim().toLowerCase(), s);
+                });
+                currentAssociatedSubjects.forEach(s => {
+                    if (s) map.set(s.trim().toLowerCase(), s);
+                });
+                return Array.from(map.values());
+            }, [subjectsList, currentAssociatedSubjects]);
+
+            const displayedSubjects = useMemo(() => {
+                if (showOnlyAssociated) {
+                    return currentAssociatedSubjects;
+                }
+                return allAvailableSubjects;
+            }, [showOnlyAssociated, currentAssociatedSubjects, allAvailableSubjects]);
+
             const tagColors = { ...DEFAULT_TAG_COLORS, ...(settings.tagColors || {}) };
 
             // Handlers
@@ -1273,16 +1330,18 @@
             const handleToggleSubjectForClass = async (school, cls, subj) => {
                 const pairKey = `${school}__${cls}`;
                 const current = getSubjectsForClass(school, cls);
+                const sLower = (subj || '').trim().toLowerCase();
+                const isAssoc = current.some(s => (s || '').trim().toLowerCase() === sLower);
                 let updated;
-                if (current.includes(subj)) {
-                    updated = current.filter(s => s !== subj);
+                if (isAssoc) {
+                    updated = current.filter(s => (s || '').trim().toLowerCase() !== sLower);
                 } else {
                     updated = [...current, subj];
                 }
                 const updatedSCS = { ...(settings.schoolClassSubjects || DEFAULT_SCHOOL_CLASS_SUBJECTS), [pairKey]: updated };
                 const updatedCS = { ...(settings.classSubjects || DEFAULT_CLASS_SUBJECTS), [cls]: updated };
                 await handleUpdateSettings({ schoolClassSubjects: updatedSCS, classSubjects: updatedCS });
-                showToast(`Matière « ${subj} » ${updated.includes(subj) ? 'associée à' : 'dissociée de'} ${cls}`);
+                showToast(`Matière « ${subj} » ${!isAssoc ? 'associée à' : 'dissociée de'} ${cls}`);
             };
 
             const handleSetAllSubjectsForClass = async (school, cls, enableAll) => {
@@ -1370,8 +1429,12 @@
                 const val = (name || '').trim();
                 if (!val) return showToast('Nom de matière requis', 'warning');
                 
+                const valLower = val.toLowerCase();
                 let updated = [...subjectsList];
-                if (!subjectsList.some(s => s.toLowerCase() === val.toLowerCase())) {
+                const existingIdx = updated.findIndex(s => (s || '').trim().toLowerCase() === valLower);
+                if (existingIdx !== -1) {
+                    updated[existingIdx] = val;
+                } else {
                     updated.push(val);
                 }
 
@@ -1381,7 +1444,8 @@
                 if (associateToCurrentClass && assocSchool && assocClass) {
                     const pairKey = `${assocSchool}__${assocClass}`;
                     const currentClassSubs = getSubjectsForClass(assocSchool, assocClass);
-                    const updatedClassSubs = currentClassSubs.includes(val) ? currentClassSubs : [...currentClassSubs, val];
+                    const withoutExisting = currentClassSubs.filter(s => (s || '').trim().toLowerCase() !== valLower);
+                    const updatedClassSubs = [...withoutExisting, val];
                     updatedSCS[pairKey] = updatedClassSubs;
                     updatedCS[assocClass] = updatedClassSubs;
                 }
@@ -1597,10 +1661,180 @@
                 setEditingCourse(course);
                 const initialSubj = course?.subject || selectedSubject || currentAssociatedSubjects[0] || subjectsList[0] || 'Général';
                 setModalSubject(initialSubj);
+                setModalSubSubject(course?.subSubject || course?.subFolder || '');
                 setDigitalLinkVal(course?.digitalLink || '');
                 setCasioLinkVal(course?.casioLink || '');
                 setModalUploadingField(null);
                 setIsUploadOpen(true);
+            };
+
+            const getExistingSubSubjects = (subjName) => {
+                if (!subjName) return [];
+                const target = subjName.trim().toLowerCase();
+                const courseSubs = courses
+                    .filter(c => (c.subject || '').trim().toLowerCase() === target)
+                    .map(c => (c.subSubject || c.subFolder || '').trim())
+                    .filter(Boolean);
+
+                let settingsSubs = [];
+                if (settings?.subjectSubFolders) {
+                    Object.keys(settings.subjectSubFolders).forEach(k => {
+                        if (k.trim().toLowerCase() === target && Array.isArray(settings.subjectSubFolders[k])) {
+                            settingsSubs.push(...settings.subjectSubFolders[k]);
+                        }
+                    });
+                }
+
+                return Array.from(new Set([...courseSubs, ...settingsSubs])).filter(Boolean);
+            };
+
+            const handleRegisterSubFolder = async (subjectName, subName) => {
+                const subj = (subjectName || '').trim();
+                const sub = (subName || '').trim();
+                if (!subj || !sub) return;
+
+                const existingDict = settings.subjectSubFolders || {};
+                const matchedKey = Object.keys(existingDict).find(k => k.trim().toLowerCase() === subj.toLowerCase()) || subj;
+                const currentSubs = existingDict[matchedKey] || [];
+
+                if (!currentSubs.some(s => s.trim().toLowerCase() === sub.toLowerCase())) {
+                    const updatedDict = {
+                        ...existingDict,
+                        [matchedKey]: [...currentSubs, sub]
+                    };
+                    await handleUpdateSettings({ subjectSubFolders: updatedDict });
+                }
+            };
+
+            const handleCreateSubFolderStandalone = async (subjectName, subName) => {
+                const cleanSub = (subName || '').trim();
+                if (!cleanSub) return;
+                await handleRegisterSubFolder(subjectName, cleanSub);
+                showToast(`Sous-dossier « ${cleanSub} » créé pour ${subjectName} !`);
+            };
+
+            const handleDeleteSubFolder = async (subjectName, subName) => {
+                const subj = (subjectName || '').trim();
+                const sub = (subName || '').trim();
+                if (!subj || !sub) return;
+
+                if (!confirm(`Voulez-vous vraiment supprimer le sous-dossier « ${sub} » de ${subj} ?\nLes cours associés repasseront à la racine de la matière.`)) return;
+
+                const existingDict = settings.subjectSubFolders || {};
+                const matchedKey = Object.keys(existingDict).find(k => k.trim().toLowerCase() === subj.toLowerCase()) || subj;
+                const currentSubs = existingDict[matchedKey] || [];
+                const updatedSubs = currentSubs.filter(s => s.trim().toLowerCase() !== sub.toLowerCase());
+
+                const updatedDict = {
+                    ...existingDict,
+                    [matchedKey]: updatedSubs
+                };
+
+                const targetCourses = courses.filter(c => 
+                    (c.subject || '').trim().toLowerCase() === subj.toLowerCase() && 
+                    (c.subSubject || c.subFolder || '').trim().toLowerCase() === sub.toLowerCase()
+                );
+
+                if (targetCourses.length > 0 && dataDb) {
+                    for (const c of targetCourses) {
+                        await updateDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'courses', c.id), { subSubject: '' }).catch(() => {});
+                    }
+                }
+                setCourses(prev => prev.map(c => {
+                    if ((c.subject || '').trim().toLowerCase() === subj.toLowerCase() && 
+                        (c.subSubject || c.subFolder || '').trim().toLowerCase() === sub.toLowerCase()) {
+                        return { ...c, subSubject: '' };
+                    }
+                    return c;
+                }));
+
+                await handleUpdateSettings({ subjectSubFolders: updatedDict });
+                showToast(`Sous-dossier « ${sub} » supprimé.`);
+            };
+
+            // Actions de sélection & déplacement en masse
+            const toggleSelectCourse = (courseId) => {
+                setSelectedCourseIds(prev => 
+                    prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
+                );
+            };
+
+            const toggleSelectChapter = (chapterCourses) => {
+                const chapterIds = chapterCourses.map(c => c.id);
+                const allSelected = chapterIds.every(id => selectedCourseIds.includes(id));
+                if (allSelected) {
+                    setSelectedCourseIds(prev => prev.filter(id => !chapterIds.includes(id)));
+                } else {
+                    setSelectedCourseIds(prev => Array.from(new Set([...prev, ...chapterIds])));
+                }
+            };
+
+            const handleMoveSelectedCoursesToSubFolder = async (targetSubFolder) => {
+                if (!selectedCourseIds || selectedCourseIds.length === 0) {
+                    return showToast('Veuillez sélectionner au moins un cours à déplacer.', 'warning');
+                }
+
+                let cleanSub = (targetSubFolder || '').trim();
+                if (cleanSub === '__NEW__') {
+                    const input = prompt("Nom du nouveau sous-dossier / dérivée :");
+                    if (!input || !input.trim()) return;
+                    cleanSub = input.trim();
+                }
+
+                try {
+                    if (dataDb) {
+                        for (const id of selectedCourseIds) {
+                            await updateDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'courses', id), {
+                                subSubject: cleanSub
+                            }).catch(e => console.error(e));
+                        }
+                    }
+
+                    setCourses(prev => prev.map(c => selectedCourseIds.includes(c.id) ? { ...c, subSubject: cleanSub } : c));
+
+                    if (cleanSub && selectedSubject) {
+                        await handleRegisterSubFolder(selectedSubject, cleanSub);
+                    }
+
+                    showToast(`✨ ${selectedCourseIds.length} cours déplacé(s) vers « ${cleanSub || 'Racine de la matière'} » !`);
+                    setSelectedCourseIds([]);
+                } catch (e) {
+                    showToast('Erreur lors du déplacement : ' + e.message, 'error');
+                }
+            };
+
+            const handleMoveEntireChapterToSubFolder = async (chapterName, targetSubFolder) => {
+                const targetCourses = currentFilteredCourses.filter(c => c.subject === selectedSubject && (c.chapter || 'Chapitre 1') === chapterName);
+                if (targetCourses.length === 0) return;
+
+                let cleanSub = (targetSubFolder || '').trim();
+                if (cleanSub === '__NEW__') {
+                    const input = prompt("Nom du nouveau sous-dossier / dérivée :");
+                    if (!input || !input.trim()) return;
+                    cleanSub = input.trim();
+                }
+
+                const ids = targetCourses.map(c => c.id);
+
+                try {
+                    if (dataDb) {
+                        for (const id of ids) {
+                            await updateDoc(doc(dataDb, 'artifacts', worksBoxAppId, 'public', 'data', 'courses', id), {
+                                subSubject: cleanSub
+                            }).catch(e => console.error(e));
+                        }
+                    }
+
+                    setCourses(prev => prev.map(c => ids.includes(c.id) ? { ...c, subSubject: cleanSub } : c));
+
+                    if (cleanSub && selectedSubject) {
+                        await handleRegisterSubFolder(selectedSubject, cleanSub);
+                    }
+
+                    showToast(`✨ Le chapitre « ${chapterName} » (${ids.length} cours) a été déplacé vers « ${cleanSub || 'Racine'} » !`);
+                } catch (e) {
+                    showToast('Erreur déplacement chapitre : ' + e.message, 'error');
+                }
             };
 
             // Courses CRUD
@@ -1609,6 +1843,7 @@
                     const clean = {
                         title: (courseData.title || '').trim(),
                         subject: courseData.subject || subjectsList[0] || 'Général',
+                        subSubject: (courseData.subSubject || '').trim(),
                         chapter: (courseData.chapter || '').trim() || 'Chapitre 1',
                         chapterOrder: Number(courseData.chapterOrder) || 1,
                         courseOrder: Number(courseData.courseOrder) || 1,
@@ -2374,7 +2609,13 @@
                     const cSubj = (c.subject || '').trim();
                     const matchAssociated = !showOnlyAssociated || (cSubj ? assocSet.has(cSubj.toLowerCase()) : false);
                     const matchSubject = !selectedSubject || cSubj.toLowerCase() === selectedSubject.trim().toLowerCase();
-                    const matchSearch = !searchQuery || (c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || (c.chapter || '').toLowerCase().includes(searchQuery.toLowerCase());
+                    const sq = (searchQuery || '').trim().toLowerCase();
+                    const matchSearch = !sq || 
+                        (c.title || '').toLowerCase().includes(sq) || 
+                        (c.chapter || '').toLowerCase().includes(sq) || 
+                        (c.subject || '').toLowerCase().includes(sq) || 
+                        (c.subFolder || '').toLowerCase().includes(sq) || 
+                        (c.tag || '').toLowerCase().includes(sq);
                     return matchSchool && matchClass && matchAssociated && matchSubject && matchSearch;
                 });
             }, [courses, assocSchool, assocClass, selectedSubject, searchQuery, showOnlyAssociated, currentAssociatedSubjects]);
@@ -2404,7 +2645,14 @@
             // Chapters grouped data for selected subject
             const chaptersGrouped = useMemo(() => {
                 if (!selectedSubject) return [];
-                const list = currentFilteredCourses.filter(c => c.subject === selectedSubject);
+                let list = currentFilteredCourses.filter(c => c.subject === selectedSubject);
+
+                if (selectedSubFolderFilter === 'ROOT') {
+                    list = list.filter(c => !(c.subSubject || c.subFolder || '').trim());
+                } else if (selectedSubFolderFilter !== 'ALL' && selectedSubFolderFilter) {
+                    list = list.filter(c => (c.subSubject || c.subFolder || '').trim().toLowerCase() === selectedSubFolderFilter.trim().toLowerCase());
+                }
+
                 const chaps = {};
                 list.forEach(c => {
                     const chapName = c.chapter || 'Chapitre 1';
@@ -2423,7 +2671,7 @@
                         ...ch,
                         courses: ch.courses.sort((a, b) => (a.courseOrder || 0) - (b.courseOrder || 0))
                     }));
-            }, [currentFilteredCourses, selectedSubject]);
+            }, [currentFilteredCourses, selectedSubject, selectedSubFolderFilter]);
 
             // ÉCRAN 1 : Chargement de la session administrateur
             if (isAuthLoading) {
@@ -2937,14 +3185,14 @@
                                                 onClick={() => setShowOnlyAssociated(false)}
                                                 className={`px-3 py-1.5 rounded-lg transition ${!showOnlyAssociated ? 'bg-red-900 text-white shadow-xs' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                                             >
-                                                Toutes les matières ({subjectsList.length})
+                                                Toutes les matières ({allAvailableSubjects.length})
                                             </button>
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                            {(showOnlyAssociated ? subjectsList.filter(s => currentAssociatedSubjects.includes(s)) : subjectsList).map((subj, subjIdx) => {
+                                            {displayedSubjects.map((subj, subjIdx) => {
                                                 const stats = subjectStats[subj] || { count: 0, views: 0, drafts: 0 };
-                                                const isAssoc = currentAssociatedSubjects.includes(subj);
+                                                const isAssoc = currentAssociatedSubjects.some(a => (a || '').trim().toLowerCase() === (subj || '').trim().toLowerCase());
                                                 return (
                                                     <div
                                                         key={`${subj}_${subjIdx}`}
@@ -3000,6 +3248,51 @@
                                                             <h3 className="font-bold text-gray-900 text-lg group-hover:text-red-900 transition leading-snug">
                                                                 {subj}
                                                             </h3>
+
+                                                            {/* AFFICHAGE ET GESTION DES SOUS-DOSSIERS DE LA MATIÈRE */}
+                                                            {(() => {
+                                                                const subs = getExistingSubSubjects(subj);
+                                                                return (
+                                                                    <div className="mt-2.5 pt-2 border-t border-gray-100 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+                                                                        <div className="flex items-center justify-between">
+                                                                            <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                                                                                Sous-dossiers ({subs.length})
+                                                                            </span>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    const subName = prompt(`Créer un sous-dossier / dérivée dans "${subj}" (ex: Maths Approfondies, Info...) :`);
+                                                                                    if (subName && subName.trim()) {
+                                                                                        handleCreateSubFolderStandalone(subj, subName.trim());
+                                                                                    }
+                                                                                }}
+                                                                                className="text-[10px] font-extrabold text-red-800 hover:text-red-950 bg-red-50 hover:bg-red-100 border border-red-200/80 px-2 py-0.5 rounded-md transition flex items-center gap-1 cursor-pointer"
+                                                                            >
+                                                                                <PlusIcon className="w-3 h-3" />
+                                                                                <span>Sous-dossier</span>
+                                                                            </button>
+                                                                        </div>
+                                                                        
+                                                                        {subs.length > 0 ? (
+                                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                                {subs.map(s => (
+                                                                                    <span key={s} className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200/80 px-2 py-0.5 rounded-md">
+                                                                                        <span>📁 {s}</span>
+                                                                                        <button
+                                                                                            onClick={() => handleDeleteSubFolder(subj, s)}
+                                                                                            className="text-slate-400 hover:text-red-600 transition ml-0.5"
+                                                                                            title={`Supprimer le sous-dossier ${s}`}
+                                                                                        >
+                                                                                            ✕
+                                                                                        </button>
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        ) : (
+                                                                            <p className="text-[10px] text-slate-400 italic">Aucun sous-dossier spécifique</p>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })()}
                                                         </div>
 
                                                         <div className="mt-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
@@ -3047,11 +3340,23 @@
                                                 </button>
                                                 <h2 className="text-2xl font-extrabold text-gray-900">{selectedSubject}</h2>
                                                 <span className="bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                                                    {currentFilteredCourses.length} cours
+                                                    {currentFilteredCourses.filter(c => c.subject === selectedSubject).length} cours au total
                                                 </span>
                                             </div>
 
                                             <div className="flex items-center space-x-2">
+                                                <button
+                                                    onClick={() => {
+                                                        const subName = prompt(`Créer un sous-dossier / dérivée pour ${selectedSubject} (ex: Maths Approfondies, Info...) :`);
+                                                        if (subName && subName.trim()) {
+                                                            handleCreateSubFolderStandalone(selectedSubject, subName.trim());
+                                                        }
+                                                    }}
+                                                    className="bg-red-50 hover:bg-red-100 text-red-900 border border-red-200 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 cursor-pointer"
+                                                >
+                                                    <FolderIcon className="w-3.5 h-3.5 text-red-700" />
+                                                    <span>+ Créer un sous-dossier</span>
+                                                </button>
                                                 <button
                                                     onClick={() => setIsDriveImportOpen(true)}
                                                     className="bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-bold px-3 py-2 rounded-xl transition flex items-center space-x-1"
@@ -3069,125 +3374,304 @@
                                             </div>
                                         </div>
 
+                                        {/* BARRE DE FILTRAGE PAR SOUS-DOSSIERS (DÉRIVÉES) */}
+                                        {(() => {
+                                            const subFoldersList = getExistingSubSubjects(selectedSubject);
+                                            const allSubjCourses = currentFilteredCourses.filter(c => c.subject === selectedSubject);
+                                            const rootCount = allSubjCourses.filter(c => !(c.subSubject || c.subFolder || '').trim()).length;
+                                            return (
+                                                <div className="flex flex-wrap items-center justify-between gap-3 bg-gray-100/80 p-3 rounded-2xl border border-gray-200">
+                                                    <div className="flex items-center space-x-1.5 flex-wrap gap-y-1.5">
+                                                        <span className="text-xs font-extrabold text-gray-500 uppercase tracking-wider mr-1">Filtrer par sous-dossier :</span>
+                                                        <button
+                                                            onClick={() => setSelectedSubFolderFilter('ALL')}
+                                                            className={`text-xs font-bold px-3 py-1.5 rounded-xl transition ${selectedSubFolderFilter === 'ALL' ? 'bg-red-900 text-white shadow-xs' : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
+                                                        >
+                                                            Tous ({allSubjCourses.length})
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setSelectedSubFolderFilter('ROOT')}
+                                                            className={`text-xs font-bold px-3 py-1.5 rounded-xl transition ${selectedSubFolderFilter === 'ROOT' ? 'bg-red-900 text-white shadow-xs' : 'bg-white text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
+                                                        >
+                                                            Racine de la matière ({rootCount})
+                                                        </button>
+                                                        {subFoldersList.map(sf => {
+                                                            const sfCount = allSubjCourses.filter(c => (c.subSubject || c.subFolder || '').trim().toLowerCase() === sf.toLowerCase()).length;
+                                                            return (
+                                                                <button
+                                                                    key={sf}
+                                                                    onClick={() => setSelectedSubFolderFilter(sf)}
+                                                                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center space-x-1.5 ${selectedSubFolderFilter.toLowerCase() === sf.toLowerCase() ? 'bg-amber-600 text-white shadow-xs ring-2 ring-amber-400' : 'bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200/80'}`}
+                                                                >
+                                                                    <span>📁 {sf} ({sfCount})</span>
+                                                                    <span
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleDeleteSubFolder(selectedSubject, sf);
+                                                                        }}
+                                                                        className="text-amber-800/70 hover:text-red-700 ml-1 font-black"
+                                                                        title={`Supprimer le sous-dossier ${sf}`}
+                                                                    >
+                                                                        ✕
+                                                                    </span>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            const subName = prompt(`Créer un nouveau sous-dossier / dérivée pour ${selectedSubject} :`);
+                                                            if (subName && subName.trim()) handleCreateSubFolderStandalone(selectedSubject, subName.trim());
+                                                        }}
+                                                        className="text-xs font-bold text-red-900 bg-white hover:bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl transition"
+                                                    >
+                                                        + Nouveau sous-dossier
+                                                    </button>
+                                                </div>
+                                            );
+                                        })()}
+
+                                        {/* BANNIÈRE D'ACTIONS DE DÉPLACEMENT EN MASSE */}
+                                        {selectedCourseIds.length > 0 && (
+                                            <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-2xl border border-red-700/80 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                                                <div className="flex items-center space-x-3">
+                                                    <span className="font-extrabold text-sm flex items-center gap-2">
+                                                        <span className="w-6 h-6 bg-amber-400 text-slate-950 rounded-full flex items-center justify-center text-xs font-black">
+                                                            {selectedCourseIds.length}
+                                                        </span>
+                                                        cours sélectionné(s)
+                                                    </span>
+                                                    <button
+                                                        onClick={() => {
+                                                            const visibleIds = chaptersGrouped.flatMap(ch => ch.courses.map(c => c.id));
+                                                            setSelectedCourseIds(visibleIds);
+                                                        }}
+                                                        className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 font-bold transition"
+                                                    >
+                                                        Tout sélectionner ({chaptersGrouped.flatMap(ch => ch.courses).length})
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setSelectedCourseIds([])}
+                                                        className="text-xs bg-red-950/80 hover:bg-red-900 text-red-300 px-2.5 py-1 rounded-lg font-medium transition"
+                                                    >
+                                                        Désélectionner
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-xs font-bold text-slate-300">Déplacer les {selectedCourseIds.length} cours vers :</span>
+                                                    <select
+                                                        defaultValue=""
+                                                        onChange={(e) => {
+                                                            const target = e.target.value;
+                                                            if (target !== '') {
+                                                                handleMoveSelectedCoursesToSubFolder(target);
+                                                                e.target.value = '';
+                                                            }
+                                                        }}
+                                                        className="bg-red-900 hover:bg-red-800 text-white text-xs font-bold rounded-xl px-3 py-2 border border-red-600 focus:outline-none cursor-pointer"
+                                                    >
+                                                        <option value="" disabled>-- Choisir le sous-dossier destination --</option>
+                                                        <option value="">📁 Racine de la matière (Sans sous-dossier)</option>
+                                                        {getExistingSubSubjects(selectedSubject).map(s => (
+                                                            <option key={s} value={s}>📁 {s}</option>
+                                                        ))}
+                                                        <option value="__NEW__">➕ Créer un nouveau sous-dossier...</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {chaptersGrouped.length === 0 ? (
                                             <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
                                                 <FolderIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                                <p className="text-gray-500 font-medium">Aucun cours dans cette matière pour le moment.</p>
+                                                <p className="text-gray-500 font-medium">Aucun cours trouvé dans ce filtre.</p>
                                                 <button
                                                     onClick={() => openCourseModal({ subject: selectedSubject, school: assocSchool, classe: assocClass })}
                                                     className="mt-4 bg-red-900 text-white font-bold text-sm px-4 py-2 rounded-xl"
                                                 >
-                                                    + Ajouter le premier cours
+                                                    + Ajouter un cours
                                                 </button>
                                             </div>
                                         ) : (
                                             <div className="space-y-6">
-                                                {chaptersGrouped.map((chap, chapIdx) => (
-                                                    <div key={`${chap.name}_${chapIdx}`} className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-                                                        {/* CHAPTER HEADER */}
-                                                        <div className="bg-gray-50/80 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
-                                                            <div className="flex items-center space-x-2">
-                                                                <span className="font-extrabold text-gray-800 text-base">{chap.name}</span>
-                                                                <span className="text-xs bg-gray-200 text-gray-600 font-bold px-2 py-0.5 rounded-full">
-                                                                    {chap.courses.length} cours
-                                                                </span>
+                                                {chaptersGrouped.map((chap, chapIdx) => {
+                                                    const isAllChapSelected = chap.courses.length > 0 && chap.courses.every(c => selectedCourseIds.includes(c.id));
+                                                    return (
+                                                        <div key={`${chap.name}_${chapIdx}`} className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+                                                            {/* CHAPTER HEADER AVEC SÉLECTION & DÉPLACEMENT DU CHAPITRE */}
+                                                            <div className="bg-gray-50/90 px-5 py-3 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
+                                                                <div className="flex items-center space-x-3">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={isAllChapSelected}
+                                                                        onChange={() => toggleSelectChapter(chap.courses)}
+                                                                        className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer"
+                                                                        title="Sélectionner tous les cours de ce chapitre"
+                                                                    />
+                                                                    <span className="font-extrabold text-gray-800 text-base">{chap.name}</span>
+                                                                    <span className="text-xs bg-gray-200 text-gray-600 font-bold px-2 py-0.5 rounded-full">
+                                                                        {chap.courses.length} cours
+                                                                    </span>
+                                                                </div>
+
+                                                                <div className="flex items-center space-x-2">
+                                                                    {/* MENU DÉPLACER TOUT LE CHAPITRE */}
+                                                                    <select
+                                                                        defaultValue=""
+                                                                        onChange={(e) => {
+                                                                            if (e.target.value !== '') {
+                                                                                handleMoveEntireChapterToSubFolder(chap.name, e.target.value);
+                                                                                e.target.value = '';
+                                                                            }
+                                                                        }}
+                                                                        className="text-xs bg-white hover:bg-gray-100 text-gray-800 font-bold px-2.5 py-1 rounded-lg border border-gray-300 cursor-pointer focus:outline-none shadow-2xs"
+                                                                    >
+                                                                        <option value="" disabled>📁 Déplacer tout le chapitre...</option>
+                                                                        <option value="">Racine (Sans sous-dossier)</option>
+                                                                        {getExistingSubSubjects(selectedSubject).map(s => (
+                                                                            <option key={s} value={s}>📁 {s}</option>
+                                                                        ))}
+                                                                        <option value="__NEW__">➕ Créer un nouveau sous-dossier...</option>
+                                                                    </select>
+
+                                                                    <button
+                                                                        onClick={() => handleMoveChapter(selectedSubject, chap.name, -1)}
+                                                                        disabled={chapIdx === 0}
+                                                                        className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 rounded hover:bg-gray-200"
+                                                                        title="Monter ce chapitre"
+                                                                    >
+                                                                        <ArrowUpIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleMoveChapter(selectedSubject, chap.name, 1)}
+                                                                        disabled={chapIdx === chaptersGrouped.length - 1}
+                                                                        className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 rounded hover:bg-gray-200"
+                                                                        title="Descendre ce chapitre"
+                                                                    >
+                                                                        <ArrowDownIcon className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center space-x-1">
-                                                                <button
-                                                                    onClick={() => handleMoveChapter(selectedSubject, chap.name, -1)}
-                                                                    disabled={chapIdx === 0}
-                                                                    className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 rounded hover:bg-gray-200"
-                                                                    title="Monter ce chapitre"
-                                                                >
-                                                                    <ArrowUpIcon className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleMoveChapter(selectedSubject, chap.name, 1)}
-                                                                    disabled={chapIdx === chaptersGrouped.length - 1}
-                                                                    className="p-1.5 text-gray-500 hover:text-gray-800 disabled:opacity-30 rounded hover:bg-gray-200"
-                                                                    title="Descendre ce chapitre"
-                                                                >
-                                                                    <ArrowDownIcon className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
 
-                                                        {/* COURSES LIST */}
-                                                        <div className="divide-y divide-gray-100">
-                                                            {chap.courses.map((course, cIdx) => {
-                                                                const tagBg = tagColors[course.tag] || '#2563eb';
-                                                                return (
-                                                                    <div key={`${course.id || 'c'}_${cIdx}`} className="p-4 flex items-center justify-between gap-4 hover:bg-gray-50/60 transition">
-                                                                        <div className="flex items-center space-x-3 flex-1 min-w-0">
-                                                                            <div className="flex flex-col space-y-0.5">
-                                                                                <button
-                                                                                    onClick={() => handleMoveCourse(course.id, -1)}
-                                                                                    disabled={cIdx === 0}
-                                                                                    className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                                                            {/* COURSES LIST */}
+                                                            <div className="divide-y divide-gray-100">
+                                                                {chap.courses.map((course, cIdx) => {
+                                                                    const tagBg = tagColors[course.tag] || '#2563eb';
+                                                                    const isSelected = selectedCourseIds.includes(course.id);
+                                                                    return (
+                                                                        <div key={`${course.id || 'c'}_${cIdx}`} className={`p-4 flex items-center justify-between gap-4 transition ${isSelected ? 'bg-red-50/60 border-l-4 border-l-red-600' : 'hover:bg-gray-50/60'}`}>
+                                                                            <div className="flex items-center space-x-3 flex-1 min-w-0">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={isSelected}
+                                                                                    onChange={() => toggleSelectCourse(course.id)}
+                                                                                    className="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500 cursor-pointer shrink-0"
+                                                                                />
+
+                                                                                <div className="flex flex-col space-y-0.5">
+                                                                                    <button
+                                                                                        onClick={() => handleMoveCourse(course.id, -1)}
+                                                                                        disabled={cIdx === 0}
+                                                                                        className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                                                                                    >
+                                                                                        <ArrowUpIcon className="w-3.5 h-3.5" />
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => handleMoveCourse(course.id, 1)}
+                                                                                        disabled={cIdx === chap.courses.length - 1}
+                                                                                        className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                                                                                    >
+                                                                                        <ArrowDownIcon className="w-3.5 h-3.5" />
+                                                                                    </button>
+                                                                                </div>
+
+                                                                                <span
+                                                                                    className="text-xs font-bold text-white px-2.5 py-1 rounded-md shrink-0"
+                                                                                    style={{ backgroundColor: tagBg }}
                                                                                 >
-                                                                                    <ArrowUpIcon className="w-3.5 h-3.5" />
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => handleMoveCourse(course.id, 1)}
-                                                                                    disabled={cIdx === chap.courses.length - 1}
-                                                                                    className="p-0.5 text-gray-400 hover:text-gray-700 disabled:opacity-20"
-                                                                                >
-                                                                                    <ArrowDownIcon className="w-3.5 h-3.5" />
-                                                                                </button>
-                                                                            </div>
+                                                                                    {course.tag || 'Cours'}
+                                                                                </span>
 
-                                                                            <span
-                                                                                className="text-xs font-bold text-white px-2.5 py-1 rounded-md shrink-0"
-                                                                                style={{ backgroundColor: tagBg }}
-                                                                            >
-                                                                                {course.tag || 'Cours'}
-                                                                            </span>
+                                                                                {(course.subSubject || course.subFolder) && (
+                                                                                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+                                                                                        📁 {course.subSubject || course.subFolder}
+                                                                                    </span>
+                                                                                )}
 
-                                                                            <div className="truncate">
-                                                                                <h4 className="font-bold text-gray-900 text-sm truncate">{course.title}</h4>
-                                                                                <div className="flex items-center space-x-2 text-xs text-gray-400 mt-0.5">
-                                                                                    {course.digitalLink && <span className="text-blue-600 font-semibold">📄 Document</span>}
-                                                                                    {course.casioLink && <span className="text-gray-700 font-semibold">📟 Casio</span>}
-                                                                                    {course.numworksLink && <span className="text-amber-600 font-semibold">🐍 NumWorks</span>}
-                                                                                    {course.videoLink && <span className="text-red-600 font-semibold">🎥 Vidéo</span>}
-                                                                                    {course.audioLink && <span className="text-cyan-600 font-semibold">🎧 Audio</span>}
-                                                                                    <span>• {course.viewsDigital || 0} vues numériques</span>
-                                                                                    <span>• {course.viewsCasio || 0} vues Casio</span>
-                                                                                    <span>• {course.viewsNumworks || 0} vues NumWorks</span>
+                                                                                <div className="truncate">
+                                                                                    <h4 className="font-bold text-gray-900 text-sm truncate">{course.title}</h4>
+                                                                                    <div className="flex items-center space-x-2 text-xs text-gray-400 mt-0.5">
+                                                                                        {course.digitalLink && <span className="text-blue-600 font-semibold">📄 Document</span>}
+                                                                                        {course.casioLink && <span className="text-gray-700 font-semibold">📟 Casio</span>}
+                                                                                        {course.numworksLink && <span className="text-amber-600 font-semibold">🐍 NumWorks</span>}
+                                                                                        {course.videoLink && <span className="text-red-600 font-semibold">🎥 Vidéo</span>}
+                                                                                        {course.audioLink && <span className="text-cyan-600 font-semibold">🎧 Audio</span>}
+                                                                                        <span>• {course.viewsDigital || 0} vues numériques</span>
+                                                                                        <span>• {course.viewsCasio || 0} vues Casio</span>
+                                                                                        <span>• {course.viewsNumworks || 0} vues NumWorks</span>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
-                                                                        </div>
 
-                                                                        <div className="flex items-center space-x-2 shrink-0">
-                                                                            <button
-                                                                                onClick={() => handleToggleVisibility(course)}
-                                                                                className={`p-2 rounded-lg border text-xs font-bold transition flex items-center space-x-1 ${course.isVisible !== false ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-amber-50 text-amber-700 border-amber-300'}`}
-                                                                                title="Basculer en ligne / masqué"
-                                                                            >
-                                                                                {course.isVisible !== false ? <EyeIcon className="w-4 h-4" /> : <EyeOffIcon className="w-4 h-4" />}
-                                                                                <span>{course.isVisible !== false ? 'Public' : 'Brouillon'}</span>
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => openCourseModal(course)}
-                                                                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
-                                                                                title="Modifier"
-                                                                            >
-                                                                                <EditIcon className="w-4 h-4" />
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => handleDeleteCourse(course.id, course.title)}
-                                                                                className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 transition"
-                                                                                title="Supprimer"
-                                                                            >
-                                                                                <TrashIcon className="w-4 h-4" />
-                                                                            </button>
+                                                                            <div className="flex items-center space-x-2 shrink-0">
+                                                                                {/* RACCOURCI SÉLECTEUR SOUS-DOSSIER INDIVIDUEL */}
+                                                                                <select
+                                                                                    value={course.subSubject || course.subFolder || ''}
+                                                                                    onChange={(e) => {
+                                                                                        const val = e.target.value;
+                                                                                        if (val === '__NEW__') {
+                                                                                            const input = prompt("Nom du nouveau sous-dossier :");
+                                                                                            if (input && input.trim()) {
+                                                                                                setSelectedCourseIds([course.id]);
+                                                                                                handleMoveSelectedCoursesToSubFolder(input.trim());
+                                                                                            }
+                                                                                        } else {
+                                                                                            setSelectedCourseIds([course.id]);
+                                                                                            handleMoveSelectedCoursesToSubFolder(val);
+                                                                                        }
+                                                                                    }}
+                                                                                    className="text-[11px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-2 py-1.5 rounded-lg border border-gray-300 cursor-pointer focus:outline-none"
+                                                                                    title="Changer le sous-dossier de ce cours"
+                                                                                >
+                                                                                    <option value="">📁 Racine</option>
+                                                                                    {getExistingSubSubjects(selectedSubject).map(s => (
+                                                                                        <option key={s} value={s}>📁 {s}</option>
+                                                                                    ))}
+                                                                                    <option value="__NEW__">➕ Nouveau...</option>
+                                                                                </select>
+
+                                                                                <button
+                                                                                    onClick={() => handleToggleVisibility(course)}
+                                                                                    className={`p-2 rounded-lg border text-xs font-bold transition flex items-center space-x-1 ${course.isVisible !== false ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-amber-50 text-amber-700 border-amber-300'}`}
+                                                                                    title="Basculer en ligne / masqué"
+                                                                                >
+                                                                                    {course.isVisible !== false ? <EyeIcon className="w-4 h-4" /> : <EyeOffIcon className="w-4 h-4" />}
+                                                                                    <span>{course.isVisible !== false ? 'Public' : 'Brouillon'}</span>
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => openCourseModal(course)}
+                                                                                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg border border-gray-200 transition"
+                                                                                    title="Modifier"
+                                                                                >
+                                                                                    <EditIcon className="w-4 h-4" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteCourse(course.id, course.title)}
+                                                                                    className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 transition"
+                                                                                    title="Supprimer"
+                                                                                >
+                                                                                    <TrashIcon className="w-4 h-4" />
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                                    );
+                                                                })}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </div>
@@ -3494,28 +3978,60 @@
                                     </button>
                                 </div>
 
-                                {/* Bannière défilante globale */}
-                                <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 space-y-2">
-                                    <label className="text-xs font-bold text-amber-900 uppercase block">
-                                        Bannière d'annonce urgente défilante (affichée en haut du site)
-                                    </label>
-                                    <div className="flex gap-3">
+                                {/* Bannière d'annonce officielle */}
+                                <div className="bg-amber-50/80 border border-amber-300 rounded-2xl p-4.5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-700 flex items-center justify-center text-xs font-bold">
+                                                📢
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-amber-950 uppercase tracking-wide block">
+                                                    Annonce officielle du site
+                                                </label>
+                                                <p className="text-[11px] text-amber-800">
+                                                    S'ancre élégamment sous le menu de navigation (carte Liquid Glass fermable avec accès rapide).
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {settings.announcement && (
+                                            <span className="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">
+                                                Active
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-2.5">
                                         <input
                                             type="text"
                                             id="announcement-global-input"
                                             defaultValue={settings.announcement || ''}
-                                            placeholder="Ex: Attention, le cours de mathématiques est déplacé en salle 104 !"
-                                            className="flex-1 border border-amber-300 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none"
+                                            placeholder="Ex: Mise à jour des cours de BTS SIO pour la rentrée..."
+                                            className="flex-1 border border-amber-300/80 rounded-xl px-3.5 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                                         />
-                                        <button
-                                            onClick={() => {
-                                                const val = document.getElementById('announcement-global-input').value;
-                                                handleUpdateSettings('announcement', val);
-                                            }}
-                                            className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition"
-                                        >
-                                            Enregistrer la bannière
-                                        </button>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    const val = document.getElementById('announcement-global-input').value;
+                                                    handleUpdateSettings('announcement', val);
+                                                }}
+                                                className="bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition flex-1 sm:flex-initial cursor-pointer"
+                                            >
+                                                Enregistrer l'annonce
+                                            </button>
+                                            {settings.announcement && (
+                                                <button
+                                                    onClick={() => {
+                                                        document.getElementById('announcement-global-input').value = '';
+                                                        handleUpdateSettings('announcement', '');
+                                                    }}
+                                                    className="bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold px-3 py-2.5 rounded-xl transition cursor-pointer"
+                                                    title="Supprimer l'annonce"
+                                                >
+                                                    Effacer
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -4252,6 +4768,41 @@
                                                                     className="flex-1 border border-gray-200 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-red-900 focus:outline-none bg-gray-50/50"
                                                                 />
                                                             </div>
+
+                                                            {/* SOUS-DOSSIERS DE LA MATIÈRE DANS PARAMÈTRES */}
+                                                            <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap text-xs">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="font-bold text-gray-500 text-[11px]">Sous-dossiers / Dérivées :</span>
+                                                                    {getExistingSubSubjects(subj).length > 0 ? (
+                                                                        getExistingSubSubjects(subj).map(sub => (
+                                                                            <span key={sub} className="inline-flex items-center gap-1 text-[11px] bg-red-50 text-red-900 border border-red-200 font-bold px-2 py-0.5 rounded-lg">
+                                                                                <span>📁 {sub}</span>
+                                                                                <button
+                                                                                    onClick={() => handleDeleteSubFolder(subj, sub)}
+                                                                                    className="text-red-400 hover:text-red-700 ml-0.5 transition font-black"
+                                                                                    title={`Supprimer le sous-dossier ${sub}`}
+                                                                                >
+                                                                                    ✕
+                                                                                </button>
+                                                                            </span>
+                                                                        ))
+                                                                    ) : (
+                                                                        <span className="text-[11px] text-gray-400 italic">Aucun sous-dossier</span>
+                                                                    )}
+                                                                </div>
+
+                                                                 <button
+                                                                    onClick={() => {
+                                                                        const subName = prompt(`Créer un nouveau sous-dossier / dérivée pour ${subj} (ex: Maths Approfondies) :`);
+                                                                        if (subName && subName.trim()) {
+                                                                            handleCreateSubFolderStandalone(subj, subName.trim());
+                                                                        }
+                                                                    }}
+                                                                    className="text-[11px] font-bold text-red-800 hover:text-red-950 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg transition shrink-0 cursor-pointer"
+                                                                >
+                                                                    + Créer un sous-dossier
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}
@@ -4588,7 +5139,7 @@
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                         <div>
                                             <div className="flex justify-between items-center mb-1">
                                                 <label className="text-xs font-bold text-gray-600 uppercase">Matière *</label>
@@ -4619,6 +5170,38 @@
                                                 </optgroup>
                                             </select>
                                         </div>
+
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="text-xs font-bold text-gray-600 uppercase">Sous-dossier / Dérivée</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const n = prompt(`Ajouter un sous-dossier / dérivée pour ${modalSubject} (ex: Maths Approfondies, Info...) :`);
+                                                        if (n && n.trim()) {
+                                                            setModalSubSubject(n.trim());
+                                                        }
+                                                    }}
+                                                    className="text-[11px] text-red-800 font-bold hover:underline"
+                                                >
+                                                    + Nouveau
+                                                </button>
+                                            </div>
+                                            <input
+                                                name="subSubject"
+                                                list={`sub-subjects-datalist-${modalSubject}`}
+                                                value={modalSubSubject}
+                                                onChange={(e) => setModalSubSubject(e.target.value)}
+                                                placeholder="Ex: Maths approfondies..."
+                                                className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white font-medium"
+                                            />
+                                            <datalist id={`sub-subjects-datalist-${modalSubject}`}>
+                                                {getExistingSubSubjects(modalSubject).map(sub => (
+                                                    <option key={sub} value={sub} />
+                                                ))}
+                                            </datalist>
+                                        </div>
+
                                         <div>
                                             <label className="text-xs font-bold text-gray-600 uppercase block mb-1">Tag pédagogique</label>
                                             <select
@@ -4631,10 +5214,10 @@
                                         </div>
                                     </div>
 
-                                    {/* ATTACHEMENT DES FICHIERS DE COURS */}
-                                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-3">
+                                    {/* LIENS VERS FICHIERS DE COURS */}
+                                    <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-slate-700">Fichiers & Documents du cours</span>
+                                            <span className="text-xs font-bold text-slate-700">📌 Liens vers les documents & ressources</span>
                                             {(settings.subjectDriveFolders || {})[modalSubject] && (
                                                 <a 
                                                     href={(settings.subjectDriveFolders || {})[modalSubject]} 
@@ -4642,104 +5225,11 @@
                                                     rel="noopener noreferrer" 
                                                     className="text-[11px] font-semibold text-blue-700 hover:underline"
                                                 >
-                                                    Dossier Drive ↗
+                                                    Ouvrir le dossier Drive ↗
                                                 </a>
                                             )}
                                         </div>
-
-                                        {/* BOUTONS D'UPLOAD DIRECT */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                                            {/* PDF UPLOAD */}
-                                            <div className="bg-white p-3 rounded-xl border border-slate-200/90 space-y-2 shadow-2xs">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-bold text-slate-800 text-[11px]">📄 Document PDF</span>
-                                                    {digitalLinkVal && <span className="text-[10px] font-bold text-emerald-600">✓ Prêt</span>}
-                                                </div>
-                                                <label className="flex items-center justify-center space-x-1.5 py-2 px-3 bg-red-900 hover:bg-red-800 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
-                                                    <span>📤 Joindre PDF</span>
-                                                    <input 
-                                                        type="file" 
-                                                        accept=".pdf" 
-                                                        className="hidden" 
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files && e.target.files[0];
-                                                            if (!file) return;
-                                                            try {
-                                                                setModalUploadingField('digital');
-                                                                setModalUploadProgress(10);
-                                                                setModalUploadMessage('Téléversement...');
-                                                                const result = await uploadFileToGoogleDrive({
-                                                                    file,
-                                                                    subject: modalSubject,
-                                                                    onProgress: (pct, msg) => {
-                                                                        setModalUploadProgress(pct);
-                                                                        setModalUploadMessage(msg);
-                                                                    }
-                                                                });
-                                                                setDigitalLinkVal(result.webViewLink);
-                                                                showToast(`✓ PDF téléversé avec succès !`);
-                                                            } catch(err) {
-                                                                showToast('Erreur d\'upload : ' + err.message, 'error');
-                                                            } finally {
-                                                                setModalUploadingField(null);
-                                                            }
-                                                        }}
-                                                    />
-                                                </label>
-                                            </div>
-
-                                            {/* CALCULATOR FILE UPLOAD */}
-                                            <div className="bg-white p-3 rounded-xl border border-slate-200/90 space-y-2 shadow-2xs">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-bold text-slate-800 text-[11px]">📟 Fichier Calculatrice</span>
-                                                    {casioLinkVal && <span className="text-[10px] font-bold text-emerald-600">✓ Prêt</span>}
-                                                </div>
-                                                <label className="flex items-center justify-center space-x-1.5 py-2 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold text-xs cursor-pointer shadow-2xs transition active:scale-95">
-                                                    <span>📤 Joindre Calculatrice</span>
-                                                    <input 
-                                                        type="file" 
-                                                        accept=".8xv,.g1m,.py,.cat,.txt,.pdf,.zip" 
-                                                        className="hidden" 
-                                                        onChange={async (e) => {
-                                                            const file = e.target.files && e.target.files[0];
-                                                            if (!file) return;
-                                                            try {
-                                                                setModalUploadingField('casio');
-                                                                setModalUploadProgress(10);
-                                                                setModalUploadMessage('Téléversement...');
-                                                                const result = await uploadFileToGoogleDrive({
-                                                                    file,
-                                                                    subject: modalSubject,
-                                                                    onProgress: (pct, msg) => {
-                                                                        setModalUploadProgress(pct);
-                                                                        setModalUploadMessage(msg);
-                                                                    }
-                                                                });
-                                                                setCasioLinkVal(result.webViewLink);
-                                                                showToast(`✓ Fichier calculatrice téléversé avec succès !`);
-                                                            } catch(err) {
-                                                                showToast('Erreur d\'upload : ' + err.message, 'error');
-                                                            } finally {
-                                                                setModalUploadingField(null);
-                                                            }
-                                                        }}
-                                                    />
-                                                </label>
-                                            </div>
-                                        </div>
-
-                                        {/* STATUS BARRE DE PROGRESSION */}
-                                        {modalUploadingField && (
-                                            <div className="bg-white p-3 rounded-xl border border-blue-200 space-y-1.5 animate-in fade-in">
-                                                <div className="flex justify-between text-xs font-bold text-slate-700">
-                                                    <span>{modalUploadMessage}</span>
-                                                    <span>{modalUploadProgress}%</span>
-                                                </div>
-                                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                                    <div className="bg-gradient-to-r from-red-600 via-amber-500 to-emerald-500 h-full transition-all duration-300" style={{ width: `${modalUploadProgress}%` }}></div>
-                                                </div>
-                                            </div>
-                                        )}
+                                        <p className="text-[11px] text-slate-500">Renseignez directement ci-dessous les liens Google Drive, Dropbox ou web vers vos documents (PDF, fichiers de calculatrice, vidéos).</p>
                                     </div>
 
                                     <div className="grid grid-cols-3 gap-3">

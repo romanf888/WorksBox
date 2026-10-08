@@ -840,7 +840,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 "Physique Chimie", "Sciences Numériques et Technologiques", "Anglais", "Allemand"
             ],
             "Lycée Gaspard Monge__BTS SIO 1": [
-                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques", "Anglais"
+                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques"
             ]
         };
 
@@ -857,7 +857,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 "Anglais", "Mathématiques", "Conception et Industrialisation", "Usinage et FAO"
             ],
             "BTS SIO 1": [
-                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques", "Anglais"
+                "BLOC 3 CYBER (DALLA-ROSA)", "CULTURE ECO JUR MANAG", "Mathématiques"
             ],
             "Seconde Générale/Technologique": [
                 "Mathématiques", "Français", "Histoire-Géographie et EMC", "SVT", 
@@ -984,6 +984,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             id: "sample-prem-math-1",
             title: "Polynômes du second degré, discriminant et racines",
             subject: "Mathématiques",
+            subSubject: "Maths Approfondies",
             chapter: "Chapitre 1 : Le Second Degré",
             school: "Lycée François Bazin",
             classe: "Première STI2D",
@@ -994,6 +995,23 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             courseOrder: 1,
             viewsDigital: 44,
             viewsCasio: 30,
+            isVisible: true
+          },
+          {
+            id: "sample-prem-math-2",
+            title: "Logique booléenne, binaire et matrices pour l'informatique",
+            subject: "Mathématiques",
+            subSubject: "Maths pour l'Info",
+            chapter: "Chapitre 1 : Mathématiques Numériques",
+            school: "Lycée François Bazin",
+            classe: "Première STI2D",
+            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
+            tag: "Cours",
+            chapterOrder: 1,
+            courseOrder: 2,
+            viewsDigital: 38,
+            viewsCasio: 15,
             isVisible: true
           },
           {
@@ -1013,22 +1031,6 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           },
 
           // ==================== BTS SIO 1 ====================
-          {
-            id: "sample-bts-anglais-1",
-            title: "Professional English: IT Support, Cybersecurity & Tech Reporting",
-            subject: "Anglais",
-            chapter: "Unit 1: IT Infrastructures & Helpdesk",
-            school: "Lycée Gaspard Monge",
-            classe: "BTS SIO 1",
-            digitalLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-            casioLink: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/view",
-            tag: "Cours",
-            chapterOrder: 1,
-            courseOrder: 1,
-            viewsDigital: 40,
-            viewsCasio: 18,
-            isVisible: true
-          },
           {
             id: "sample-bts-cyber-1",
             title: "Sécurisation des accès, cryptographie et analyse de vulnérabilités",
@@ -1088,9 +1090,69 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
         const DEFAULT_SHARED_CLOUD_FILES = [];
 
+        // Normalisation avancée pour recherche insensible aux accents et à la casse
+        const normalizeSearchText = (str) => {
+            if (!str) return '';
+            return str
+                .toString()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        };
+
+        // Composant de surlignage des termes recherchés dans les propositions
+        function HighlightMatch({ text, query, className = "" }) {
+            if (!text) return null;
+            if (!query || !query.trim()) return <span className={className}>{text}</span>;
+            
+            try {
+                const rawTokens = query
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase()
+                    .split(/\s+/)
+                    .filter(t => t.length > 0);
+                
+                if (rawTokens.length === 0) return <span className={className}>{text}</span>;
+
+                const regexPatterns = rawTokens.map(token => {
+                    const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    return escaped
+                        .replace(/[aàáâãäå]/gi, '[aàáâãäå]')
+                        .replace(/[eèéêë]/gi, '[eèéêë]')
+                        .replace(/[iìíîï]/gi, '[iìíîï]')
+                        .replace(/[oòóôõö]/gi, '[oòóôõö]')
+                        .replace(/[uùúûü]/gi, '[uùúûü]')
+                        .replace(/[cç]/gi, '[cç]');
+                });
+
+                const regex = new RegExp(`(${regexPatterns.join('|')})`, 'gi');
+                const parts = String(text).split(regex);
+                return (
+                    <span className={className}>
+                        {parts.map((part, i) => {
+                            const isMatch = regex.test(part);
+                            regex.lastIndex = 0;
+                            return isMatch ? (
+                                <span key={i} className="text-blue-600 dark:text-blue-400 font-extrabold underline decoration-blue-500/40 underline-offset-2">
+                                    {part}
+                                </span>
+                            ) : (
+                                <span key={i}>{part}</span>
+                            );
+                        })}
+                    </span>
+                );
+            } catch (e) {
+                return <span className={className}>{text}</span>;
+            }
+        }
+
         function App() {
           const [currentView, setCurrentView] = useState('home');
           const [selectedSubject, setSelectedSubject] = useState(null);
+          const [selectedSubFolder, setSelectedSubFolder] = useState(null);
           const [searchQuery, setSearchQuery] = useState('');
           const [courses, setCourses] = useState([]);
           const [articles, setArticles] = useState([]);
@@ -1122,6 +1184,81 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [authError, setAuthError] = useState(null);
           const [previewData, setPreviewData] = useState(null);
           const [showMobileMenu, setShowMobileMenu] = useState(false);
+          const [readingArticle, setReadingArticle] = useState(null);
+          const [isArticlesCollapsed, setIsArticlesCollapsed] = useState(() => {
+              try { return localStorage.getItem('wb_articles_collapsed') === 'true'; } catch(e) { return false; }
+          });
+          const articlesScrollRef = React.useRef(null);
+          const scrollArticles = (dir) => {
+              if (articlesScrollRef.current) {
+                  articlesScrollRef.current.scrollBy({ left: dir * 340, behavior: 'smooth' });
+              }
+          };
+          const toggleArticlesCollapsed = () => {
+              setIsArticlesCollapsed(prev => {
+                  const next = !prev;
+                  try { localStorage.setItem('wb_articles_collapsed', String(next)); } catch(e) {}
+                  return next;
+              });
+          };
+
+          // États et références pour la barre de recherche et ses propositions en direct
+          const [isSearchFocused, setIsSearchFocused] = useState(false);
+          const [searchSelectedIndex, setSearchSelectedIndex] = useState(-1);
+          const [searchFilterTab, setSearchFilterTab] = useState('all'); // 'all' | 'courses' | 'subjects' | 'folders' | 'articles'
+          const searchContainerRef = React.useRef(null);
+          const searchInputRef = React.useRef(null);
+
+          // Fermer le menu des propositions lors d'un clic en dehors de la barre de recherche
+          useEffect(() => {
+              const handleClickOutside = (e) => {
+                  if (searchContainerRef.current && !searchContainerRef.current.contains(e.target)) {
+                      setIsSearchFocused(false);
+                  }
+              };
+              document.addEventListener('mousedown', handleClickOutside);
+              document.addEventListener('touchstart', handleClickOutside);
+              return () => {
+                  document.removeEventListener('mousedown', handleClickOutside);
+                  document.removeEventListener('touchstart', handleClickOutside);
+              };
+          }, []);
+
+          // Gestion de l'annonce officielle (bannière ancrée et bouton de réouverture)
+          const [isAnnouncementDismissed, setIsAnnouncementDismissed] = useState(false);
+
+          useEffect(() => {
+              if (!settings.announcement) {
+                  setIsAnnouncementDismissed(false);
+                  return;
+              }
+              try {
+                  const stored = localStorage.getItem('wb_dismissed_announcement');
+                  if (stored === settings.announcement) {
+                      setIsAnnouncementDismissed(true);
+                  } else {
+                      setIsAnnouncementDismissed(false);
+                  }
+              } catch (e) {
+                  setIsAnnouncementDismissed(false);
+              }
+          }, [settings.announcement]);
+
+          const handleDismissAnnouncement = () => {
+              setIsAnnouncementDismissed(true);
+              try {
+                  if (settings.announcement) {
+                      localStorage.setItem('wb_dismissed_announcement', settings.announcement);
+                  }
+              } catch (e) {}
+          };
+
+          const handleReopenAnnouncement = () => {
+              setIsAnnouncementDismissed(false);
+              try {
+                  localStorage.removeItem('wb_dismissed_announcement');
+              } catch (e) {}
+          };
 
           // Onglets du profil : 'favorites' | 'cloud' | 'sharedCloud' | 'account'
           const [profileTab, setProfileTab] = useState('favorites');
@@ -2821,6 +2958,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   const provider = new GoogleAuthProvider();
                   provider.addScope('profile');
                   provider.addScope('email');
+                  provider.addScope('https://www.googleapis.com/auth/drive.file');
+                  provider.addScope('https://www.googleapis.com/auth/drive');
                   provider.setCustomParameters({ prompt: 'select_account' });
                   const cred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
                   const currentUser = cred.user;
@@ -3188,7 +3327,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           const activeSubjects = useMemo(() => {
               const configured = getSubjectsForClass(selectedSchool, selectedClass);
-              // Détection automatique des matières des cours existants pour cette classe et cet établissement
+              
+              // Si une liste de matières associées existe (que ce soit via les réglages admin ou les associations par défaut), on l'applique STRICTEMENT.
+              if (configured && configured.length > 0) {
+                  return configured;
+              }
+
+              // Uniquement si aucune matière n'est définie pour cette classe : détection des matières des cours existants
               const fromCourses = courses
                   .filter(c => {
                       const cSchool = (c.school || (c.classe === 'BTS SIO 1' ? 'Lycée Gaspard Monge' : 'Lycée François Bazin')).trim();
@@ -3200,8 +3345,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   .map(c => c.subject.trim())
                   .filter(Boolean);
               
-              const combined = Array.from(new Set([...configured, ...fromCourses]));
-              return combined;
+              return Array.from(new Set(fromCourses));
           }, [selectedSchool, selectedClass, settings.schoolClassSubjects, settings.classSubjects, courses]);
 
           // Filtrage par établissement et classe sélectionnés avec restriction stricte aux matières associées
@@ -3219,12 +3363,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           }, [courses, selectedSchool, selectedClass, activeSubjects]);
 
           const filteredArticles = useMemo(() => {
-              return articles.filter(a => (a.school || 'Lycée François Bazin') === selectedSchool && (a.classe || 'Terminale STI2D') === selectedClass);
+              const list = articles.filter(a => (a.school || 'Lycée François Bazin') === selectedSchool && (a.classe || 'Terminale STI2D') === selectedClass);
+              return [...list].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || new Date(b.date) - new Date(a.date));
           }, [articles, selectedSchool, selectedClass]);
 
           // Réinitialiser la matière sélectionnée si elle n'est plus associée à la classe courante
           useEffect(() => {
-              if (selectedSubject && !activeSubjects.includes(selectedSubject)) {
+              if (selectedSubject && !activeSubjects.some(s => (s || '').trim().toLowerCase() === selectedSubject.trim().toLowerCase())) {
                   setSelectedSubject(null);
                   if (currentView === 'subject') {
                       setCurrentView('home');
@@ -3236,27 +3381,220 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               const ordered = Array.isArray(settings.subjects)
                   ? settings.subjects
                   : (Array.isArray(settings.subjectOrder) ? settings.subjectOrder : DEFAULT_SUBJECTS);
-              const assocSet = new Set(activeSubjects);
-              const known = ordered.filter(s => assocSet.has(s));
-              const unknown = activeSubjects.filter(s => !ordered.includes(s)).sort();
-              return [...known, ...unknown];
+              
+              const assocLowerMap = new Map();
+              activeSubjects.forEach(s => {
+                  if (s) assocLowerMap.set(s.trim().toLowerCase(), s);
+              });
+
+              const known = [];
+              const visited = new Set();
+              ordered.forEach(s => {
+                  const sLower = (s || '').trim().toLowerCase();
+                  if (assocLowerMap.has(sLower) && !visited.has(sLower)) {
+                      known.push(assocLowerMap.get(sLower));
+                      visited.add(sLower);
+                  }
+              });
+
+              const remaining = activeSubjects.filter(s => !visited.has((s || '').trim().toLowerCase()));
+              return [...known, ...remaining];
           }, [activeSubjects, settings.subjects, settings.subjectOrder]);
 
           const latestCourses = useMemo(() => filteredCourses.slice(0, 4), [filteredCourses]);
           const favoriteCourses = useMemo(() => filteredCourses.filter(c => favorites.includes(c.id)), [filteredCourses, favorites]);
 
-          const searchedCourses = useMemo(() => {
-              if (!searchQuery || searchQuery.length < 2) return [];
-              const q = searchQuery.toLowerCase();
-              return filteredCourses.filter(c => c.title.toLowerCase().includes(q) || c.chapter.toLowerCase().includes(q) || c.subject.toLowerCase().includes(q));
-          }, [filteredCourses, searchQuery]);
+          // Liste complète de tous les sous-dossiers existants pour les matières de la classe
+          const allAvailableSubFolders = useMemo(() => {
+              const list = [];
+              sortedSubjects.forEach(subject => {
+                  const targetSubjLower = (subject || '').trim().toLowerCase();
+                  const subjectCourses = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === targetSubjLower);
+                  const registeredSubs = (settings?.subjectSubFolders?.[subject] || settings?.subjectSubFolders?.[subject.trim()] || []);
+                  const subSet = new Set([
+                      ...subjectCourses.map(c => (c.subSubject || c.subFolder || '').trim()).filter(Boolean),
+                      ...registeredSubs.map(s => (s || '').trim()).filter(Boolean)
+                  ]);
+                  Array.from(subSet).forEach(subFolder => {
+                      const count = subjectCourses.filter(c => (c.subSubject || c.subFolder || '').trim().toLowerCase() === subFolder.toLowerCase()).length;
+                      list.push({
+                          subject,
+                          subFolder,
+                          count
+                      });
+                  });
+              });
+              return list;
+          }, [sortedSubjects, filteredCourses, settings.subjectSubFolders]);
 
-          const filteredSubjectsList = sortedSubjects.filter(subject => subject.toLowerCase().includes(searchQuery.toLowerCase()));
-          const goHome = () => { setSelectedSubject(null); setCurrentView('home'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
-          const openSoftwareHub = () => { setSelectedSubject(null); setCurrentView('software'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
-          const openSubject = (subject) => { setSelectedSubject(subject); setCurrentView('subject'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
-          const openTerms = () => { setSelectedSubject(null); setCurrentView('terms'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
-          const openCasioGuide = () => { setSelectedSubject(null); setCurrentView('casioGuide'); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          // Tokens de recherche insensibles aux accents et minuscules
+          const searchTokens = useMemo(() => {
+              if (!searchQuery) return [];
+              return normalizeSearchText(searchQuery).split(/\s+/).filter(Boolean);
+          }, [searchQuery]);
+
+          // 1. Matières correspondantes
+          const searchedSubjects = useMemo(() => {
+              if (searchTokens.length === 0) return [];
+              return sortedSubjects.filter(sub => {
+                  const normSub = normalizeSearchText(sub);
+                  return searchTokens.every(tok => normSub.includes(tok));
+              });
+          }, [sortedSubjects, searchTokens]);
+
+          // 2. Sous-dossiers correspondants
+          const searchedSubFolders = useMemo(() => {
+              if (searchTokens.length === 0) return [];
+              return allAvailableSubFolders.filter(item => {
+                  const combined = normalizeSearchText(`${item.subject} ${item.subFolder}`);
+                  return searchTokens.every(tok => combined.includes(tok));
+              });
+          }, [allAvailableSubFolders, searchTokens]);
+
+          // 3. Actualités correspondantes
+          const searchedArticles = useMemo(() => {
+              if (searchTokens.length === 0) return [];
+              return filteredArticles.filter(art => {
+                  const combined = normalizeSearchText(`${art.title || ''} ${art.content || ''}`);
+                  return searchTokens.every(tok => combined.includes(tok));
+              });
+          }, [filteredArticles, searchTokens]);
+
+          // 4. Cours correspondants
+          const searchedCourses = useMemo(() => {
+              if (searchTokens.length === 0) return [];
+              return filteredCourses.filter(c => {
+                  const combined = normalizeSearchText(
+                      `${c.title || ''} ${c.chapter || ''} ${c.subject || ''} ${c.subFolder || ''} ${c.subSubject || ''} ${c.tag || ''} ${c.description || ''} ${c.fileName || ''} ${c.fileType || ''} ${c.mediaType || ''}`
+                  );
+                  return searchTokens.every(tok => combined.includes(tok));
+              });
+          }, [filteredCourses, searchTokens]);
+
+          // Alias pour compatibilité
+          const filteredSubjectsList = searchedSubjects;
+
+          // Nombre total de résultats trouvés
+          const totalSearchResultsCount = searchedSubjects.length + searchedSubFolders.length + searchedArticles.length + searchedCourses.length;
+
+          // Suggestions intelligentes pour le menu déroulant
+          const searchSuggestions = useMemo(() => {
+              if (searchTokens.length === 0) return [];
+              const list = [];
+              
+              // Matières (jusqu'à 3)
+              searchedSubjects.slice(0, 3).forEach(sub => {
+                  const count = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === sub.trim().toLowerCase()).length;
+                  list.push({
+                      type: 'subject',
+                      id: `sub-${sub}`,
+                      title: sub,
+                      subtitle: `${count} cours disponible${count !== 1 ? 's' : ''}`,
+                      badge: 'Matière',
+                      badgeColor: 'blue',
+                      data: sub,
+                      action: () => {
+                          openSubject(sub);
+                          setIsSearchFocused(false);
+                      }
+                  });
+              });
+
+              // Sous-dossiers (jusqu'à 3)
+              searchedSubFolders.slice(0, 3).forEach(item => {
+                  list.push({
+                      type: 'subFolder',
+                      id: `folder-${item.subject}-${item.subFolder}`,
+                      title: item.subFolder,
+                      subtitle: `Dans ${item.subject} • ${item.count} cours`,
+                      badge: 'Sous-dossier',
+                      badgeColor: 'indigo',
+                      data: item,
+                      action: () => {
+                          openSubject(item.subject, item.subFolder);
+                          setIsSearchFocused(false);
+                      }
+                  });
+              });
+
+              // Cours (jusqu'à 5)
+              searchedCourses.slice(0, 5).forEach(c => {
+                  const formatLabel = c.digitalLink ? 'PDF' : (c.casioLink ? 'Casio' : (c.videoLink ? 'Vidéo' : (c.imageLink ? 'Image' : 'Document')));
+                  list.push({
+                      type: 'course',
+                      id: `course-${c.id}`,
+                      title: c.title,
+                      subtitle: `${c.subject}${c.subFolder ? ` • ${c.subFolder}` : (c.chapter ? ` • ${c.chapter}` : '')}`,
+                      badge: c.tag || formatLabel,
+                      badgeColor: 'emerald',
+                      data: c,
+                      action: () => {
+                          const targetType = c.digitalLink ? 'Numérique' : (c.casioLink ? 'Casio' : (c.videoLink ? 'Vidéo' : (c.imageLink ? 'Image' : (c.audioLink ? 'Audio' : 'Numérique'))));
+                          handleView(c, targetType);
+                          setIsSearchFocused(false);
+                      }
+                  });
+              });
+
+              // Actualités (jusqu'à 2)
+              searchedArticles.slice(0, 2).forEach(art => {
+                  list.push({
+                      type: 'article',
+                      id: `art-${art.id}`,
+                      title: art.title,
+                      subtitle: `Actualité • ${new Date(art.date).toLocaleDateString('fr-FR')}`,
+                      badge: 'Annonce',
+                      badgeColor: 'amber',
+                      data: art,
+                      action: () => {
+                          setReadingArticle(art);
+                          setIsSearchFocused(false);
+                      }
+                  });
+              });
+
+              return list;
+          }, [searchTokens, searchedSubjects, searchedSubFolders, searchedCourses, searchedArticles, filteredCourses]);
+
+          const handleSearchKeyDown = (e) => {
+              if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setSearchSelectedIndex(prev => {
+                      if (searchSuggestions.length === 0) return -1;
+                      return prev < searchSuggestions.length - 1 ? prev + 1 : 0;
+                  });
+              } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setSearchSelectedIndex(prev => {
+                      if (searchSuggestions.length === 0) return -1;
+                      return prev > 0 ? prev - 1 : searchSuggestions.length - 1;
+                  });
+              } else if (e.key === 'Enter') {
+                  if (searchSelectedIndex >= 0 && searchSelectedIndex < searchSuggestions.length) {
+                      e.preventDefault();
+                      searchSuggestions[searchSelectedIndex].action();
+                  } else {
+                      setIsSearchFocused(false);
+                      if (searchInputRef.current) searchInputRef.current.blur();
+                  }
+              } else if (e.key === 'Escape') {
+                  setIsSearchFocused(false);
+                  if (searchInputRef.current) searchInputRef.current.blur();
+              }
+          };
+
+          const handleClearSearch = () => {
+              setSearchQuery('');
+              setSearchSelectedIndex(-1);
+              if (searchInputRef.current) {
+                  searchInputRef.current.focus();
+              }
+          };
+          const goHome = () => { setSelectedSubject(null); setSelectedSubFolder(null); setCurrentView('home'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openSoftwareHub = () => { setSelectedSubject(null); setSelectedSubFolder(null); setCurrentView('software'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openSubject = (subject, subFolder = null) => { setSelectedSubject(subject); setSelectedSubFolder(subFolder); setCurrentView('subject'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openTerms = () => { setSelectedSubject(null); setSelectedSubFolder(null); setCurrentView('terms'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
+          const openCasioGuide = () => { setSelectedSubject(null); setSelectedSubFolder(null); setCurrentView('casioGuide'); window.scrollTo({top: 0, behavior: 'smooth'}); };
           
           const openProfile = (tab = 'favorites') => {
               if (!activeUser) {
@@ -3264,10 +3602,23 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   return;
               }
               setSelectedSubject(null);
+              setSelectedSubFolder(null);
               setProfileTab(tab);
               setCurrentView('profile');
               window.scrollTo({top: 0, behavior: 'smooth'});
           };
+
+          const activeSubFolders = useMemo(() => {
+              if (!selectedSubject) return [];
+              const targetSubjLower = selectedSubject.trim().toLowerCase();
+              const subjectCourses = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === targetSubjLower);
+              const registeredSubs = (settings?.subjectSubFolders?.[selectedSubject] || settings?.subjectSubFolders?.[selectedSubject.trim()] || []);
+              const subSet = new Set([
+                  ...subjectCourses.map(c => (c.subSubject || c.subFolder || '').trim()).filter(Boolean),
+                  ...registeredSubs.map(s => (s || '').trim()).filter(Boolean)
+              ]);
+              return Array.from(subSet).sort();
+          }, [filteredCourses, selectedSubject, settings.subjectSubFolders]);
           const openFavorites = () => openProfile('favorites');
           const openCloud = () => openProfile('cloud');
           const openSharedCloud = () => openProfile('sharedCloud');
@@ -3337,7 +3688,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const chaptersData = useMemo(() => {
             if (!selectedSubject) return [];
             const targetSubjLower = selectedSubject.trim().toLowerCase();
-            const filtered = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === targetSubjLower);
+            let filtered = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === targetSubjLower);
+            if (selectedSubFolder) {
+                const sfLower = selectedSubFolder.trim().toLowerCase();
+                filtered = filtered.filter(c => (c.subSubject || c.subFolder || '').trim().toLowerCase() === sfLower);
+            }
             const groups = {};
             filtered.forEach(course => {
                 if (!groups[course.chapter]) groups[course.chapter] = { name: course.chapter, courses: [] };
@@ -3348,7 +3703,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 group.courses.sort((a, b) => (a.courseOrder||0) - (b.courseOrder||0));
             });
             return Object.values(groups).sort((a, b) => a.chapterOrder - b.chapterOrder);
-          }, [filteredCourses, selectedSubject]);
+          }, [filteredCourses, selectedSubject, selectedSubFolder]);
 
           const handleSaveOnboarding = async (e) => {
               e.preventDefault();
@@ -3384,6 +3739,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1]?.split('?')[0];
               else if (url.includes('watch?v=')) videoId = new URLSearchParams(new URL(url).search).get('v');
               return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+          };
+
+          const getYouTubeThumbnail = (url) => {
+              if (!url) return null;
+              try {
+                  let videoId = '';
+                  if (url.includes('embed/')) videoId = url.split('embed/')[1]?.split('?')[0];
+                  else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1]?.split('?')[0];
+                  else if (url.includes('watch?v=')) videoId = new URLSearchParams(new URL(url).search).get('v');
+                  return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+              } catch (e) {
+                  return null;
+              }
           };
 
           return (
@@ -3496,13 +3864,6 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                   </div>
               )}
 
-              {settings.announcement && (
-                  <div className="bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur-md text-white text-xs sm:text-sm font-bold py-2 sm:py-2.5 px-3 sm:px-4 flex justify-center items-center shadow-sm border-b border-amber-400/40 text-center leading-snug">
-                      <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 shrink-0 animate-bounce" />
-                      <span className="line-clamp-2">{settings.announcement}</span>
-                  </div>
-              )}
-
               {/* NAVIGATION PRINCIPALE LIQUID GLASS OPTIMISÉE MOBILE & DESKTOP */}
               <nav className="liquid-glass-nav sticky top-0 z-30 transition-all duration-200">
                 <div className={`${currentView === 'noteEditor' ? 'w-full px-3 sm:px-6 lg:px-8' : 'max-w-7xl mx-auto px-3 sm:px-6 lg:px-8'} transition-all duration-300`}>
@@ -3527,6 +3888,37 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
                     {/* Actions de droite (Adaptées mobile : badge classe, thème, menu compact) */}
                     <div className="flex items-center space-x-1.5 sm:space-x-2.5">
+                        {/* Bouton d'accès rapide à l'annonce officielle si définie */}
+                        {settings.announcement && (
+                            <button 
+                                id="nav-btn-announcement"
+                                onClick={() => {
+                                    if (isAnnouncementDismissed) {
+                                        handleReopenAnnouncement();
+                                    } else {
+                                        const el = document.getElementById('global-announcement-card');
+                                        if (el) {
+                                            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                        }
+                                    }
+                                }}
+                                className={`p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                                    isAnnouncementDismissed 
+                                        ? 'liquid-glass-btn text-amber-600 dark:text-amber-400 hover:bg-amber-500/10' 
+                                        : 'bg-amber-500/15 dark:bg-amber-400/15 text-amber-700 dark:text-amber-300 border border-amber-400/30 shadow-xs'
+                                }`}
+                                title={isAnnouncementDismissed ? "Réafficher l'annonce officielle" : "Voir l'annonce officielle"}
+                                aria-label="Annonce"
+                            >
+                                <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                                </span>
+                                <Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-600 dark:text-amber-400" />
+                                <span className="hidden xl:inline text-[11px] font-extrabold">Annonce</span>
+                            </button>
+                        )}
+
                         {/* Bouton de basculement Mode Clair / Sombre */}
                         <button 
                             id="nav-btn-theme-toggle" 
@@ -3622,6 +4014,53 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 </div>
               </nav>
 
+              {/* ANNONCE OFFICIELLE ANCRÉE (Liquid Glass Design) */}
+              {settings.announcement && !isAnnouncementDismissed && (
+                  <div id="global-announcement-card" className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-3.5 sm:pt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="relative group overflow-hidden rounded-2xl sm:rounded-3xl liquid-glass border border-amber-300/50 dark:border-amber-400/25 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-orange-500/10 dark:from-amber-950/30 dark:via-slate-900/50 dark:to-orange-950/20 p-3.5 sm:p-4 shadow-lg shadow-amber-500/5 backdrop-blur-xl flex items-start sm:items-center justify-between gap-3 sm:gap-4">
+                          {/* Liseré lumineux dégradé ambre/orange sur la gauche */}
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400 via-amber-500 to-orange-500 rounded-l-full shadow-xs" />
+                          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-amber-500/10 dark:bg-amber-400/10 rounded-full blur-2xl pointer-events-none -z-10" />
+                          
+                          <div className="flex items-start sm:items-center gap-3 sm:gap-3.5 pl-1.5 sm:pl-2 min-w-0 flex-1">
+                              {/* Icône avec halo subtil */}
+                              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-amber-500/15 dark:bg-amber-400/15 border border-amber-400/30 dark:border-amber-400/25 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 shadow-2xs">
+                                  <Megaphone className="w-4 h-4 sm:w-5 sm:h-5" />
+                              </div>
+                              
+                              <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-500/15 dark:bg-amber-400/15 px-2.5 py-0.5 rounded-lg border border-amber-400/30">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 animate-pulse" />
+                                          Information importante
+                                      </span>
+                                      {selectedSchool && (
+                                          <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">
+                                              • {selectedSchool} {selectedClass ? `(${selectedClass})` : ''}
+                                          </span>
+                                      )}
+                                  </div>
+                                  <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 mt-1 leading-snug break-words">
+                                      {settings.announcement}
+                                  </p>
+                              </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                  type="button"
+                                  onClick={handleDismissAnnouncement}
+                                  className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
+                                  title="Masquer l'annonce"
+                                  aria-label="Masquer l'annonce"
+                              >
+                                  <X className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
               <main className={`${currentView === 'noteEditor' ? 'w-full px-2 sm:px-4 md:px-6 lg:px-8 pt-3 pb-12' : 'max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-5 sm:pt-8 mobile-content-pb lg:pb-8'} transition-all duration-300`}>
                 {isLoading ? (
                     <CourseListSkeleton view={currentView} selectedSubject={selectedSubject} />
@@ -3649,88 +4088,573 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         Changer
                                     </button>
                                 </div>
-                                <div className="max-w-xl mx-auto relative">
-                                    <Search className="absolute left-4 top-4 h-5 w-5 text-slate-400 dark:text-slate-400" />
-                                    <input type="text" className="block w-full pl-12 pr-4 py-4 liquid-glass-input rounded-2xl text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-colors" placeholder="Rechercher un cours, un chapitre..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                                <div ref={searchContainerRef} className="max-w-xl mx-auto relative z-30">
+                                    <div className="relative flex items-center">
+                                        <Search className={`absolute left-4 h-5 w-5 transition-colors duration-200 pointer-events-none ${isSearchFocused ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-400'}`} />
+                                        <input 
+                                            ref={searchInputRef}
+                                            type="text" 
+                                            className="block w-full pl-12 pr-12 py-3.5 sm:py-4 liquid-glass-input rounded-2xl text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-all outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 shadow-sm" 
+                                            placeholder="Rechercher un cours, un dossier, une matière..." 
+                                            value={searchQuery} 
+                                            onChange={(e) => {
+                                                setSearchQuery(e.target.value);
+                                                setSearchSelectedIndex(-1);
+                                                if (!isSearchFocused) setIsSearchFocused(true);
+                                            }} 
+                                            onFocus={() => setIsSearchFocused(true)}
+                                            onKeyDown={handleSearchKeyDown}
+                                        />
+                                        {searchQuery && (
+                                            <button 
+                                                type="button" 
+                                                onClick={handleClearSearch}
+                                                className="absolute right-3.5 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-xl transition cursor-pointer"
+                                                title="Effacer la recherche"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* MENU DÉROULANT DES PROPOSITIONS EN DIRECT (Suggestions Dropdown) */}
+                                    {isSearchFocused && (
+                                        <div 
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            className="absolute left-0 right-0 top-full mt-2 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/80 dark:border-white/10 overflow-hidden text-left animate-in fade-in slide-in-from-top-2 duration-150"
+                                        >
+                                            {searchQuery.trim().length === 0 ? (
+                                                /* Suggestions rapides quand la barre est vide et sélectionnée */
+                                                <div className="p-4 space-y-3">
+                                                    <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
+                                                        <span className="flex items-center gap-1.5">
+                                                            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                                                            Matières recommandées ({selectedClass || 'Général'})
+                                                        </span>
+                                                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400">Accès direct</span>
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 pt-0.5">
+                                                        {sortedSubjects.slice(0, 6).map(sub => (
+                                                            <button
+                                                                key={sub}
+                                                                onClick={() => {
+                                                                    openSubject(sub);
+                                                                    setIsSearchFocused(false);
+                                                                }}
+                                                                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-slate-800/80 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 border border-blue-100 dark:border-slate-700/60 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs group"
+                                                            >
+                                                                <Folder className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 group-hover:text-white transition-colors" />
+                                                                <span>{sub}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 italic pt-1">
+                                                        💡 Commencez à saisir pour voir les cours, dossiers et annonces correspondants.
+                                                    </p>
+                                                </div>
+                                            ) : searchSuggestions.length === 0 ? (
+                                                /* Aucun résultat pour la saisie */
+                                                <div className="p-6 text-center space-y-3">
+                                                    <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center">
+                                                        <Search className="w-5 h-5 opacity-60" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
+                                                            Aucune proposition trouvée pour « {searchQuery} »
+                                                        </p>
+                                                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                                            Vérifiez l'orthographe ou essayez avec un mot plus court.
+                                                        </p>
+                                                    </div>
+                                                    <div className="pt-2 flex justify-center gap-2">
+                                                        <button 
+                                                            onClick={handleClearSearch}
+                                                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                                                        >
+                                                            Effacer la recherche
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                /* Liste de suggestions en direct */
+                                                <div>
+                                                    <div className="px-4 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                                                        <span className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                                            <Search className="w-3.5 h-3.5 text-blue-500" />
+                                                            Propositions de recherche
+                                                        </span>
+                                                        <span className="font-bold text-[11px] text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-400/20 px-2 py-0.5 rounded-full">
+                                                            {searchSuggestions.length} proposition{searchSuggestions.length > 1 ? 's' : ''}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100/70 dark:divide-slate-800/60 no-scrollbar">
+                                                        {searchSuggestions.map((item, idx) => {
+                                                            const isSelected = idx === searchSelectedIndex;
+                                                            return (
+                                                                <div 
+                                                                    key={item.id}
+                                                                    onClick={item.action}
+                                                                    onMouseEnter={() => setSearchSelectedIndex(idx)}
+                                                                    className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer transition-colors duration-150 ${
+                                                                        isSelected 
+                                                                            ? 'bg-blue-500/15 dark:bg-blue-400/20 border-l-4 border-blue-600 dark:border-blue-400 pl-3' 
+                                                                            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                        {item.type === 'subject' && (
+                                                                            <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-400/20 shadow-2xs">
+                                                                                <Folder className="w-4.5 h-4.5" />
+                                                                            </div>
+                                                                        )}
+                                                                        {item.type === 'subFolder' && (
+                                                                            <div className="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-400/20 shadow-2xs">
+                                                                                <FolderOpen className="w-4.5 h-4.5" />
+                                                                            </div>
+                                                                        )}
+                                                                        {item.type === 'course' && (
+                                                                            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-400/20 shadow-2xs">
+                                                                                <FileText className="w-4.5 h-4.5" />
+                                                                            </div>
+                                                                        )}
+                                                                        {item.type === 'article' && (
+                                                                            <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-400/20 shadow-2xs">
+                                                                                <Newspaper className="w-4.5 h-4.5" />
+                                                                            </div>
+                                                                        )}
+
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <p className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate leading-snug">
+                                                                                <HighlightMatch text={item.title} query={searchQuery} />
+                                                                            </p>
+                                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                                                                {item.subtitle}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2 shrink-0">
+                                                                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                                                                            item.badgeColor === 'blue' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/30' :
+                                                                            item.badgeColor === 'indigo' ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/30' :
+                                                                            item.badgeColor === 'emerald' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-400/30' :
+                                                                            'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-400/30'
+                                                                        }`}>
+                                                                            {item.badge}
+                                                                        </span>
+                                                                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <div className="px-4 py-2.5 bg-slate-50/90 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                                                        <span className="hidden sm:inline">
+                                                            {totalSearchResultsCount} résultat{totalSearchResultsCount > 1 ? 's' : ''} trouvé{totalSearchResultsCount > 1 ? 's' : ''} au total
+                                                        </span>
+                                                        <button 
+                                                            onClick={() => {
+                                                                setIsSearchFocused(false);
+                                                                if (searchInputRef.current) searchInputRef.current.blur();
+                                                            }}
+                                                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+                                                        >
+                                                            <span>Afficher tous les résultats sur la page</span>
+                                                            <ChevronRight className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
                             {filteredArticles.length > 0 && (
-                                <div className="space-y-4">
-                                    <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center"><Newspaper className="w-5 h-5 mr-2 text-red-500"/> Actualités & Annonces</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                                        {filteredArticles.map(art => {
-                                            const embedUrl = getYouTubeEmbedUrl(art.videoUrl);
-                                            const hasMedia = !!(art.imageUrl || embedUrl);
-                                            return (
-                                                <div key={art.id} className={`liquid-glass-card rounded-3xl p-6 flex flex-col h-fit ${art.pinned ? 'border-amber-400/80 dark:border-amber-400/60 shadow-[0_8px_30px_rgba(251,191,36,0.15)]' : ''}`}>
-                                                    <div>
-                                                        <div className="flex justify-between items-center mb-3">
-                                                            <span className="text-xs text-slate-400 dark:text-slate-400 font-medium">{new Date(art.date).toLocaleDateString('fr-FR')}</span>
-                                                            {art.pinned && <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-amber-400/40 shadow-xs">Épinglé</span>}
-                                                        </div>
-                                                        <h4 className="text-lg font-extrabold text-slate-900 dark:text-white mb-2">{art.title}</h4>
-                                                        <p className={`text-slate-600 dark:text-slate-300 text-sm whitespace-pre-line ${hasMedia ? 'mb-4' : 'mb-0'}`}>{art.content}</p>
-                                                    </div>
-                                                    {art.imageUrl && (
-                                                        <div className="mt-4 rounded-2xl overflow-hidden border border-white/60 dark:border-white/10 bg-slate-900/10 max-h-72 shadow-inner">
-                                                            <img src={art.imageUrl} alt={art.title} className="w-full h-full object-cover" onError={(e)=>{e.target.style.display='none'}} />
-                                                        </div>
-                                                    )}
-                                                    {embedUrl && (
-                                                        <div className="mt-4 aspect-video w-full rounded-2xl overflow-hidden shadow-md bg-slate-950 border border-white/10">
-                                                            <iframe src={embedUrl} className="w-full h-full border-0" allowFullScreen title="YouTube Video"></iframe>
-                                                        </div>
-                                                    )}
+                                <div className="space-y-2.5">
+                                    {/* En-tête compact avec compteur, flèches de navigation et bouton de réduction */}
+                                    <div className="flex items-center justify-between px-1">
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-7 h-7 rounded-lg bg-red-500/15 dark:bg-red-400/20 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-500/20 shadow-xs">
+                                                <Newspaper className="w-4 h-4" />
+                                            </div>
+                                            <h3 className="text-sm sm:text-base font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                                Actualités & Annonces
+                                                <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20">
+                                                    {filteredArticles.length}
+                                                </span>
+                                            </h3>
+                                        </div>
+
+                                        <div className="flex items-center space-x-1.5">
+                                            {!isArticlesCollapsed && filteredArticles.length > 1 && (
+                                                <div className="flex items-center space-x-1 mr-1">
+                                                    <button 
+                                                        onClick={() => scrollArticles(-1)}
+                                                        className="w-7 h-7 rounded-lg liquid-glass-btn flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
+                                                        title="Annonce précédente"
+                                                    >
+                                                        <ChevronLeft className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => scrollArticles(1)}
+                                                        className="w-7 h-7 rounded-lg liquid-glass-btn flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
+                                                        title="Annonce suivante"
+                                                    >
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </button>
                                                 </div>
-                                            );
-                                        })}
+                                            )}
+                                            <button
+                                                onClick={toggleArticlesCollapsed}
+                                                className="text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 liquid-glass-btn px-2.5 py-1 rounded-xl flex items-center gap-1 transition cursor-pointer"
+                                                title={isArticlesCollapsed ? "Développer les actualités" : "Réduire les actualités"}
+                                            >
+                                                <span>{isArticlesCollapsed ? "Afficher" : "Réduire"}</span>
+                                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isArticlesCollapsed ? '-rotate-90' : ''}`} />
+                                            </button>
+                                        </div>
                                     </div>
+
+                                    {/* Si réduit : bandeau ticker ultra-compact sur une seule ligne (~40px) */}
+                                    {isArticlesCollapsed ? (
+                                        <div 
+                                            onClick={() => setReadingArticle(filteredArticles[0])}
+                                            className="liquid-glass-card rounded-2xl px-4 py-2.5 flex items-center justify-between gap-3 cursor-pointer hover:border-red-400/40 transition group"
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                {filteredArticles[0].pinned ? (
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-md border border-amber-400/40 shrink-0">
+                                                        Épinglé
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 shrink-0">
+                                                        {new Date(filteredArticles[0].date).toLocaleDateString('fr-FR')}
+                                                    </span>
+                                                )}
+                                                <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                                                    {filteredArticles[0].title}
+                                                </p>
+                                                <span className="text-xs text-slate-400 dark:text-slate-400 hidden md:inline truncate">
+                                                    — {filteredArticles[0].content}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-1 shrink-0 text-xs font-bold text-red-600 dark:text-red-400 group-hover:underline">
+                                                <span>Lire</span>
+                                                <ChevronRight className="w-3.5 h-3.5" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* Développé : défilement horizontal de cartes compactes (hauteur minimale ~92px au lieu de 400px+) */
+                                        <div 
+                                            ref={articlesScrollRef}
+                                            className="flex gap-3.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar scroll-smooth snap-x items-stretch"
+                                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                                        >
+                                            {filteredArticles.map(art => {
+                                                const ytThumb = getYouTubeThumbnail(art.videoUrl);
+                                                const hasVideo = !!art.videoUrl;
+                                                const thumbSrc = art.imageUrl || ytThumb;
+                                                return (
+                                                    <div 
+                                                        key={art.id} 
+                                                        onClick={() => setReadingArticle(art)}
+                                                        className={`liquid-glass-card rounded-2xl p-3 flex items-center gap-3.5 cursor-pointer hover:border-red-400/50 hover:shadow-md transition-all group shrink-0 snap-start w-[290px] sm:w-[340px] md:w-[380px] h-[92px] ${art.pinned ? 'border-amber-400/70 dark:border-amber-400/50 shadow-[0_4px_16px_rgba(251,191,36,0.12)]' : ''}`}
+                                                    >
+                                                        {/* Miniature compacte */}
+                                                        <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-slate-900/10 dark:bg-white/5 relative flex items-center justify-center border border-white/40 dark:border-white/10">
+                                                            {thumbSrc ? (
+                                                                <>
+                                                                    <img 
+                                                                        src={thumbSrc} 
+                                                                        alt={art.title} 
+                                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                                                                        onError={(e) => { e.target.style.display = 'none'; }} 
+                                                                    />
+                                                                    {hasVideo && (
+                                                                        <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                                                                            <div className="w-6 h-6 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-xs">
+                                                                                <VideoIcon className="w-3.5 h-3.5 ml-0.5" />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-500/10 to-amber-500/10 text-red-500">
+                                                                    <Megaphone className="w-6 h-6" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Contenu textuel condensé */}
+                                                        <div className="flex-1 min-w-0 flex flex-col justify-between h-full py-0.5">
+                                                            <div>
+                                                                <div className="flex items-center justify-between gap-1 mb-1">
+                                                                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium truncate">
+                                                                        {new Date(art.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                                                    </span>
+                                                                    {art.pinned && (
+                                                                        <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[9px] font-extrabold px-1.5 py-0.2 rounded-md border border-amber-400/40 shrink-0">
+                                                                            Épinglé
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <h4 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white truncate group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors leading-snug">
+                                                                    {art.title}
+                                                                </h4>
+                                                            </div>
+                                                            <div className="flex items-center justify-between gap-2 mt-1">
+                                                                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate leading-tight flex-1">
+                                                                    {art.content}
+                                                                </p>
+                                                                <span className="text-[10px] font-bold text-red-600 dark:text-red-400 group-hover:translate-x-0.5 transition-transform shrink-0 flex items-center">
+                                                                    Lire →
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            {searchQuery.length >= 2 ? (
+                            {searchQuery.trim().length > 0 ? (
                                 <div className="space-y-6">
-                                    <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 border-b border-white/40 dark:border-white/10 pb-2">Résultats pour "{searchQuery}"</h3>
-                                    {searchedCourses.length === 0 && filteredSubjectsList.length === 0 ? (
-                                        <div className="liquid-glass rounded-3xl p-12 text-center text-slate-500 dark:text-slate-400">
-                                            <Search className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-3 opacity-60" />
-                                            <p className="font-bold text-base text-slate-700 dark:text-slate-300">Aucun résultat trouvé pour « {searchQuery} ».</p>
-                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Essayez un autre mot-clé ou parcourez les matières ci-dessous.</p>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/40 dark:border-white/10 pb-3">
+                                        <div>
+                                            <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                                <span>Résultats pour « {searchQuery} »</span>
+                                                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-400/30">
+                                                    {totalSearchResultsCount} trouvé{totalSearchResultsCount > 1 ? 's' : ''}
+                                                </span>
+                                            </h3>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                Recherche dans {selectedSchool} • {selectedClass}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={handleClearSearch}
+                                                className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 liquid-glass-btn px-3 py-1.5 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                                <span>Effacer la recherche</span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Onglets de filtrage par catégorie */}
+                                    {totalSearchResultsCount > 0 && (
+                                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                                            <button 
+                                                onClick={() => setSearchFilterTab('all')}
+                                                className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${searchFilterTab === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'liquid-glass-btn text-slate-700 dark:text-slate-300'}`}
+                                            >
+                                                Tous ({totalSearchResultsCount})
+                                            </button>
+                                            {searchedCourses.length > 0 && (
+                                                <button 
+                                                    onClick={() => setSearchFilterTab('courses')}
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${searchFilterTab === 'courses' ? 'bg-emerald-600 text-white shadow-xs' : 'liquid-glass-btn text-slate-700 dark:text-slate-300'}`}
+                                                >
+                                                    Cours ({searchedCourses.length})
+                                                </button>
+                                            )}
+                                            {searchedSubjects.length > 0 && (
+                                                <button 
+                                                    onClick={() => setSearchFilterTab('subjects')}
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${searchFilterTab === 'subjects' ? 'bg-blue-600 text-white shadow-xs' : 'liquid-glass-btn text-slate-700 dark:text-slate-300'}`}
+                                                >
+                                                    Matières ({searchedSubjects.length})
+                                                </button>
+                                            )}
+                                            {searchedSubFolders.length > 0 && (
+                                                <button 
+                                                    onClick={() => setSearchFilterTab('folders')}
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${searchFilterTab === 'folders' ? 'bg-indigo-600 text-white shadow-xs' : 'liquid-glass-btn text-slate-700 dark:text-slate-300'}`}
+                                                >
+                                                    Sous-dossiers ({searchedSubFolders.length})
+                                                </button>
+                                            )}
+                                            {searchedArticles.length > 0 && (
+                                                <button 
+                                                    onClick={() => setSearchFilterTab('articles')}
+                                                    className={`text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer shrink-0 ${searchFilterTab === 'articles' ? 'bg-amber-600 text-white shadow-xs' : 'liquid-glass-btn text-slate-700 dark:text-slate-300'}`}
+                                                >
+                                                    Actualités ({searchedArticles.length})
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {totalSearchResultsCount === 0 ? (
+                                        <div className="liquid-glass rounded-3xl p-10 sm:p-12 text-center text-slate-500 dark:text-slate-400 space-y-3">
+                                            <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 mx-auto flex items-center justify-center">
+                                                <Search className="w-7 h-7" />
+                                            </div>
+                                            <p className="font-extrabold text-base sm:text-lg text-slate-800 dark:text-slate-200">
+                                                Aucun résultat trouvé pour « {searchQuery} »
+                                            </p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 max-w-md mx-auto">
+                                                Essayez un mot plus général, retirez les mots superflus ou cliquez sur l'une des matières ci-dessous pour naviguer directement dans vos cours.
+                                            </p>
+                                            <div className="pt-3 flex flex-wrap justify-center gap-2 max-w-lg mx-auto">
+                                                {sortedSubjects.slice(0, 5).map(sub => (
+                                                    <button 
+                                                        key={sub}
+                                                        onClick={() => openSubject(sub)}
+                                                        className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-500/15 text-blue-700 dark:text-blue-300 hover:bg-blue-600 hover:text-white transition flex items-center gap-1.5 cursor-pointer"
+                                                    >
+                                                        <Folder className="w-3.5 h-3.5" />
+                                                        <span>{sub}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-8">
-                                            {filteredSubjectsList.length > 0 && (
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
-                                                    {filteredSubjectsList.map(sub => (
-                                                        <div key={sub} onClick={() => openSubject(sub)} className="liquid-glass-card rounded-2xl p-4.5 cursor-pointer flex items-center space-x-3.5 group h-full">
-                                                            <div className="w-11 h-11 rounded-xl bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform shadow-xs shrink-0">
-                                                                <Folder className="w-6 h-6" />
-                                                            </div>
-                                                            <h3 className="font-bold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{sub}</h3>
-                                                        </div>
-                                                    ))}
+                                            {/* Section Matières trouvées */}
+                                            {searchedSubjects.length > 0 && (searchFilterTab === 'all' || searchFilterTab === 'subjects') && (
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                                        <Folder className="w-4 h-4 text-blue-500" />
+                                                        Matières correspondantes ({searchedSubjects.length})
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+                                                        {searchedSubjects.map(sub => {
+                                                            const count = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === sub.trim().toLowerCase()).length;
+                                                            return (
+                                                                <div 
+                                                                    key={sub} 
+                                                                    onClick={() => openSubject(sub)} 
+                                                                    className="liquid-glass-card rounded-2xl p-4.5 cursor-pointer flex items-center justify-between group h-full hover:border-blue-400/50 hover:shadow-md transition-all"
+                                                                >
+                                                                    <div className="flex items-center space-x-3.5 min-w-0">
+                                                                        <div className="w-11 h-11 rounded-xl bg-blue-500/15 dark:bg-blue-400/20 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-400/30 group-hover:scale-105 transition-transform shadow-xs shrink-0">
+                                                                            <Folder className="w-6 h-6" />
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <h3 className="font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                                                                                <HighlightMatch text={sub} query={searchQuery} />
+                                                                            </h3>
+                                                                            <p className="text-xs text-slate-400 dark:text-slate-500">
+                                                                                {count} cours disponible{count !== 1 ? 's' : ''}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-1 shrink-0" />
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
                                             )}
-                                            {searchedCourses.length > 0 && (
-                                                <div className="liquid-glass rounded-3xl overflow-hidden shadow-lg">
-                                                    <ul className="divide-y divide-white/60 dark:divide-white/10">
-                                                        {searchedCourses.map(course => (
-                                                            <CourseListItem 
-                                                                key={course.id} 
-                                                                course={course} 
-                                                                handleView={handleView} 
-                                                                tagColors={settings.tagColors} 
-                                                                isFav={favorites.includes(course.id)} 
-                                                                toggleFav={() => toggleFav(course.id)} 
-                                                                showSubject={true} 
-                                                                onCopy={() => copyCourseLink(course)}
-                                                                onShare={() => shareCourse(course)}
-                                                                onSaveToCloud={() => saveCourseToCloudDrive(course)}
-                                                                onTakeNotes={() => handleTakeNotesOnCourse(course)}
-                                                            />
+
+                                            {/* Section Sous-dossiers trouvés */}
+                                            {searchedSubFolders.length > 0 && (searchFilterTab === 'all' || searchFilterTab === 'folders') && (
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                                        <FolderOpen className="w-4 h-4 text-indigo-500" />
+                                                        Sous-dossiers correspondants ({searchedSubFolders.length})
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+                                                        {searchedSubFolders.map(item => (
+                                                            <div 
+                                                                key={`${item.subject}-${item.subFolder}`} 
+                                                                onClick={() => openSubject(item.subject, item.subFolder)} 
+                                                                className="liquid-glass-card rounded-2xl p-4.5 cursor-pointer flex items-center justify-between group h-full hover:border-indigo-400/50 hover:shadow-md transition-all"
+                                                            >
+                                                                <div className="flex items-center space-x-3.5 min-w-0">
+                                                                    <div className="w-11 h-11 rounded-xl bg-indigo-500/15 dark:bg-indigo-400/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-400/30 group-hover:scale-105 transition-transform shadow-xs shrink-0">
+                                                                        <FolderOpen className="w-6 h-6" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <h3 className="font-extrabold text-slate-800 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                                                                            <HighlightMatch text={item.subFolder} query={searchQuery} />
+                                                                        </h3>
+                                                                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold truncate">
+                                                                            Dans {item.subject} • {item.count} cours
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-500 transition-transform group-hover:translate-x-1 shrink-0" />
+                                                            </div>
                                                         ))}
-                                                    </ul>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Section Actualités trouvées */}
+                                            {searchedArticles.length > 0 && (searchFilterTab === 'all' || searchFilterTab === 'articles') && (
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                                        <Newspaper className="w-4 h-4 text-amber-500" />
+                                                        Actualités & Annonces ({searchedArticles.length})
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        {searchedArticles.map(art => (
+                                                            <div 
+                                                                key={art.id} 
+                                                                onClick={() => setReadingArticle(art)}
+                                                                className="liquid-glass-card rounded-2xl p-4 cursor-pointer hover:border-amber-400/50 hover:shadow-md transition-all group flex items-start gap-3"
+                                                            >
+                                                                <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-400/30">
+                                                                    <Newspaper className="w-5 h-5" />
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-[10px] text-slate-400 font-semibold">
+                                                                            {new Date(art.date).toLocaleDateString('fr-FR')}
+                                                                        </span>
+                                                                        {art.pinned && (
+                                                                            <span className="text-[9px] font-black uppercase text-amber-700 dark:text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-400/30">
+                                                                                Épinglé
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <h5 className="font-extrabold text-sm text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                                                        <HighlightMatch text={art.title} query={searchQuery} />
+                                                                    </h5>
+                                                                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1">
+                                                                        {art.content}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Section Cours & Documents trouvés */}
+                                            {searchedCourses.length > 0 && (searchFilterTab === 'all' || searchFilterTab === 'courses') && (
+                                                <div className="space-y-3">
+                                                    <h4 className="text-sm font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                                        <FileText className="w-4 h-4 text-emerald-500" />
+                                                        Cours & Documents ({searchedCourses.length})
+                                                    </h4>
+                                                    <div className="liquid-glass rounded-3xl overflow-hidden shadow-lg">
+                                                        <ul className="divide-y divide-white/60 dark:divide-white/10">
+                                                            {searchedCourses.map(course => (
+                                                                <CourseListItem 
+                                                                    key={course.id} 
+                                                                    course={course} 
+                                                                    handleView={handleView} 
+                                                                    tagColors={settings.tagColors} 
+                                                                    isFav={favorites.includes(course.id)} 
+                                                                    toggleFav={() => toggleFav(course.id)} 
+                                                                    showSubject={true} 
+                                                                    onCopy={() => copyCourseLink(course)}
+                                                                    onShare={() => shareCourse(course)}
+                                                                    onSaveToCloud={() => saveCourseToCloudDrive(course)}
+                                                                    onTakeNotes={() => handleTakeNotesOnCourse(course)}
+                                                                />
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
@@ -3865,7 +4789,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 items-stretch">
                                             {sortedSubjects.map((subject, index) => {
                                                 const sLower = (subject || '').trim().toLowerCase();
-                                                const courseCount = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === sLower).length;
+                                                const subjectCourses = filteredCourses.filter(c => (c.subject || '').trim().toLowerCase() === sLower);
+                                                const courseCount = subjectCourses.length;
+                                                
+                                                const registeredSubs = (settings?.subjectSubFolders?.[subject] || settings?.subjectSubFolders?.[subject.trim()] || []);
+                                                const subList = Array.from(new Set([
+                                                    ...subjectCourses.map(c => (c.subSubject || c.subFolder || '').trim()).filter(Boolean),
+                                                    ...registeredSubs.map(s => (s || '').trim()).filter(Boolean)
+                                                ])).sort();
+
                                                 // Dynamic colorful liquid glass gradients for each subject
                                                 const iconGradients = [
                                                     'from-blue-600 to-cyan-500 text-white shadow-blue-500/25',
@@ -3877,21 +4809,43 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                 ];
                                                 const grad = iconGradients[index % iconGradients.length];
                                                 return (
-                                                <div key={index} onClick={() => openSubject(subject)} className="liquid-glass-card rounded-3xl p-5 sm:p-6 cursor-pointer flex items-center space-x-4 group h-full select-none">
-                                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform shrink-0`}>
-                                                        <Folder className="w-7 h-7" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between gap-1 mb-1">
-                                                            <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{subject}</h3>
-                                                            <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-400/20 px-2 py-0.5 rounded-lg border border-blue-400/30 shrink-0">
-                                                                {selectedClass}
-                                                            </span>
+                                                <div key={index} onClick={() => openSubject(subject)} className="liquid-glass-card rounded-3xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between group h-full select-none">
+                                                    <div className="flex items-center space-x-4">
+                                                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform shrink-0`}>
+                                                            <Folder className="w-7 h-7" />
                                                         </div>
-                                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                                            {courseCount} cours spécifique{courseCount !== 1 ? 's' : ''}
-                                                        </p>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-1 mb-1">
+                                                                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">{subject}</h3>
+                                                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/15 dark:bg-blue-400/20 px-2 py-0.5 rounded-lg border border-blue-400/30 shrink-0">
+                                                                    {selectedClass}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                                {courseCount} cours spécifique{courseCount !== 1 ? 's' : ''}
+                                                            </p>
+                                                        </div>
                                                     </div>
+
+                                                    {subList.length > 0 && (
+                                                        <div className="mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800/80">
+                                                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1.5">
+                                                                Sous-dossiers ({subList.length}) :
+                                                            </span>
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {subList.map(sub => (
+                                                                    <span 
+                                                                        key={sub}
+                                                                        onClick={(e) => { e.stopPropagation(); openSubject(subject, sub); }}
+                                                                        className="text-[11px] font-bold text-slate-700 dark:text-slate-200 bg-slate-100/90 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white px-2.5 py-1 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center transition cursor-pointer shadow-2xs"
+                                                                    >
+                                                                        <Folder className="w-3 h-3 mr-1 text-blue-500 group-hover:text-white" />
+                                                                        {sub}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 );
                                             })}
@@ -4797,58 +5751,155 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                         )}
 
                         {currentView === 'subject' && (
-                        <div key={`view-subject-${selectedSubject}`} className="space-y-6 view-transition">
+                        <div key={`view-subject-${selectedSubject}-${selectedSubFolder || 'root'}`} className="space-y-6 view-transition">
                             <div className="liquid-glass-card rounded-3xl p-5 sm:p-6 mb-6">
                                 <div className="flex flex-wrap items-center justify-between gap-4">
                                     <div className="flex items-center space-x-3.5">
                                         <button 
-                                            onClick={goHome} 
+                                            onClick={() => {
+                                                if (selectedSubFolder) {
+                                                    setSelectedSubFolder(null);
+                                                } else {
+                                                    goHome();
+                                                }
+                                            }} 
                                             className="p-2.5 liquid-glass-btn rounded-2xl text-slate-700 dark:text-slate-200 shadow-xs transition-all active:scale-95 cursor-pointer"
-                                            title="Retour à l'accueil"
+                                            title={selectedSubFolder ? "Retour aux sous-dossiers" : "Retour à l'accueil"}
                                         >
                                             <ChevronLeft className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                         </button>
                                         <div>
-                                            <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                                            <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400 flex-wrap">
                                                 <span>{selectedSchool}</span>
                                                 <span className="text-slate-300 dark:text-slate-600">•</span>
                                                 <span className="liquid-glass-pill px-2.5 py-0.5 rounded-md font-extrabold text-blue-700 dark:text-blue-300">{selectedClass}</span>
+                                                <span className="text-slate-300 dark:text-slate-600">/</span>
+                                                <span 
+                                                    className={`cursor-pointer hover:underline ${selectedSubFolder ? 'text-blue-600 dark:text-blue-400' : 'text-slate-800 dark:text-slate-200 font-extrabold'}`}
+                                                    onClick={() => setSelectedSubFolder(null)}
+                                                >
+                                                    {selectedSubject}
+                                                </span>
+                                                {selectedSubFolder && (
+                                                    <>
+                                                        <span className="text-slate-300 dark:text-slate-600">/</span>
+                                                        <span className="font-black text-slate-900 dark:text-white bg-blue-500/15 dark:bg-blue-400/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-lg border border-blue-400/30">
+                                                            📁 {selectedSubFolder}
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
-                                            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">{selectedSubject}</h1>
+                                            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
+                                                {selectedSubFolder || selectedSubject}
+                                            </h1>
                                         </div>
                                     </div>
                                     <div className="text-xs font-bold text-slate-700 dark:text-slate-200 liquid-glass-pill px-4 py-2 rounded-xl">
-                                        {chaptersData.reduce((acc, chap) => acc + chap.courses.length, 0)} cours spécifiques à <span className="font-extrabold text-blue-600 dark:text-blue-400">{selectedClass}</span>
+                                        {chaptersData.reduce((acc, chap) => acc + chap.courses.length, 0)} cours {selectedSubFolder ? `dans ${selectedSubFolder}` : `dans ${selectedSubject}`}
                                     </div>
                                 </div>
                             </div>
-                            {chaptersData.length === 0 ? (
-                                <div className="liquid-glass rounded-3xl p-12 text-center text-slate-500 dark:text-slate-400">
-                                    <Folder className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                                    <p className="font-bold text-slate-700 dark:text-slate-300 text-base">Aucun cours d'« {selectedSubject} » pour {selectedClass}.</p>
-                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">Chaque classe possède son propre programme et ses propres cours indépendants.</p>
-                                    <button onClick={goHome} className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer">
-                                        ← Retourner à l'accueil
-                                    </button>
+
+                            {/* SI LA MATIÈRE A DES SOUS-DOSSIERS ET QU'AUCUN SOUS-DOSSIER N'EST ENCORE SÉLECTIONNÉ */}
+                            {activeSubFolders.length > 0 && !selectedSubFolder ? (
+                                <div className="space-y-4 mb-8">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 flex items-center">
+                                            <Folder className="w-5 h-5 mr-2 text-blue-500" />
+                                            Sous-dossiers de {selectedSubject}
+                                        </h3>
+                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                                            Sélectionnez un sous-dossier pour afficher ses cours
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-stretch">
+                                        {activeSubFolders.map((subName, subIdx) => {
+                                            const subCount = filteredCourses.filter(c => 
+                                                (c.subject || '').trim().toLowerCase() === (selectedSubject || '').trim().toLowerCase() && 
+                                                (c.subSubject || c.subFolder || '').trim().toLowerCase() === subName.trim().toLowerCase()
+                                            ).length;
+
+                                            const subGradients = [
+                                                'from-indigo-600 to-purple-600 text-white shadow-indigo-500/25',
+                                                'from-emerald-600 to-teal-500 text-white shadow-emerald-500/25',
+                                                'from-amber-500 to-orange-500 text-white shadow-amber-500/25',
+                                                'from-rose-500 to-pink-500 text-white shadow-rose-500/25',
+                                                'from-sky-500 to-blue-600 text-white shadow-sky-500/25',
+                                                'from-cyan-600 to-teal-600 text-white shadow-cyan-500/25',
+                                                'from-fuchsia-600 to-pink-600 text-white shadow-fuchsia-500/25'
+                                            ];
+                                            const grad = subGradients[subIdx % subGradients.length];
+
+                                            return (
+                                                <div 
+                                                    key={subName} 
+                                                    onClick={() => setSelectedSubFolder(subName)}
+                                                    className="liquid-glass-card rounded-3xl p-5 sm:p-6 cursor-pointer flex flex-col justify-between group h-full select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
+                                                >
+                                                    <div className="flex items-center space-x-4">
+                                                        <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${grad} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform shrink-0`}>
+                                                            <Folder className="w-7 h-7" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-1 mb-1">
+                                                                <h3 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                                                                    {subName}
+                                                                </h3>
+                                                                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-1 shrink-0" />
+                                                            </div>
+                                                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                                                {subCount} cours spécifique{subCount !== 1 ? 's' : ''}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="space-y-6">
-                                    {chaptersData.map((chap) => (
-                                        <ChapterBlock 
-                                            key={chap.name} 
-                                            chapter={chap.name} 
-                                            chapterCourses={chap.courses} 
-                                            handleView={handleView} 
-                                            tagColors={settings.tagColors} 
-                                            favorites={favorites} 
-                                            toggleFav={toggleFav} 
-                                            onCopyCourse={copyCourseLink}
-                                            onShareCourse={shareCourse}
-                                            onSaveCourseToCloud={saveCourseToCloudDrive}
-                                            onTakeNotesCourse={handleTakeNotesOnCourse}
-                                        />
-                                    ))}
-                                </div>
+                                /* AFFICHAGE DES COURS LORSQU'UN SOUS-DOSSIER EST SÉLECTIONNÉ OU SI LA MATIÈRE N'A PAS DE SOUS-DOSSIERS */
+                                <>
+                                    {chaptersData.length === 0 ? (
+                                        <div className="liquid-glass rounded-3xl p-12 text-center text-slate-500 dark:text-slate-400">
+                                            <Folder className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                                            <p className="font-bold text-slate-700 dark:text-slate-300 text-base">
+                                                {selectedSubFolder 
+                                                    ? `Aucun cours trouvé dans le sous-dossier « ${selectedSubFolder} ».` 
+                                                    : `Aucun cours d'« ${selectedSubject} » pour ${selectedClass}.`}
+                                            </p>
+                                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-md mx-auto">Chaque classe possède son propre programme et ses propres cours indépendants.</p>
+                                            {selectedSubFolder ? (
+                                                <button onClick={() => setSelectedSubFolder(null)} className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer">
+                                                    ← Retour aux sous-dossiers de {selectedSubject}
+                                                </button>
+                                            ) : (
+                                                <button onClick={goHome} className="mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/20 cursor-pointer">
+                                                    ← Retourner à l'accueil
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {chaptersData.map((chap) => (
+                                                <ChapterBlock 
+                                                    key={chap.name} 
+                                                    chapter={chap.name} 
+                                                    chapterCourses={chap.courses} 
+                                                    handleView={handleView} 
+                                                    tagColors={settings.tagColors} 
+                                                    favorites={favorites} 
+                                                    toggleFav={toggleFav} 
+                                                    onCopyCourse={copyCourseLink}
+                                                    onShareCourse={shareCourse}
+                                                    onSaveCourseToCloud={saveCourseToCloudDrive}
+                                                    onTakeNotesCourse={handleTakeNotesOnCourse}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
                             )}
 
                             {/* Section "Vous ne trouvez pas le cours ?" en bas de chaque matière */}
@@ -5012,6 +6063,78 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               : (previewData.sharedFile ? () => saveSharedFileToPersonalCloud(previewData.sharedFile) : undefined)
                       }
                   />
+              )}
+
+              {/* Modal de Lecture d'Actualité / Annonce */}
+              {readingArticle && (
+                  <div 
+                      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md animate-in fade-in duration-200"
+                      onClick={(e) => { if (e.target === e.currentTarget) setReadingArticle(null); }}
+                  >
+                      <div className="liquid-glass rounded-3xl shadow-2xl max-w-2xl w-full p-6 sm:p-7 max-h-[90vh] overflow-y-auto space-y-4 animate-in zoom-in-95 duration-200 relative border border-white/30 dark:border-white/10">
+                          <div className="flex items-start justify-between gap-4 pb-2 border-b border-white/20 dark:border-white/10">
+                              <div className="space-y-1">
+                                  <div className="flex items-center space-x-2">
+                                      <span className="text-xs font-bold text-slate-400 dark:text-slate-400">
+                                          {new Date(readingArticle.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                      </span>
+                                      {readingArticle.pinned && (
+                                          <span className="bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-amber-400/40">
+                                              Épinglé
+                                          </span>
+                                      )}
+                                  </div>
+                                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                                      {readingArticle.title}
+                                  </h3>
+                              </div>
+                              <button
+                                  onClick={() => setReadingArticle(null)}
+                                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/10 transition cursor-pointer shrink-0"
+                                  title="Fermer"
+                              >
+                                  <X className="w-5 h-5" />
+                              </button>
+                          </div>
+
+                          {/* Médias complets dans la modal */}
+                          {readingArticle.imageUrl && (
+                              <div className="rounded-2xl overflow-hidden border border-white/40 dark:border-white/10 bg-slate-900/10 shadow-inner max-h-80 flex items-center justify-center">
+                                  <img 
+                                      src={readingArticle.imageUrl} 
+                                      alt={readingArticle.title} 
+                                      className="w-full h-full object-contain max-h-80" 
+                                      onError={(e) => { e.target.style.display = 'none'; }} 
+                                  />
+                              </div>
+                          )}
+
+                          {readingArticle.videoUrl && getYouTubeEmbedUrl(readingArticle.videoUrl) && (
+                              <div className="aspect-video w-full rounded-2xl overflow-hidden shadow-lg bg-slate-950 border border-white/10">
+                                  <iframe 
+                                      src={getYouTubeEmbedUrl(readingArticle.videoUrl)} 
+                                      className="w-full h-full border-0" 
+                                      allowFullScreen 
+                                      title={readingArticle.title}
+                                  ></iframe>
+                              </div>
+                          )}
+
+                          {/* Texte intégral de l'annonce */}
+                          <div className="text-slate-700 dark:text-slate-200 text-sm sm:text-base leading-relaxed whitespace-pre-line py-2">
+                              {readingArticle.content}
+                          </div>
+
+                          <div className="pt-3 border-t border-white/20 dark:border-white/10 flex justify-end">
+                              <button
+                                  onClick={() => setReadingArticle(null)}
+                                  className="px-5 py-2.5 text-xs font-bold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl transition shadow-sm cursor-pointer"
+                              >
+                                  Fermer
+                              </button>
+                          </div>
+                      </div>
+                  </div>
               )}
 
               {showAuthModal && (
@@ -5281,6 +6404,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                   Changer
                               </button>
                           </div>
+
+                          {/* Annonce officielle dans le menu mobile si définie */}
+                          {settings.announcement && (
+                              <div className="bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/25 dark:border-amber-400/20 rounded-2xl p-3 flex items-start gap-2.5">
+                                  <div className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                      <Megaphone className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                      <p className="text-[10px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-300">Information importante</p>
+                                      <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 mt-0.5 leading-snug">{settings.announcement}</p>
+                                  </div>
+                              </div>
+                          )}
 
                           {/* Grille de raccourcis rapides */}
                           <div className="grid grid-cols-2 gap-2.5 pt-1">
