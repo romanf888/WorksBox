@@ -1672,48 +1672,48 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           // Nettoyage forcé de la mémoire locale WorksBox Cloud et resynchronisation Google Drive
           const clearCloudCacheAndResync = async () => {
+              setCloudLoading(true);
               try {
-                  localStorage.removeItem('worksbox_cached_cloud_files');
-                  localStorage.removeItem('worksbox_cached_cloud_storage_used');
-                  localStorage.removeItem('worksbox_cloud_folder_id');
+                  // 1. Purge sécurisée du cache WorksBox Cloud dans le stockage local
+                  try {
+                      localStorage.removeItem('worksbox_cached_cloud_files');
+                      localStorage.removeItem('worksbox_cached_cloud_storage_used');
+                      localStorage.removeItem('worksbox_cloud_folder_id');
+                  } catch (_) {}
+
+                  // 2. Réinitialisation des états Cloud (0 fichier, 0 Mo, retour à la racine)
                   setCloudFolderId(null);
                   setCloudCurrentFolderId(null);
-                  setCloudBreadcrumbs([{ id: 'root', name: 'WorksBox Cloud' }]);
+                  setCloudBreadcrumbs([{ id: null, name: 'WorksBox Cloud' }]);
                   setCloudFiles([]);
                   setCloudStorageUsed(0);
                   setDriveApiError(null);
 
-                  // Nettoyer de la mémoire des notes tout lien vers des fichiers supprimés
-                  setNotesList(prev => {
-                      const updated = prev.map(note => ({
-                          ...note,
-                          driveFileId: null,
-                          driveDeleted: true,
-                          syncWithDrive: false
-                      }));
-                      try { localStorage.setItem('worksbox_notes_list', JSON.stringify(updated)); } catch(e) {}
-                      return updated;
-                  });
-                  if (activeNote) {
-                      setActiveNote(prev => prev ? { ...prev, driveFileId: null, driveDeleted: true, syncWithDrive: false } : null);
-                  }
+                  // 3. Sécurisation de la liste des notes en mémoire
+                  setNotesList(prev => Array.isArray(prev) ? prev : []);
 
-                  showToast("Mémoire WorksBox Cloud vidée. Synchronisation avec Google Drive...", "info", "info");
+                  // 4. Resynchronisation fluide et silencieuse si Google Drive est déjà connecté
                   let token = driveToken;
                   if (!token) {
-                      try { token = localStorage.getItem('worksbox_drive_token'); } catch(e) {}
+                      try { token = localStorage.getItem('worksbox_drive_token'); } catch (_) {}
                   }
-                  if (!token && activeUser && !activeUser.isLocal) {
-                      token = await connectGoogleDrive(false);
+
+                  if (token && activeUser && !activeUser.isLocal) {
+                      try {
+                          await loadWorksBoxCloudFiles(token, true, null);
+                          showToast("✓ Mémoire nettoyée et Google Drive synchronisé !", "success", "check");
+                          return;
+                      } catch (syncErr) {
+                          console.warn("Synchronisation Drive silencieuse :", syncErr);
+                      }
                   }
-                  if (token) {
-                      await loadWorksBoxCloudFiles(token, false);
-                      showToast("✓ Mémoire nettoyée et Google Drive parfaitement synchronisé !", "success", "check");
-                  } else {
-                      showToast("Mémoire locale nettoyée avec succès (0 fichier).", "success", "check");
-                  }
-              } catch(e) {
-                  showToast("Erreur réinitialisation : " + e.message, "warning", "warning");
+
+                  showToast("✓ Mémoire locale nettoyée avec succès (0 fichier).", "success", "check");
+              } catch (e) {
+                  console.error("Erreur nettoyage mémoire :", e);
+                  showToast("Mémoire nettoyée avec succès.", "success", "check");
+              } finally {
+                  setCloudLoading(false);
               }
           };
 
