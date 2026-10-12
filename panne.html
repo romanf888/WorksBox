@@ -121,7 +121,77 @@
             50% { opacity: 0.9; }
         }
         .laser-barrier {
-            animation: laserPulse 1s ease-in-out infinite;
+            transition: opacity 0.2s ease-in;
+        }
+        .laser-barrier.hidden-barrier {
+            opacity: 0;
+        }
+        .laser-barrier.visible-barrier {
+            opacity: 1;
+            animation: laserPulse 0.6s ease-in-out infinite;
+        }
+
+        /* High-tech shield wall popup & laser barrier */
+        #wallGroup {
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.45), opacity 0.2s ease-out;
+            transform-origin: 550px 155px;
+        }
+        #wallGroup.hidden-wall {
+            opacity: 0;
+            transform: scale(0.05) translateY(-120px) rotate(-15deg);
+            pointer-events: none;
+        }
+        #wallGroup.visible-wall {
+            opacity: 1;
+            transform: scale(1) translateY(0) rotate(0deg);
+        }
+
+        /* Sprinting body bobbing and lean animation */
+        @keyframes sprintStride {
+            0% { transform: translateY(0px) rotate(14deg); }
+            25% { transform: translateY(-7px) rotate(17deg); }
+            50% { transform: translateY(0px) rotate(14deg); }
+            75% { transform: translateY(-7px) rotate(17deg); }
+            100% { transform: translateY(0px) rotate(14deg); }
+        }
+        .sprinting-body {
+            animation: sprintStride 0.24s infinite linear !important;
+        }
+
+        /* Open shield wall when unblocked by admin */
+        #wallGroup.open-wall {
+            opacity: 0.1;
+            transform: translateY(-260px) scale(0.4);
+            filter: hue-rotate(120deg);
+        }
+
+        .laser-barrier.unblocked-laser {
+            stroke: #10b981 !important;
+            opacity: 0.3;
+        }
+
+        /* Tank cannon recoil */
+        @keyframes tankRecoilAnim {
+            0% { transform: translateX(0px); }
+            20% { transform: translateX(-16px); }
+            100% { transform: translateX(0px); }
+        }
+        .tank-recoil {
+            animation: tankRecoilAnim 0.35s ease-out;
+        }
+
+        /* Shield activation flash badge */
+        .shield-alert-badge {
+            position: absolute;
+            top: 25px;
+            left: 450px;
+            transform: scale(0);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+            z-index: 45;
+            pointer-events: none;
+        }
+        .shield-alert-badge.active {
+            transform: scale(1);
         }
     </style>
 </head>
@@ -216,6 +286,11 @@
             <!-- ANIMATION STAGE -->
             <div id="animationContainer" class="relative flex items-center justify-center">
 
+                <!-- Phase & Attempt Counter Badge -->
+                <div id="attemptBadge" class="absolute top-3 left-3 z-30 px-3 py-1 bg-slate-900/90 border border-slate-700/80 rounded-xl text-[11px] font-black text-amber-400 shadow-lg flex items-center gap-1.5">
+                    <span id="attemptText">🏃‍♂️ TENTATIVE N° 1/20 • SPRINT DIRECT</span>
+                </div>
+
                 <!-- DATACENTER BACKGROUND SVG -->
                 <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 330" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                     <defs>
@@ -289,11 +364,11 @@
                     <!-- Neon Datacenter Title Banner -->
                     <g transform="translate(610, 6)">
                         <rect x="0" y="0" width="170" height="20" rx="4" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5"/>
-                        <text x="85" y="14" fill="#a5b4fc" font-size="9" font-weight="900" text-anchor="middle">DATACENTER WORKSBOX</text>
+                        <text id="datacenterBannerText" x="85" y="14" fill="#a5b4fc" font-size="9" font-weight="900" text-anchor="middle">DATACENTER WORKSBOX</text>
                     </g>
 
-                    <!-- HEAVY REINFORCED FIREWALL WALL (THE CRASH WALL) -->
-                    <g transform="translate(510, 45)" id="wallGroup">
+                    <!-- HEAVY REINFORCED FIREWALL WALL (THE CRASH WALL / SHIELD) -->
+                    <g transform="translate(510, 45)" id="wallGroup" class="hidden-wall">
                         <!-- Wall Main Body -->
                         <rect x="0" y="0" width="80" height="220" rx="6" fill="url(#wallGrad)" stroke="#ef4444" stroke-width="2.5"/>
                         
@@ -315,11 +390,18 @@
                     </g>
 
                     <!-- Red Laser Barrier Line in front of wall -->
-                    <line x1="505" y1="45" x2="505" y2="265" stroke="#ef4444" stroke-width="3" class="laser-barrier" stroke-dasharray="8,4"/>
+                    <line id="laserBarrier" x1="505" y1="45" x2="505" y2="265" stroke="#ef4444" stroke-width="3" class="laser-barrier hidden-barrier" stroke-dasharray="8,4"/>
                 </svg>
 
                 <!-- SPARK & PARTICLE CANVAS OVERLAY -->
                 <canvas id="sparkCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-30" width="800" height="330"></canvas>
+
+                <!-- SHIELD ACTIVATION BADGE POPUP -->
+                <div id="shieldAlertBadge" class="shield-alert-badge pointer-events-none">
+                    <div class="px-3.5 py-1.5 bg-red-600 text-yellow-300 font-black text-xs rounded-xl shadow-2xl border-2 border-yellow-300 animate-pulse flex items-center gap-1.5 uppercase tracking-wider">
+                        <span>🛡️ PARE-FEU DÉPLOYÉ !</span>
+                    </div>
+                </div>
 
                 <!-- IMPACT BURST GRAPHIC (COMIC BOOM EFFECT) -->
                 <div id="impactBurst" class="impact-burst pointer-events-none" style="left: 460px; top: 105px;">
@@ -351,50 +433,93 @@
                         <span>💫</span><span>⭐</span><span>🌟</span><span>💫</span>
                     </div>
 
-                    <!-- Runner Avatar SVG -->
-                    <div id="runnerGraphic" class="relative w-16 h-20 transition-transform duration-200">
-                        <!-- Running SVG -->
-                        <svg id="svgRunning" class="w-full h-full text-slate-100" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Sweat drops -->
-                            <circle cx="50" cy="15" r="2.5" fill="#38bdf8"/>
-                            <circle cx="56" cy="22" r="1.8" fill="#38bdf8"/>
-
-                            <!-- Head with Cap -->
+                    <!-- Runner Avatar SVG Container -->
+                    <div id="runnerGraphic" class="relative w-20 h-24 transition-transform duration-200 flex items-center justify-center">
+                        <!-- 1. Sprinting SVG -->
+                        <svg id="svgRunning" class="w-16 h-20 text-slate-100 overflow-visible" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle id="sweat1" cx="50" cy="15" r="2.5" fill="#38bdf8"/>
+                            <circle id="sweat2" cx="56" cy="22" r="1.8" fill="#38bdf8"/>
                             <circle cx="32" cy="18" r="10" fill="#fca5a5"/>
                             <path d="M22 14 C22 8, 42 8, 42 14 L46 16 L22 16 Z" fill="#dc2626"/> 
-                            <circle cx="35" cy="17" r="1.5" fill="#1e293b"/> <!-- Eye -->
-
-                            <!-- Hoodie Body -->
+                            <circle cx="35" cy="17" r="1.5" fill="#1e293b"/>
                             <path d="M22 28 L42 28 L38 50 L24 50 Z" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>
                             <text x="31" y="42" fill="#ffffff" font-size="7" font-weight="900" text-anchor="middle">WB</text>
+                            <path id="legLeft" d="M26 50 L14 65 L8 76" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/>
+                            <path id="legRight" d="M34 50 L46 65 L56 74" stroke="#991b1b" stroke-width="4.5" stroke-linecap="round"/>
+                            <path id="armLeft" d="M24 32 L12 42 L20 48" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
+                            <path id="armRight" d="M38 32 L52 38 L48 48" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
+                            <path id="runnerCable" d="M20 48 Q35 55 48 48" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                        </svg>
 
-                            <!-- Legs in Run Cycle -->
-                            <path id="legLeft" d="M26 50 L14 65 L8 76" stroke="#334155" stroke-width="4.5" stroke-linecap="round"/>
-                            <path id="legRight" d="M34 50 L46 65 L56 74" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round"/>
+                        <!-- 2. Gun Shooter SVG (Phase 2) -->
+                        <svg id="svgGunUser" class="hidden w-20 h-20 text-slate-100 overflow-visible" viewBox="0 0 70 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="32" cy="18" r="10" fill="#fca5a5"/>
+                            <path d="M22 14 C22 8, 42 8, 42 14 L46 16 L22 16 Z" fill="#dc2626"/> 
+                            <circle cx="35" cy="17" r="1.5" fill="#1e293b"/>
+                            <path d="M22 28 L42 28 L38 50 L24 50 Z" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>
+                            <text x="31" y="42" fill="#ffffff" font-size="7" font-weight="900" text-anchor="middle">WB</text>
+                            <path d="M26 50 L18 68 L10 76" stroke="#ef4444" stroke-width="4.5" stroke-linecap="round"/>
+                            <path d="M34 50 L42 68 L50 76" stroke="#991b1b" stroke-width="4.5" stroke-linecap="round"/>
+                            <!-- Arm holding Laser Gun -->
+                            <path d="M34 32 L54 32 L62 36" stroke="#fca5a5" stroke-width="4" stroke-linecap="round"/>
+                            <rect x="52" y="28" width="16" height="8" rx="2" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+                            <rect x="64" y="30" width="8" height="4" fill="#38bdf8"/>
+                        </svg>
 
-                            <!-- Arms carrying server cable -->
-                            <path d="M24 32 L12 42 L20 48" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
-                            <path d="M38 32 L52 38 L48 48" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
-                            <!-- Cable -->
-                            <path d="M20 48 Q35 55 48 48" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                        <!-- 3. Heavy Tank SVG (Phase 3) -->
+                        <svg id="svgTankUser" class="hidden w-32 h-20 text-slate-100 overflow-visible" viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="10" y="42" width="100" height="22" rx="11" fill="#0f172a" stroke="#475569" stroke-width="2.5"/>
+                            <circle cx="22" cy="53" r="7" fill="#334155"/>
+                            <circle cx="42" cy="53" r="7" fill="#334155"/>
+                            <circle cx="62" cy="53" r="7" fill="#334155"/>
+                            <circle cx="82" cy="53" r="7" fill="#334155"/>
+                            <circle cx="102" cy="53" r="7" fill="#334155"/>
+                            <path d="M15 42 L30 22 L90 22 L105 42 Z" fill="#991b1b" stroke="#dc2626" stroke-width="2"/>
+                            <text x="60" y="36" fill="#fef08a" font-size="8" font-weight="900" text-anchor="middle">WB TANK 503</text>
+                            <path d="M45 22 C45 10, 85 10, 85 22 Z" fill="#7f1d1d" stroke="#ef4444" stroke-width="2"/>
+                            <rect id="tankBarrel" x="80" y="12" width="40" height="7" rx="2" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+                        </svg>
+
+                        <!-- 4. Protest Crowd SVG (Phase 4) -->
+                        <svg id="svgCrowdUser" class="hidden w-40 h-24 text-slate-100 overflow-visible" viewBox="0 0 150 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g transform="translate(10, 20)">
+                                <circle cx="15" cy="12" r="8" fill="#fca5a5"/>
+                                <path d="M8 20 L22 20 L20 45 L10 45 Z" fill="#2563eb"/>
+                                <line x1="22" y1="20" x2="22" y2="-5" stroke="#78350f" stroke-width="2.5"/>
+                                <rect x="5" y="-22" width="34" height="17" rx="3" fill="#fef08a" stroke="#854d0e"/>
+                                <text x="22" y="-10" fill="#000" font-size="6" font-weight="900" text-anchor="middle">NO 503!</text>
+                            </g>
+                            <g transform="translate(45, 10)">
+                                <circle cx="15" cy="12" r="8" fill="#fcd34d"/>
+                                <path d="M8 20 L22 20 L20 48 L10 48 Z" fill="#dc2626"/>
+                                <line x1="15" y1="20" x2="15" y2="-10" stroke="#78350f" stroke-width="2.5"/>
+                                <rect x="-8" y="-28" width="46" height="18" rx="3" fill="#ffffff" stroke="#dc2626"/>
+                                <text x="15" y="-16" fill="#dc2626" font-size="6" font-weight="900" text-anchor="middle">LIBÉREZ WB!</text>
+                            </g>
+                            <g transform="translate(85, 25)">
+                                <circle cx="15" cy="12" r="8" fill="#fca5a5"/>
+                                <path d="M8 20 L22 20 L20 42 L10 42 Z" fill="#16a34a"/>
+                                <line x1="8" y1="20" x2="8" y2="-5" stroke="#78350f" stroke-width="2.5"/>
+                                <rect x="-10" y="-22" width="36" height="17" rx="3" fill="#38bdf8" stroke="#0284c7"/>
+                                <text x="8" y="-10" fill="#0f172a" font-size="6" font-weight="900" text-anchor="middle">NOS COURS!</text>
+                            </g>
+                            <g transform="translate(115, 15)">
+                                <circle cx="15" cy="12" r="8" fill="#fdba74"/>
+                                <path d="M8 20 L22 20 L20 46 L10 46 Z" fill="#9333ea"/>
+                                <line x1="20" y1="20" x2="20" y2="-8" stroke="#78350f" stroke-width="2.5"/>
+                                <rect x="2" y="-25" width="36" height="17" rx="3" fill="#f43f5e" stroke="#881337"/>
+                                <text x="20" y="-13" fill="#fff" font-size="6" font-weight="900" text-anchor="middle">OUVREZ !</text>
+                            </g>
                         </svg>
 
                         <!-- Crashed / Knocked out SVG -->
-                        <svg id="svgCrashed" class="hidden w-full h-full text-slate-100" viewBox="0 0 80 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg id="svgCrashed" class="hidden w-16 h-20 text-slate-100" viewBox="0 0 80 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <ellipse cx="40" cy="52" rx="35" ry="6" fill="#000000" opacity="0.5"/>
-                            
-                            <!-- Body on ground -->
                             <rect x="15" y="42" width="30" height="14" rx="4" fill="#ef4444" transform="rotate(-10 15 42)"/>
-                            <!-- Head with spiral eyes -->
                             <circle cx="52" cy="38" r="10" fill="#fca5a5"/>
-                            <!-- Cap knocked off -->
                             <path d="M58 48 L68 56 L54 58 Z" fill="#dc2626"/>
-                            <!-- Spiral eye -->
                             <text x="49" y="41" fill="#000000" font-size="8" font-weight="900">@_@</text>
-
-                            <!-- Legs bent -->
                             <path d="M15 46 L2 52 L10 60" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-                            <!-- Dropped cable -->
                             <path d="M30 54 Q45 62 60 58" stroke="#f59e0b" stroke-width="2" fill="none"/>
                             <text x="62" y="58" fill="#f59e0b" font-size="11">⚡</text>
                         </svg>
@@ -429,18 +554,29 @@
 
     <!-- AUTOMATED LOOPING ANIMATION SCRIPT -->
     <script>
+        let attemptCount = 1; // 1 to 20
         let isRunning = false;
+        let isUnblocking = false;
+        let sequenceTimer = null;
+        let shieldTimer = null;
         let pollTimer = null;
 
         // DOM Elements
         const runner = document.getElementById('runnerChar');
+        const runnerGraphic = document.getElementById('runnerGraphic');
         const speechBubble = document.getElementById('speechBubble');
         const dizzyContainer = document.getElementById('dizzyContainer');
         const svgRunning = document.getElementById('svgRunning');
+        const svgGunUser = document.getElementById('svgGunUser');
+        const svgTankUser = document.getElementById('svgTankUser');
+        const svgCrowdUser = document.getElementById('svgCrowdUser');
         const svgCrashed = document.getElementById('svgCrashed');
         const impactBurst = document.getElementById('impactBurst');
         const statusMessageText = document.getElementById('statusMessageText');
         const spinnerCheck = document.getElementById('spinnerCheck');
+        const wallGroup = document.getElementById('wallGroup');
+        const laserBarrier = document.getElementById('laserBarrier');
+        const shieldAlertBadge = document.getElementById('shieldAlertBadge');
         const wallCracks = document.getElementById('wallCracks');
         const sparkCanvas = document.getElementById('sparkCanvas');
         const ctx = sparkCanvas ? sparkCanvas.getContext('2d') : null;
@@ -449,16 +585,16 @@
         let particles = [];
         function createExplosionParticles(x, y) {
             particles = [];
-            for (let i = 0; i < 40; i++) {
+            for (let i = 0; i < 45; i++) {
                 const angle = (Math.PI * 0.7) + (Math.random() * Math.PI * 0.8);
-                const speed = (Math.random() * 9) + 2;
+                const speed = (Math.random() * 10) + 2.5;
                 particles.push({
                     x: x,
                     y: y,
                     vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed - (Math.random() * 3),
-                    size: Math.random() * 4 + 2,
-                    color: Math.random() > 0.4 ? '#ef4444' : (Math.random() > 0.5 ? '#fef08a' : '#f59e0b'),
+                    vy: Math.sin(angle) * speed - (Math.random() * 3.5),
+                    size: Math.random() * 4.5 + 2,
+                    color: Math.random() > 0.35 ? '#ef4444' : (Math.random() > 0.5 ? '#fef08a' : '#f59e0b'),
                     alpha: 1,
                     decay: Math.random() * 0.03 + 0.015
                 });
@@ -476,7 +612,7 @@
                     alive = true;
                     p.x += p.vx;
                     p.y += p.vy;
-                    p.vy += 0.3; // Gravity
+                    p.vy += 0.32; // Gravity
                     p.alpha -= p.decay;
 
                     ctx.save();
@@ -493,27 +629,104 @@
             }
         }
 
-        // Running Legs Animation Cycle
-        let legState = false;
+        // Laser Blaster Shots Effect (Phase 2)
+        function drawLaserShots(startX, startY, targetX, targetY, callback) {
+            if (!ctx) { if (callback) callback(); return; }
+            let shotCount = 0;
+            const interval = setInterval(() => {
+                if (isUnblocking) { clearInterval(interval); return; }
+                shotCount++;
+                let beamX = startX;
+                function animateBeam() {
+                    if (isUnblocking) return;
+                    ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+                    beamX += 32;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.fillRect(beamX, startY - 3, 35, 6);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(beamX + 8, startY - 1.5, 18, 3);
+                    ctx.shadowBlur = 0;
+
+                    if (beamX < targetX) {
+                        requestAnimationFrame(animateBeam);
+                    } else {
+                        ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+                        createExplosionParticles(targetX, targetY);
+                        if (shotCount >= 4 && callback) {
+                            callback();
+                        }
+                    }
+                }
+                animateBeam();
+                if (shotCount >= 4) {
+                    clearInterval(interval);
+                }
+            }, 250);
+        }
+
+        // Tank Shell Projectile Effect (Phase 3)
+        function drawTankShell(startX, startY, targetX, targetY, callback) {
+            if (!ctx) { if (callback) callback(); return; }
+            let shellX = startX;
+            function animateShell() {
+                if (isUnblocking) return;
+                ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+                shellX += 26;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#f97316';
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.arc(shellX, startY, 9, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                if (shellX < targetX) {
+                    requestAnimationFrame(animateShell);
+                } else {
+                    ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+                    createExplosionParticles(targetX, targetY);
+                    if (callback) callback();
+                }
+            }
+            animateShell();
+        }
+
+        // Fluid 4-Frame Running Animation Cycle
+        let runFrame = 0;
         let legInterval = null;
+
+        const runFrames = [
+            { legLeft: 'M26 50 L38 62 L50 72', legRight: 'M34 50 L20 62 L8 74', armLeft: 'M24 32 L10 40 L18 48', armRight: 'M38 32 L52 38 L46 48', cable: 'M18 48 Q32 55 46 48', sweat1X: 52, sweat1Y: 13, sweat2X: 58, sweat2Y: 20 },
+            { legLeft: 'M26 50 L32 58 L28 74', legRight: 'M34 50 L28 60 L18 72', armLeft: 'M24 32 L16 42 L24 48', armRight: 'M38 32 L44 38 L38 48', cable: 'M24 48 Q31 54 38 48', sweat1X: 50, sweat1Y: 15, sweat2X: 56, sweat2Y: 22 },
+            { legLeft: 'M26 50 L14 62 L6 74', legRight: 'M34 50 L44 62 L54 72', armLeft: 'M24 32 L36 36 L40 48', armRight: 'M38 32 L22 40 L26 48', cable: 'M40 48 Q33 55 26 48', sweat1X: 48, sweat1Y: 17, sweat2X: 54, sweat2Y: 24 },
+            { legLeft: 'M26 50 L20 60 L12 72', legRight: 'M34 50 L38 58 L34 74', armLeft: 'M24 32 L28 38 L32 48', armRight: 'M38 32 L32 42 L28 48', cable: 'M32 48 Q30 54 28 48', sweat1X: 50, sweat1Y: 15, sweat2X: 56, sweat2Y: 22 }
+        ];
 
         function animateLegs(active) {
             if (active) {
                 if (!legInterval) {
+                    runFrame = 0;
+                    const legLeft = document.getElementById('legLeft');
+                    const legRight = document.getElementById('legRight');
+                    const armLeft = document.getElementById('armLeft');
+                    const armRight = document.getElementById('armRight');
+                    const runnerCable = document.getElementById('runnerCable');
+                    const sweat1 = document.getElementById('sweat1');
+                    const sweat2 = document.getElementById('sweat2');
+
                     legInterval = setInterval(() => {
-                        legState = !legState;
-                        const legLeft = document.getElementById('legLeft');
-                        const legRight = document.getElementById('legRight');
-                        if (legLeft && legRight) {
-                            if (legState) {
-                                legLeft.setAttribute('d', 'M26 50 L38 62 L48 74');
-                                legRight.setAttribute('d', 'M34 50 L20 65 L10 74');
-                            } else {
-                                legLeft.setAttribute('d', 'M26 50 L14 65 L8 76');
-                                legRight.setAttribute('d', 'M34 50 L46 65 L56 74');
-                            }
-                        }
-                    }, 85);
+                        runFrame = (runFrame + 1) % runFrames.length;
+                        const f = runFrames[runFrame];
+                        if (legLeft) legLeft.setAttribute('d', f.legLeft);
+                        if (legRight) legRight.setAttribute('d', f.legRight);
+                        if (armLeft) armLeft.setAttribute('d', f.armLeft);
+                        if (armRight) armRight.setAttribute('d', f.armRight);
+                        if (runnerCable) runnerCable.setAttribute('d', f.cable);
+                        if (sweat1) { sweat1.setAttribute('cx', f.sweat1X); sweat1.setAttribute('cy', f.sweat1Y); }
+                        if (sweat2) { sweat2.setAttribute('cx', f.sweat2X); sweat2.setAttribute('cy', f.sweat2Y); }
+                    }, 60);
                 }
             } else {
                 if (legInterval) {
@@ -523,90 +736,303 @@
             }
         }
 
-        // Automatic Running Loop
+        // Automatic Running Loop with 4 Phases
         function runAutomatedSequence() {
-            if (isRunning) return;
+            if (isRunning || isUnblocking) return;
             isRunning = true;
 
-            // Reset elements to start position
+            // Reset Avatars
+            if (svgRunning) svgRunning.classList.add('hidden');
+            if (svgGunUser) svgGunUser.classList.add('hidden');
+            if (svgTankUser) svgTankUser.classList.add('hidden');
+            if (svgCrowdUser) svgCrowdUser.classList.add('hidden');
+            if (svgCrashed) svgCrashed.classList.add('hidden');
+            if (dizzyContainer) dizzyContainer.classList.add('hidden');
+            if (impactBurst) impactBurst.classList.remove('active');
+
+            // Reset wall state: hidden at start
+            if (wallGroup) wallGroup.className = 'hidden-wall';
+            if (laserBarrier) laserBarrier.className = 'laser-barrier hidden-barrier';
+            if (shieldAlertBadge) shieldAlertBadge.classList.remove('active');
+
+            const attemptText = document.getElementById('attemptText');
+
+            // Select Phase based on attemptCount (1..20)
+            if (attemptCount <= 5) {
+                if (attemptText) attemptText.innerHTML = '🏃‍♂️ TENTATIVE N° ' + attemptCount + '/20 • SPRINT DIRECT';
+                if (svgRunning) svgRunning.classList.remove('hidden');
+                runSprintSequence();
+            } else if (attemptCount <= 10) {
+                if (attemptText) attemptText.innerHTML = '🔫 TENTATIVE N° ' + attemptCount + '/20 • ATTAQUE AU PISTOLET LASER';
+                if (svgGunUser) svgGunUser.classList.remove('hidden');
+                runGunSequence();
+            } else if (attemptCount <= 15) {
+                if (attemptText) attemptText.innerHTML = '🚜 TENTATIVE N° ' + attemptCount + '/20 • ASSAUT AU TANK LOURD';
+                if (svgTankUser) svgTankUser.classList.remove('hidden');
+                runTankSequence();
+            } else {
+                if (attemptText) attemptText.innerHTML = '📢 TENTATIVE N° ' + attemptCount + '/20 • MANIFESTATION DE FOULE';
+                if (svgCrowdUser) svgCrowdUser.classList.remove('hidden');
+                runCrowdSequence();
+            }
+        }
+
+        // Phase 1: Sprint & Crash (Attempts 1..5)
+        function runSprintSequence() {
+            speechBubble.innerHTML = '<span>Aha ! Les serveurs sont juste là, j\'y vais ! 🏃‍♂️💨</span>';
+            speechBubble.className = 'mb-1.5 px-3 py-1 bg-white text-slate-900 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-emerald-500 whitespace-nowrap animate-float';
+
             runner.style.transition = 'none';
             runner.style.left = '40px';
-            svgRunning.classList.remove('hidden');
-            svgCrashed.classList.add('hidden');
-            dizzyContainer.classList.add('hidden');
-            impactBurst.classList.remove('active');
-            wallCracks.style.opacity = '0';
-
-            speechBubble.innerHTML = '<span>Vite ! Je fonce vers les serveurs ! 🏃‍♂️💨</span>';
-            speechBubble.className = 'mb-1.5 px-3 py-1 bg-white text-slate-900 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-red-500 whitespace-nowrap animate-float';
-
-            // Force browser layout update
             void runner.offsetWidth;
 
-            // Sprint towards the firewall wall
-            const runDuration = 1500;
-            runner.style.transition = `left ${runDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1)`;
+            const runDuration = 1700;
+            if (runnerGraphic) runnerGraphic.classList.add('sprinting-body');
+            runner.style.transition = `left ${runDuration}ms cubic-bezier(0.25, 0.8, 0.25, 1)`;
             runner.style.left = '445px';
             animateLegs(true);
 
-            // Wall Impact after run completes
-            setTimeout(() => {
+            shieldTimer = setTimeout(() => {
+                if (isUnblocking) return;
+                if (wallGroup) wallGroup.className = 'visible-wall';
+                if (laserBarrier) laserBarrier.className = 'laser-barrier visible-barrier';
+                if (shieldAlertBadge) shieldAlertBadge.classList.add('active');
+
+                speechBubble.innerHTML = '<span>ATTENDS, C\'EST QUOI CE TRUC ?! 😱💥</span>';
+                speechBubble.className = 'mb-1.5 px-3 py-1 bg-red-600 text-white rounded-2xl text-[11px] font-black shadow-2xl border-2 border-yellow-300 whitespace-nowrap animate-bounce';
+            }, 1100);
+
+            sequenceTimer = setTimeout(() => {
+                if (isUnblocking) return;
                 triggerAutomatedImpact();
             }, runDuration);
         }
 
-        // Wall Impact Event
+        // Phase 2: Gun Laser Blaster (Attempts 6..10)
+        function runGunSequence() {
+            speechBubble.innerHTML = '<span>Nouvelle technique ! Pistolet laser de combat activé ! 🔫⚡</span>';
+            speechBubble.className = 'mb-1.5 px-3 py-1 bg-slate-900 text-cyan-300 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-cyan-400 whitespace-nowrap animate-float';
+
+            runner.style.transition = 'none';
+            runner.style.left = '40px';
+            void runner.offsetWidth;
+
+            runner.style.transition = 'left 800ms ease-out';
+            runner.style.left = '180px';
+
+            sequenceTimer = setTimeout(() => {
+                if (isUnblocking) return;
+                if (wallGroup) wallGroup.className = 'visible-wall';
+                if (laserBarrier) laserBarrier.className = 'laser-barrier visible-barrier';
+                if (shieldAlertBadge) shieldAlertBadge.classList.add('active');
+
+                speechBubble.innerHTML = '<span>PARE-FEU DÉTECTÉ ! TIRS LASER EN COURS ! 🔫🔥</span>';
+
+                drawLaserShots(240, 215, 505, 215, () => {
+                    if (isUnblocking) return;
+                    const mainCard = document.getElementById('mainCard');
+                    if (mainCard) { mainCard.classList.add('animate-shake'); setTimeout(() => mainCard.classList.remove('animate-shake'), 400); }
+
+                    speechBubble.innerHTML = '<span>Rien à faire, le bouclier pare-feu 503 absorbe tous mes lasers ! 🔫💥</span>';
+                    speechBubble.className = 'mb-1.5 px-3 py-1 bg-yellow-300 text-slate-950 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-slate-900 whitespace-nowrap animate-bounce';
+
+                    finishAttempt();
+                });
+            }, 900);
+        }
+
+        // Phase 3: WorksBox Heavy Tank (Attempts 11..15)
+        function runTankSequence() {
+            speechBubble.innerHTML = '<span>Artillerie lourde : sortie du Tank de combat WorksBox ! 🚜💣</span>';
+            speechBubble.className = 'mb-1.5 px-3 py-1 bg-red-950 text-red-200 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-red-500 whitespace-nowrap animate-float';
+
+            runner.style.transition = 'none';
+            runner.style.left = '20px';
+            void runner.offsetWidth;
+
+            if (wallGroup) wallGroup.className = 'visible-wall';
+            if (laserBarrier) laserBarrier.className = 'laser-barrier visible-barrier';
+            if (shieldAlertBadge) shieldAlertBadge.classList.add('active');
+
+            runner.style.transition = 'left 1100ms ease-out';
+            runner.style.left = '160px';
+
+            sequenceTimer = setTimeout(() => {
+                if (isUnblocking) return;
+                
+                speechBubble.innerHTML = '<span>VERROUILLAGE CANON ... TIR DE CHAR LOURD ! 💣🔥</span>';
+                const svgTankUser = document.getElementById('svgTankUser');
+                if (svgTankUser) svgTankUser.classList.add('tank-recoil');
+
+                drawTankShell(270, 210, 505, 210, () => {
+                    if (isUnblocking) return;
+                    if (svgTankUser) svgTankUser.classList.remove('tank-recoil');
+                    const mainCard = document.getElementById('mainCard');
+                    if (mainCard) { mainCard.classList.add('animate-shake'); setTimeout(() => mainCard.classList.remove('animate-shake'), 500); }
+
+                    if (impactBurst) impactBurst.classList.add('active');
+                    setTimeout(() => { if (impactBurst) impactBurst.classList.remove('active'); }, 1200);
+
+                    speechBubble.innerHTML = '<span>Incroyable ! Même un obus de tank ne fait rien au bouclier ! 💣🛡️</span>';
+                    speechBubble.className = 'mb-1.5 px-3 py-1 bg-yellow-300 text-slate-950 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-slate-900 whitespace-nowrap animate-bounce';
+
+                    finishAttempt();
+                });
+            }, 1200);
+        }
+
+        // Phase 4: Crowd Protest Rush (Attempts 16..20)
+        function runCrowdSequence() {
+            speechBubble.innerHTML = '<span>Tous ensemble ! Manif collective pour débloquer WorksBox ! 📢✊</span>';
+            speechBubble.className = 'mb-1.5 px-3 py-1 bg-purple-900 text-yellow-300 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-yellow-400 whitespace-nowrap animate-float';
+
+            runner.style.transition = 'none';
+            runner.style.left = '20px';
+            void runner.offsetWidth;
+
+            runner.style.transition = 'left 1500ms ease-out';
+            runner.style.left = '360px';
+
+            shieldTimer = setTimeout(() => {
+                if (isUnblocking) return;
+                if (wallGroup) wallGroup.className = 'visible-wall';
+                if (laserBarrier) laserBarrier.className = 'laser-barrier visible-barrier';
+                if (shieldAlertBadge) shieldAlertBadge.classList.add('active');
+            }, 900);
+
+            sequenceTimer = setTimeout(() => {
+                if (isUnblocking) return;
+                
+                const mainCard = document.getElementById('mainCard');
+                if (mainCard) { mainCard.classList.add('animate-shake'); setTimeout(() => mainCard.classList.remove('animate-shake'), 500); }
+
+                if (impactBurst) impactBurst.classList.add('active');
+                createExplosionParticles(480, 200);
+
+                runner.style.transition = 'left 0.3s ease-out';
+                runner.style.left = '290px';
+
+                speechBubble.innerHTML = '<span>LIBÉREZ NOS COURS ! ... Le bouclier nous repousse tous ! 📢💥</span>';
+                speechBubble.className = 'mb-1.5 px-3 py-1 bg-yellow-300 text-slate-950 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-slate-900 whitespace-nowrap animate-bounce';
+
+                setTimeout(() => { if (impactBurst) impactBurst.classList.remove('active'); }, 1200);
+
+                finishAttempt();
+            }, 1500);
+        }
+
+        // Advance attempt counter & schedule next sequence
+        function finishAttempt() {
+            attemptCount++;
+            if (attemptCount > 20) {
+                attemptCount = 1; // Loop resets back to 1
+            }
+
+            sequenceTimer = setTimeout(() => {
+                if (isUnblocking) return;
+                speechBubble.innerHTML = '<span>Attends... Je réessaie une autre approche ! 🔄</span>';
+                setTimeout(() => {
+                    if (isUnblocking) return;
+                    isRunning = false;
+                    runAutomatedSequence();
+                }, 1500);
+            }, 3800);
+        }
+
+        // Wall Impact Event for Phase 1
         function triggerAutomatedImpact() {
             animateLegs(false);
+            if (runnerGraphic) runnerGraphic.classList.remove('sprinting-body');
 
-            // Camera shake
             const mainCard = document.getElementById('mainCard');
-            mainCard.classList.add('animate-shake');
-            setTimeout(() => mainCard.classList.remove('animate-shake'), 450);
+            if (mainCard) {
+                mainCard.classList.add('animate-shake');
+                setTimeout(() => mainCard.classList.remove('animate-shake'), 450);
+            }
 
-            // Show cracks & burst
-            wallCracks.style.opacity = '1';
-            impactBurst.classList.add('active');
+            if (wallCracks) wallCracks.style.opacity = '1';
+            if (impactBurst) impactBurst.classList.add('active');
 
-            // Particles
             createExplosionParticles(500, 200);
 
-            // Switch to crashed state
             svgRunning.classList.add('hidden');
-            svgCrashed.classList.remove('hidden');
-            dizzyContainer.classList.remove('hidden');
+            if (svgCrashed) svgCrashed.classList.remove('hidden');
+            if (dizzyContainer) dizzyContainer.classList.remove('hidden');
 
-            // Bounce back
             runner.style.transition = 'left 0.25s ease-out, transform 0.25s ease-out';
             runner.style.left = '395px';
 
             const quotes = [
-                '<span>💥 BOOM !! LE MUR DU SERVEUR EST FERMÉ ! @_@</span>',
-                '<span>💥 Ouch... Le serveur 503 est hyper solide... 🥴</span>',
-                '<span>💥 Pas moyen de passer ! C\'est complètement bloqué ! ⭐💫</span>'
+                '<span>💥 BOOM !! LE BOUCLIER S\'EST REFERMÉ AU DERNIER MOMENT ! @_@</span>',
+                '<span>💥 Ouch... Le pare-feu 503 s\'est activé d\'un coup ! 🥴</span>',
+                '<span>💥 Un vrai bouclier anti-accès ! C\'est complètement bloqué ! ⭐💫</span>'
             ];
             speechBubble.innerHTML = quotes[Math.floor(Math.random() * quotes.length)];
             speechBubble.className = 'mb-1.5 px-3 py-1 bg-yellow-300 text-slate-950 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-slate-900 whitespace-nowrap animate-bounce';
 
-            // Hide burst after 1s
             setTimeout(() => {
-                impactBurst.classList.remove('active');
-            }, 1000);
+                if (impactBurst) impactBurst.classList.remove('active');
+            }, 1200);
 
-            // Pause, then restart automated loop after 3.5 seconds
+            finishAttempt();
+        }
+
+        // Admin Unblock Opening Sequence
+        function triggerUnblockSequence() {
+            isUnblocking = true;
+            isRunning = false;
+
+            if (sequenceTimer) clearTimeout(sequenceTimer);
+            if (shieldTimer) clearTimeout(shieldTimer);
+            if (legInterval) clearInterval(legInterval);
+
+            const attemptText = document.getElementById('attemptText');
+            if (attemptText) {
+                attemptText.innerHTML = '🎉 SERVEUR WORKSBOX DÉBLOQUÉ PAR L\'ADMINISTRATEUR !';
+                attemptText.className = 'px-3.5 py-1 bg-emerald-600 text-white font-extrabold text-[11px] rounded-xl shadow-xl animate-bounce border border-emerald-300';
+            }
+
+            // Open shield wall & green laser barrier
+            if (wallGroup) wallGroup.className = 'open-wall';
+            if (laserBarrier) laserBarrier.className = 'laser-barrier unblocked-laser';
+            if (shieldAlertBadge) shieldAlertBadge.classList.remove('active');
+            if (impactBurst) impactBurst.classList.remove('active');
+
+            const datacenterBannerText = document.getElementById('datacenterBannerText');
+            if (datacenterBannerText) datacenterBannerText.textContent = 'DATACENTER ACCESSIBLE • ACCÈS ACCORDÉ';
+
+            // Show running character marching inside
+            if (svgRunning) svgRunning.classList.remove('hidden');
+            if (svgGunUser) svgGunUser.classList.add('hidden');
+            if (svgTankUser) svgTankUser.classList.add('hidden');
+            if (svgCrowdUser) svgCrowdUser.classList.add('hidden');
+            if (svgCrashed) svgCrashed.classList.add('hidden');
+            if (dizzyContainer) dizzyContainer.classList.add('hidden');
+
+            speechBubble.innerHTML = '<span>🎉 YESS !! LE BOUCLIER EST LEVÉ ! BIENVENUE SUR WORKSBOX ! 🚀</span>';
+            speechBubble.className = 'mb-1.5 px-4 py-1.5 bg-emerald-600 text-white rounded-2xl text-xs font-black shadow-2xl border-2 border-emerald-300 whitespace-nowrap animate-bounce';
+
+            runner.style.transition = 'left 1.8s cubic-bezier(0.25, 0.8, 0.25, 1)';
+            runner.style.left = '680px'; // Marches directly inside the datacenter!
+
+            if (statusMessageText) {
+                statusMessageText.innerText = '🎉 Serveur WorksBox rétabli par l\'administrateur ! Redirection...';
+            }
+
+            const banner = document.createElement('div');
+            banner.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-black text-sm px-7 py-3.5 rounded-2xl shadow-2xl z-50 animate-bounce flex items-center gap-2.5 border-2 border-emerald-300';
+            banner.innerHTML = '<span>🎉 Serveur rétabli par l\'administrateur ! Redirection vers WorksBox...</span>';
+            document.body.appendChild(banner);
+
             setTimeout(() => {
-                speechBubble.innerHTML = '<span>Attends... Je réessaie d\'accéder aux serveurs ! 🔄</span>';
-                setTimeout(() => {
-                    isRunning = false;
-                    runAutomatedSequence();
-                }, 1500);
-            }, 3500);
+                window.location.replace('index.html');
+            }, 1800);
         }
 
         // Real-Time Server Status Check (Auto-recovery)
         async function checkServerStatus(manual = false) {
             if (manual && spinnerCheck) spinnerCheck.classList.remove('hidden');
-            if (statusMessageText) statusMessageText.innerText = 'Vérification du statut de WorksBox en cours...';
+            if (statusMessageText && !isUnblocking) statusMessageText.innerText = 'Vérification du statut de WorksBox en cours...';
 
             try {
                 let isOutageStillActive = false;
@@ -616,7 +1042,6 @@
                     isOutageStillActive = true;
                 }
 
-                // Try fetching health endpoint if backend is available
                 try {
                     const res = await fetch('/api/health', { cache: 'no-store' });
                     if (res.ok) {
@@ -625,27 +1050,18 @@
                             isOutageStillActive = healthData.outageMode;
                         }
                     }
-                } catch(e) {
-                    // Ignore network error for static deployments
-                }
+                } catch(e) {}
 
                 if (!isOutageStillActive || localOutage === 'false') {
-                    if (statusMessageText) statusMessageText.innerText = '✅ Serveur WorksBox de nouveau opérationnel ! Redirection...';
-                    
-                    const banner = document.createElement('div');
-                    banner.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-black text-sm px-7 py-3.5 rounded-2xl shadow-2xl z-50 animate-bounce flex items-center gap-2.5 border-2 border-emerald-300';
-                    banner.innerHTML = '<span>🎉 Serveur rétabli ! Redirection vers WorksBox...</span>';
-                    document.body.appendChild(banner);
-
-                    setTimeout(() => {
-                        window.location.replace('index.html');
-                    }, 1200);
+                    if (!isUnblocking) {
+                        triggerUnblockSequence();
+                    }
                     return;
                 }
 
-                if (statusMessageText) statusMessageText.innerText = 'Panne toujours en cours. Prochain test dans 10 secondes...';
+                if (statusMessageText && !isUnblocking) statusMessageText.innerText = 'Panne toujours en cours. Prochain test dans 10 secondes...';
             } catch (err) {
-                if (statusMessageText) statusMessageText.innerText = 'Nouvelle tentative automatique dans 10s...';
+                if (statusMessageText && !isUnblocking) statusMessageText.innerText = 'Nouvelle tentative automatique dans 10s...';
             } finally {
                 if (spinnerCheck) spinnerCheck.classList.add('hidden');
             }
@@ -658,12 +1074,10 @@
                 sparkCanvas.height = animationContainer.clientHeight || 330;
             }
 
-            // Start loop automatically
             setTimeout(() => {
                 runAutomatedSequence();
             }, 300);
 
-            // Poll server status every 10 seconds
             pollTimer = setInterval(() => {
                 checkServerStatus(false);
             }, 10000);
