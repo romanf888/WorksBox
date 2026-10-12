@@ -673,8 +673,18 @@ Renvoie UNIQUEMENT un tableau JSON valide contenant les ${finalFiles.length} obj
   }
 });
 
-// Serve static files from the root directory
-app.use(express.static(__dirname));
+// Serve static files from the root directory with no-cache headers for SVGs & HTML
+app.use(express.static(__dirname, {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.svg') || filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Admin Dashboard route
 app.get(['/admin', '/admin.html'], (req, res) => {
