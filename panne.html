@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serveur WorksBox indisponible temporairement • Mode Panne</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fef2f2',
+                            100: '#ffe1e1',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                            950: '#450a0a'
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both',
+                        'float': 'float 3s ease-in-out infinite'
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-3px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(5px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-7px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(7px, 0, 0)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-8px)' }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #060911;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* High-tech grid background */
+        .grid-bg {
+            background-image: radial-gradient(rgba(239, 68, 68, 0.2) 1px, transparent 1px),
+                              radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px, 16px 16px;
+            background-position: 0 0, 16px 16px;
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom animation scene styles */
+        #animationContainer {
+            position: relative;
+            width: 100%;
+            height: 330px;
+            background: #020612;
+            border-radius: 1.5rem;
+            border: 2px solid rgba(239, 68, 68, 0.5);
+            overflow: hidden;
+            box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.95);
+        }
+
+        /* Server rack LED lights animation */
+        .server-led { animation: blinkLed 0.5s infinite alternate; }
+        .server-led-fast { animation: blinkLed 0.18s infinite alternate; }
+        @keyframes blinkLed {
+            0% { opacity: 0.15; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1.1); filter: drop-shadow(0 0 6px currentColor); }
+        }
+
+        /* Impact burst badge */
+        .impact-burst {
+            position: absolute;
+            transform: scale(0) rotate(-10deg);
+            transition: transform 0.12s cubic-bezier(0.175, 0.885, 0.32, 1.4);
+            pointer-events: none;
+            z-index: 50;
+        }
+        .impact-burst.active {
+            transform: scale(1.1) rotate(0deg);
+        }
+
+        /* Dizzy stars animation */
+        @keyframes spinStars {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .dizzy-stars {
+            animation: spinStars 1.8s linear infinite;
+        }
+
+        /* Laser barrier line animation */
+        @keyframes laserPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.9; }
+        }
+        .laser-barrier {
+            animation: laserPulse 1s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen grid-bg flex flex-col justify-between select-none">
+
+    <!-- Top Navigation Header -->
+    <header class="w-full max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl bg-red-600/20 border border-red-500/50 flex items-center justify-center shadow-lg shadow-red-900/40">
+                <span class="text-xl">🚨</span>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-black text-lg tracking-tight text-white">WorksBox</span>
+                    <span class="px-2.5 py-0.5 text-[10px] font-extrabold uppercase bg-red-600 text-white rounded-full tracking-wider animate-pulse shadow-md">Mode Panne</span>
+                </div>
+                <p class="text-xs text-red-300/90 font-medium">Système d'Alerte Urgence Serveurs</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 sm:space-x-3">
+            <button id="btnCheckStatus" onclick="checkServerStatus(true)" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-red-500/50 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition flex items-center gap-2 active:scale-95 cursor-pointer">
+                <span id="spinnerCheck" class="inline-block w-3 h-3 border-2 border-red-500 border-t-transparent rounded-full animate-spin hidden"></span>
+                <span>🔄 Vérifier le statut</span>
+            </button>
+            <a href="/admin.html" class="px-3.5 py-2 bg-red-900/40 hover:bg-red-900/70 border border-red-700/60 text-red-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                <span>🔐 Accès Admin</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Outage Content -->
+    <main class="w-full max-w-4xl mx-auto px-4 py-4 flex-1 flex flex-col justify-center space-y-5">
+
+        <!-- Top Status Banner -->
+        <div class="glass-card rounded-3xl p-6 sm:p-7 relative overflow-hidden text-center sm:text-left">
+            <div class="absolute -top-12 -right-12 w-56 h-56 bg-red-600/15 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                <!-- Large Emergency Icon -->
+                <div class="relative shrink-0">
+                    <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-red-600 to-rose-950 flex items-center justify-center text-4xl text-white shadow-2xl shadow-red-900/80 border border-red-400/40 animate-pulse">
+                        🔌
+                    </div>
+                    <span class="absolute -bottom-1 -right-1 w-7 h-7 bg-red-500 border-2 border-slate-900 rounded-full flex items-center justify-center text-xs font-black text-white shadow-md">✕</span>
+                </div>
+
+                <!-- Text & Information -->
+                <div class="space-y-2.5 flex-1">
+                    <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <span class="px-3 py-1 bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-black rounded-full uppercase tracking-wider">
+                            Erreur 503 • Interruption Réseau
+                        </span>
+                        <span class="px-3 py-1 bg-slate-800/90 border border-slate-700 text-slate-300 text-xs font-semibold rounded-full">
+                            Datacenters Inaccessibles
+                        </span>
+                    </div>
+
+                    <h1 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                        Serveur WorksBox indisponible temporairement
+                    </h1>
+
+                    <p class="text-sm text-slate-300 leading-relaxed max-w-2xl">
+                        Une panne réseau empêche la connexion aux datacenters de WorksBox. L'ensemble des services est suspendu temporairement.
+                    </p>
+
+                    <!-- Real-time Status Check bar -->
+                    <div class="pt-1 flex items-center gap-2.5 text-xs text-red-300/90 font-mono">
+                        <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0"></span>
+                        <span id="statusMessageText">Tentatives de réencodage et reconnexion automatique en cours...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANIMATION CARD: Automatic animated scene -->
+        <div id="mainCard" class="glass-card rounded-3xl p-4 sm:p-6 space-y-3">
+            
+            <!-- Stage Header -->
+            <div class="flex items-center justify-between border-b border-red-900/40 pb-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-lg">🏃‍♂️</span>
+                    <h2 class="font-extrabold text-xs sm:text-sm text-slate-200 uppercase tracking-wider">
+                        Caméra Datacenter WorksBox • Accès Serveur Bloqué
+                    </h2>
+                </div>
+                <span class="text-[11px] font-mono text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2.5 py-0.5 rounded-lg">
+                    ● DIRECT • SERVEURS UNREACHABLE
+                </span>
+            </div>
+
+            <!-- ANIMATION STAGE -->
+            <div id="animationContainer" class="relative flex items-center justify-center">
+
+                <!-- DATACENTER BACKGROUND SVG -->
+                <svg class="absolute inset-0 w-full h-full" viewBox="0 0 800 330" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="gridGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+                            <stop offset="100%" stop-color="#020617" stop-opacity="1"/>
+                        </linearGradient>
+                        <linearGradient id="wallGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#475569"/>
+                            <stop offset="40%" stop-color="#334155"/>
+                            <stop offset="100%" stop-color="#1e293b"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Background Fill -->
+                    <rect width="800" height="330" fill="url(#gridGrad)"/>
+
+                    <!-- Glowing Data Stream Lines -->
+                    <g stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6,12" opacity="0.35">
+                        <line x1="0" y1="50" x2="600" y2="50"/>
+                        <line x1="0" y1="80" x2="600" y2="80"/>
+                        <line x1="0" y1="120" x2="600" y2="120"/>
+                    </g>
+
+                    <!-- Ceiling & Floor boundaries -->
+                    <line x1="0" y1="265" x2="800" y2="265" stroke="#ef4444" stroke-width="2.5" stroke-opacity="0.6"/>
+                    
+                    <!-- Perspective floor grid -->
+                    <g stroke="#1e293b" stroke-width="1.2">
+                        <line x1="0" y1="265" x2="0" y2="330"/>
+                        <line x1="100" y1="265" x2="50" y2="330"/>
+                        <line x1="200" y1="265" x2="150" y2="330"/>
+                        <line x1="300" y1="265" x2="280" y2="330"/>
+                        <line x1="400" y1="265" x2="400" y2="330"/>
+                        <line x1="500" y1="265" x2="520" y2="330"/>
+                        <line x1="600" y1="265" x2="650" y2="330"/>
+                        <line x1="700" y1="265" x2="750" y2="330"/>
+                        <line x1="800" y1="265" x2="800" y2="330"/>
+                        <line x1="0" y1="295" x2="800" y2="295"/>
+                    </g>
+
+                    <!-- Server Racks (Background Right) -->
+                    <g transform="translate(620, 30)">
+                        <!-- Rack 1 -->
+                        <rect x="0" y="0" width="72" height="230" rx="6" fill="#090d16" stroke="#ef4444" stroke-width="2" stroke-opacity="0.7"/>
+                        <path d="M5 10 H67 M5 30 H67 M5 50 H67 M5 70 H67 M5 90 H67 M5 110 H67 M5 130 H67 M5 150 H67 M5 170 H67 M5 190 H67 M5 210 H67" stroke="#1e293b" stroke-width="12" stroke-linecap="round"/>
+                        
+                        <!-- LEDs -->
+                        <circle cx="12" cy="10" r="3" fill="#ef4444" class="server-led"/>
+                        <circle cx="12" cy="30" r="3" fill="#ef4444" class="server-led-fast"/>
+                        <circle cx="12" cy="50" r="3" fill="#f59e0b" class="server-led"/>
+                        <circle cx="12" cy="70" r="3" fill="#ef4444" class="server-led-fast"/>
+                        <circle cx="12" cy="90" r="3" fill="#38bdf8" class="server-led"/>
+                        <circle cx="12" cy="110" r="3" fill="#ef4444" class="server-led"/>
+                        <circle cx="12" cy="130" r="3" fill="#f59e0b" class="server-led-fast"/>
+                        <circle cx="12" cy="150" r="3" fill="#ef4444" class="server-led"/>
+                        <circle cx="12" cy="170" r="3" fill="#ef4444" class="server-led"/>
+                        <circle cx="12" cy="190" r="3" fill="#ef4444" class="server-led-fast"/>
+                    </g>
+
+                    <!-- Rack 2 -->
+                    <g transform="translate(705, 30)">
+                        <rect x="0" y="0" width="72" height="230" rx="6" fill="#090d16" stroke="#ef4444" stroke-width="2" stroke-opacity="0.7"/>
+                        <path d="M5 10 H67 M5 30 H67 M5 50 H67 M5 70 H67 M5 90 H67 M5 110 H67 M5 130 H67 M5 150 H67 M5 170 H67 M5 190 H67 M5 210 H67" stroke="#1e293b" stroke-width="12" stroke-linecap="round"/>
+                        <circle cx="12" cy="10" r="3" fill="#ef4444" class="server-led-fast"/>
+                        <circle cx="12" cy="30" r="3" fill="#ef4444" class="server-led"/>
+                        <circle cx="12" cy="50" r="3" fill="#ef4444" class="server-led-fast"/>
+                        <circle cx="12" cy="70" r="3" fill="#f59e0b" class="server-led"/>
+                    </g>
+
+                    <!-- Neon Datacenter Title Banner -->
+                    <g transform="translate(610, 6)">
+                        <rect x="0" y="0" width="170" height="20" rx="4" fill="#1e1b4b" stroke="#818cf8" stroke-width="1.5"/>
+                        <text x="85" y="14" fill="#a5b4fc" font-size="9" font-weight="900" text-anchor="middle">DATACENTER WORKSBOX</text>
+                    </g>
+
+                    <!-- HEAVY REINFORCED FIREWALL WALL (THE CRASH WALL) -->
+                    <g transform="translate(510, 45)" id="wallGroup">
+                        <!-- Wall Main Body -->
+                        <rect x="0" y="0" width="80" height="220" rx="6" fill="url(#wallGrad)" stroke="#ef4444" stroke-width="2.5"/>
+                        
+                        <!-- Brick Pattern -->
+                        <path d="M0 22 H80 M0 44 H80 M0 66 H80 M0 88 H80 M0 110 H80 M0 132 H80 M0 154 H80 M0 176 H80 M0 198 H80" stroke="#1e293b" stroke-width="2"/>
+                        <path d="M40 0 V22 M20 22 V44 M60 22 V44 M40 44 V66 M20 66 V88 M60 66 V88 M40 88 V110 M20 110 V132 M60 110 V132 M40 132 V154 M20 154 V176 M60 154 V176 M40 176 V198 M20 198 V220 M60 198 V220" stroke="#1e293b" stroke-width="2"/>
+
+                        <!-- Danger Stripes Sign -->
+                        <rect x="12" y="75" width="56" height="65" fill="#f59e0b" rx="4" stroke="#78350f" stroke-width="2"/>
+                        <path d="M12 75 L68 131 M12 92 L51 140 M29 75 L68 114 M12 110 L35 133 M45 75 L68 98" stroke="#0f172a" stroke-width="7"/>
+
+                        <!-- Warning Sign Box -->
+                        <rect x="8" y="150" width="64" height="40" rx="4" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.5"/>
+                        <text x="40" y="165" fill="#ffffff" font-size="9" font-weight="900" text-anchor="middle">FIREWALL 503</text>
+                        <text x="40" y="180" fill="#fca5a5" font-size="8" font-weight="800" text-anchor="middle">MUR BLOQUANT</text>
+
+                        <!-- Dynamic Cracks SVG (Hidden until impact) -->
+                        <path id="wallCracks" d="M0 110 L25 100 L15 125 L35 115 L20 140 M0 120 L30 130 L45 120" stroke="#fef08a" stroke-width="3" fill="none" opacity="0" class="transition-opacity duration-100"/>
+                    </g>
+
+                    <!-- Red Laser Barrier Line in front of wall -->
+                    <line x1="505" y1="45" x2="505" y2="265" stroke="#ef4444" stroke-width="3" class="laser-barrier" stroke-dasharray="8,4"/>
+                </svg>
+
+                <!-- SPARK & PARTICLE CANVAS OVERLAY -->
+                <canvas id="sparkCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-30" width="800" height="330"></canvas>
+
+                <!-- IMPACT BURST GRAPHIC (COMIC BOOM EFFECT) -->
+                <div id="impactBurst" class="impact-burst pointer-events-none" style="left: 460px; top: 105px;">
+                    <div class="relative flex items-center justify-center">
+                        <svg class="w-36 h-36 text-red-500 drop-shadow-[0_0_25px_rgba(239,68,68,0.95)] animate-pulse" viewBox="0 0 100 100">
+                            <polygon points="50,0 63,33 98,25 78,53 100,80 67,77 60,100 40,78 10,92 22,60 0,40 30,35" fill="#ef4444" stroke="#fef08a" stroke-width="3.5"/>
+                        </svg>
+                        <div class="absolute text-center">
+                            <span class="block text-2xl font-black text-yellow-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)] leading-none uppercase tracking-tighter">
+                                💥 BOOM!
+                            </span>
+                            <span class="block text-[11px] font-black text-white bg-black/90 px-2 py-0.5 rounded-md mt-1 border border-yellow-400">
+                                ACCÈS REFUSÉ !
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RUNNER CHARACTER (AUTOMATED LOOP) -->
+                <div id="runnerChar" class="absolute bottom-[66px] left-[40px] transition-all duration-[1400ms] cubic-bezier(0.2, 0.8, 0.2, 1) flex flex-col items-center z-20">
+                    
+                    <!-- Speech bubble over runner -->
+                    <div id="speechBubble" class="mb-1.5 px-3 py-1 bg-white text-slate-900 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-red-500 whitespace-nowrap animate-float max-w-xs text-center">
+                        <span>Vite ! Je fonce vers les serveurs ! 🏃‍♂️💨</span>
+                    </div>
+
+                    <!-- Dizzy Stars (Hidden until crash) -->
+                    <div id="dizzyContainer" class="hidden absolute -top-10 text-xl dizzy-stars flex space-x-1 z-40">
+                        <span>💫</span><span>⭐</span><span>🌟</span><span>💫</span>
+                    </div>
+
+                    <!-- Runner Avatar SVG -->
+                    <div id="runnerGraphic" class="relative w-16 h-20 transition-transform duration-200">
+                        <!-- Running SVG -->
+                        <svg id="svgRunning" class="w-full h-full text-slate-100" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Sweat drops -->
+                            <circle cx="50" cy="15" r="2.5" fill="#38bdf8"/>
+                            <circle cx="56" cy="22" r="1.8" fill="#38bdf8"/>
+
+                            <!-- Head with Cap -->
+                            <circle cx="32" cy="18" r="10" fill="#fca5a5"/>
+                            <path d="M22 14 C22 8, 42 8, 42 14 L46 16 L22 16 Z" fill="#dc2626"/> 
+                            <circle cx="35" cy="17" r="1.5" fill="#1e293b"/> <!-- Eye -->
+
+                            <!-- Hoodie Body -->
+                            <path d="M22 28 L42 28 L38 50 L24 50 Z" fill="#ef4444" stroke="#991b1b" stroke-width="1.5"/>
+                            <text x="31" y="42" fill="#ffffff" font-size="7" font-weight="900" text-anchor="middle">WB</text>
+
+                            <!-- Legs in Run Cycle -->
+                            <path id="legLeft" d="M26 50 L14 65 L8 76" stroke="#334155" stroke-width="4.5" stroke-linecap="round"/>
+                            <path id="legRight" d="M34 50 L46 65 L56 74" stroke="#1e293b" stroke-width="4.5" stroke-linecap="round"/>
+
+                            <!-- Arms carrying server cable -->
+                            <path d="M24 32 L12 42 L20 48" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
+                            <path d="M38 32 L52 38 L48 48" stroke="#fca5a5" stroke-width="3.5" stroke-linecap="round"/>
+                            <!-- Cable -->
+                            <path d="M20 48 Q35 55 48 48" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+                        </svg>
+
+                        <!-- Crashed / Knocked out SVG -->
+                        <svg id="svgCrashed" class="hidden w-full h-full text-slate-100" viewBox="0 0 80 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <ellipse cx="40" cy="52" rx="35" ry="6" fill="#000000" opacity="0.5"/>
+                            
+                            <!-- Body on ground -->
+                            <rect x="15" y="42" width="30" height="14" rx="4" fill="#ef4444" transform="rotate(-10 15 42)"/>
+                            <!-- Head with spiral eyes -->
+                            <circle cx="52" cy="38" r="10" fill="#fca5a5"/>
+                            <!-- Cap knocked off -->
+                            <path d="M58 48 L68 56 L54 58 Z" fill="#dc2626"/>
+                            <!-- Spiral eye -->
+                            <text x="49" y="41" fill="#000000" font-size="8" font-weight="900">@_@</text>
+
+                            <!-- Legs bent -->
+                            <path d="M15 46 L2 52 L10 60" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+                            <!-- Dropped cable -->
+                            <path d="M30 54 Q45 62 60 58" stroke="#f59e0b" stroke-width="2" fill="none"/>
+                            <text x="62" y="58" fill="#f59e0b" font-size="11">⚡</text>
+                        </svg>
+                    </div>
+
+                    <!-- Dust trail -->
+                    <div id="dustTrail" class="flex space-x-1.5 mt-1">
+                        <span class="w-2.5 h-2.5 rounded-full bg-slate-500/70 animate-ping"></span>
+                        <span class="w-2 h-2 rounded-full bg-slate-500/50 animate-ping delay-75"></span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-6xl mx-auto px-4 py-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+        <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-400">WorksBox High School</span>
+            <span>•</span>
+            <span>Rétablissement automatique actif</span>
+        </div>
+        <div>
+            <span>© 2026 WorksBox System Defense • Mode Panne Actif</span>
+        </div>
+    </footer>
+
+    <!-- AUTOMATED LOOPING ANIMATION SCRIPT -->
+    <script>
+        let isRunning = false;
+        let pollTimer = null;
+
+        // DOM Elements
+        const runner = document.getElementById('runnerChar');
+        const speechBubble = document.getElementById('speechBubble');
+        const dizzyContainer = document.getElementById('dizzyContainer');
+        const svgRunning = document.getElementById('svgRunning');
+        const svgCrashed = document.getElementById('svgCrashed');
+        const impactBurst = document.getElementById('impactBurst');
+        const statusMessageText = document.getElementById('statusMessageText');
+        const spinnerCheck = document.getElementById('spinnerCheck');
+        const wallCracks = document.getElementById('wallCracks');
+        const sparkCanvas = document.getElementById('sparkCanvas');
+        const ctx = sparkCanvas ? sparkCanvas.getContext('2d') : null;
+
+        // Particle Physics System for Spark & Brick explosion
+        let particles = [];
+        function createExplosionParticles(x, y) {
+            particles = [];
+            for (let i = 0; i < 40; i++) {
+                const angle = (Math.PI * 0.7) + (Math.random() * Math.PI * 0.8);
+                const speed = (Math.random() * 9) + 2;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - (Math.random() * 3),
+                    size: Math.random() * 4 + 2,
+                    color: Math.random() > 0.4 ? '#ef4444' : (Math.random() > 0.5 ? '#fef08a' : '#f59e0b'),
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.015
+                });
+            }
+            requestAnimationFrame(updateParticles);
+        }
+
+        function updateParticles() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
+
+            let alive = false;
+            for (let p of particles) {
+                if (p.alpha > 0) {
+                    alive = true;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.3; // Gravity
+                    p.alpha -= p.decay;
+
+                    ctx.save();
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+            if (alive) {
+                requestAnimationFrame(updateParticles);
+            }
+        }
+
+        // Running Legs Animation Cycle
+        let legState = false;
+        let legInterval = null;
+
+        function animateLegs(active) {
+            if (active) {
+                if (!legInterval) {
+                    legInterval = setInterval(() => {
+                        legState = !legState;
+                        const legLeft = document.getElementById('legLeft');
+                        const legRight = document.getElementById('legRight');
+                        if (legLeft && legRight) {
+                            if (legState) {
+                                legLeft.setAttribute('d', 'M26 50 L38 62 L48 74');
+                                legRight.setAttribute('d', 'M34 50 L20 65 L10 74');
+                            } else {
+                                legLeft.setAttribute('d', 'M26 50 L14 65 L8 76');
+                                legRight.setAttribute('d', 'M34 50 L46 65 L56 74');
+                            }
+                        }
+                    }, 85);
+                }
+            } else {
+                if (legInterval) {
+                    clearInterval(legInterval);
+                    legInterval = null;
+                }
+            }
+        }
+
+        // Automatic Running Loop
+        function runAutomatedSequence() {
+            if (isRunning) return;
+            isRunning = true;
+
+            // Reset elements to start position
+            runner.style.transition = 'none';
+            runner.style.left = '40px';
+            svgRunning.classList.remove('hidden');
+            svgCrashed.classList.add('hidden');
+            dizzyContainer.classList.add('hidden');
+            impactBurst.classList.remove('active');
+            wallCracks.style.opacity = '0';
+
+            speechBubble.innerHTML = '<span>Vite ! Je fonce vers les serveurs ! 🏃‍♂️💨</span>';
+            speechBubble.className = 'mb-1.5 px-3 py-1 bg-white text-slate-900 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-red-500 whitespace-nowrap animate-float';
+
+            // Force browser layout update
+            void runner.offsetWidth;
+
+            // Sprint towards the firewall wall
+            const runDuration = 1500;
+            runner.style.transition = `left ${runDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1)`;
+            runner.style.left = '445px';
+            animateLegs(true);
+
+            // Wall Impact after run completes
+            setTimeout(() => {
+                triggerAutomatedImpact();
+            }, runDuration);
+        }
+
+        // Wall Impact Event
+        function triggerAutomatedImpact() {
+            animateLegs(false);
+
+            // Camera shake
+            const mainCard = document.getElementById('mainCard');
+            mainCard.classList.add('animate-shake');
+            setTimeout(() => mainCard.classList.remove('animate-shake'), 450);
+
+            // Show cracks & burst
+            wallCracks.style.opacity = '1';
+            impactBurst.classList.add('active');
+
+            // Particles
+            createExplosionParticles(500, 200);
+
+            // Switch to crashed state
+            svgRunning.classList.add('hidden');
+            svgCrashed.classList.remove('hidden');
+            dizzyContainer.classList.remove('hidden');
+
+            // Bounce back
+            runner.style.transition = 'left 0.25s ease-out, transform 0.25s ease-out';
+            runner.style.left = '395px';
+
+            const quotes = [
+                '<span>💥 BOOM !! LE MUR DU SERVEUR EST FERMÉ ! @_@</span>',
+                '<span>💥 Ouch... Le serveur 503 est hyper solide... 🥴</span>',
+                '<span>💥 Pas moyen de passer ! C\'est complètement bloqué ! ⭐💫</span>'
+            ];
+            speechBubble.innerHTML = quotes[Math.floor(Math.random() * quotes.length)];
+            speechBubble.className = 'mb-1.5 px-3 py-1 bg-yellow-300 text-slate-950 rounded-2xl text-[11px] font-black shadow-2xl border-2 border-slate-900 whitespace-nowrap animate-bounce';
+
+            // Hide burst after 1s
+            setTimeout(() => {
+                impactBurst.classList.remove('active');
+            }, 1000);
+
+            // Pause, then restart automated loop after 3.5 seconds
+            setTimeout(() => {
+                speechBubble.innerHTML = '<span>Attends... Je réessaie d\'accéder aux serveurs ! 🔄</span>';
+                setTimeout(() => {
+                    isRunning = false;
+                    runAutomatedSequence();
+                }, 1500);
+            }, 3500);
+        }
+
+        // Real-Time Server Status Check (Auto-recovery)
+        async function checkServerStatus(manual = false) {
+            if (manual && spinnerCheck) spinnerCheck.classList.remove('hidden');
+            if (statusMessageText) statusMessageText.innerText = 'Vérification du statut de WorksBox en cours...';
+
+            try {
+                let isOutageStillActive = false;
+
+                const localOutage = localStorage.getItem('wb_outage_mode');
+                if (localOutage === 'true') {
+                    isOutageStillActive = true;
+                }
+
+                const res = await fetch('/api/health', { cache: 'no-store' });
+                if (!res.ok) {
+                    isOutageStillActive = true;
+                }
+
+                if (!isOutageStillActive || localOutage === 'false') {
+                    if (statusMessageText) statusMessageText.innerText = '✅ Serveur WorksBox de nouveau opérationnel ! Redirection...';
+                    
+                    const banner = document.createElement('div');
+                    banner.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white font-black text-sm px-7 py-3.5 rounded-2xl shadow-2xl z-50 animate-bounce flex items-center gap-2.5 border-2 border-emerald-300';
+                    banner.innerHTML = '<span>🎉 Serveur rétabli ! Redirection vers WorksBox...</span>';
+                    document.body.appendChild(banner);
+
+                    setTimeout(() => {
+                        window.location.replace('/');
+                    }, 1200);
+                    return;
+                }
+
+                if (statusMessageText) statusMessageText.innerText = 'Panne toujours en cours. Prochain test dans 10 secondes...';
+            } catch (err) {
+                if (statusMessageText) statusMessageText.innerText = 'Serveur injoignable. Nouvelle tentative automatique dans 10s...';
+            } finally {
+                if (spinnerCheck) spinnerCheck.classList.add('hidden');
+            }
+        }
+
+        // Initialize automated sequence on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sparkCanvas && animationContainer) {
+                sparkCanvas.width = animationContainer.clientWidth || 800;
+                sparkCanvas.height = animationContainer.clientHeight || 330;
+            }
+
+            // Start loop automatically
+            setTimeout(() => {
+                runAutomatedSequence();
+            }, 300);
+
+            // Poll server status every 10 seconds
+            pollTimer = setInterval(() => {
+                checkServerStatus(false);
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

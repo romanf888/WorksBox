@@ -8,11 +8,44 @@
     <meta property="og:title" content="WorksBox - Cours dans le Cloud">
     <meta property="og:description" content="Plateforme de partage et consultation de cours et ressources scolaires avec support calculatrice Casio.">
     
-    <!-- Favicon & App Icons -->
+    <!-- Favicon & App Icons & PWA Manifest -->
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#2563eb">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="WorksBox">
+
+    <!-- Early Outage Mode Redirect (Mode Panne) -->
+    <script>
+        try {
+            if (localStorage.getItem('wb_outage_mode') === 'true' && !window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
+                window.location.replace('/panne.html');
+            }
+        } catch(e) {}
+    </script>
+
+    <!-- CSS pour Accessibilité DYS & Styles d'Impression PDF -->
+    <style>
+        .font-dyslexic {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', 'Trebuchet MS', 'Segoe UI', sans-serif !important;
+            letter-spacing: 0.05em !important;
+            word-spacing: 0.1em !important;
+            line-height: 1.8 !important;
+        }
+        .text-size-lg { font-size: 1.125rem !important; }
+        .text-size-xl { font-size: 1.25rem !important; }
+
+        @media print {
+            body { background: white !important; color: black !important; }
+            nav, header, footer, button, .no-print { display: none !important; }
+            .print-area { display: block !important; width: 100% !important; margin: 0 !important; padding: 20px !important; }
+            .print-area * { color: black !important; background: transparent !important; }
+        }
+    </style>
     
     <!-- Global error shield for cross-origin script noise and generator deoptimisation notes -->
     <script>
@@ -26,6 +59,7 @@
             const origErr = console.error;
             const origWarn = console.warn;
             const origInfo = console.info;
+            const origLog = console.log;
             console.error = function(...args) {
                 if (args.some(filterBabelMsg)) return;
                 origErr.apply(console, args);
@@ -38,13 +72,17 @@
                 if (args.some(filterBabelMsg)) return;
                 origInfo.apply(console, args);
             };
+            console.log = function(...args) {
+                if (args.some(filterBabelMsg)) return;
+                origLog.apply(console, args);
+            };
         })();
 
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             if (msg === 'Script error.' || !msg) {
                 return true;
             }
-            if (typeof msg === 'string' && (msg.includes('deoptimised') || msg.includes('500KB'))) {
+            if (typeof msg === 'string' && (msg.includes('deoptimised') || msg.includes('500KB') || msg.includes('[BABEL] Note:'))) {
                 return true;
             }
         };
@@ -53,7 +91,7 @@
                 e.preventDefault && e.preventDefault();
                 e.stopImmediatePropagation && e.stopImmediatePropagation();
             }
-            if (typeof e.message === 'string' && (e.message.includes('deoptimised') || e.message.includes('500KB'))) {
+            if (typeof e.message === 'string' && (e.message.includes('deoptimised') || e.message.includes('500KB') || e.message.includes('[BABEL] Note:'))) {
                 e.preventDefault && e.preventDefault();
                 e.stopImmediatePropagation && e.stopImmediatePropagation();
             }
@@ -89,26 +127,15 @@
         // Configuration de Babel Standalone pour supprimer les avertissements de dé-optimisation (> 500 Ko)
         if (window.Babel) {
             window.Babel.setPresetOptions && window.Babel.setPresetOptions('react', { runtime: 'classic' });
+            const origTransform = window.Babel.transform;
+            if (typeof origTransform === 'function') {
+                window.Babel.transform = function(code, options) {
+                    options = options || {};
+                    options.compact = false;
+                    return origTransform.call(this, code, options);
+                };
+            }
         }
-        // Interception proactive du message d'avertissement console de Babel compact generator
-        (function() {
-            const origWarn = console.warn;
-            const origInfo = console.info;
-            const filterBabelMsg = (msg) => {
-                if (typeof msg === 'string' && (msg.includes('deoptimised the styling') || msg.includes('exceeds the max of 500KB'))) {
-                    return true;
-                }
-                return false;
-            };
-            console.warn = function(...args) {
-                if (args.some(filterBabelMsg)) return;
-                origWarn.apply(console, args);
-            };
-            console.info = function(...args) {
-                if (args.some(filterBabelMsg)) return;
-                origInfo.apply(console, args);
-            };
-        })();
     </script>
     <script src="tailwind.js"></script>
     <script>
@@ -1416,7 +1443,8 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               termsContent: DEFAULT_TERMS_FALLBACK,
               casioGuideContent: DEFAULT_CASIO_FALLBACK,
               sharedCloudConfig: DEFAULT_SHARED_CLOUD_CONFIG,
-              maintenanceMode: (() => { try { return localStorage.getItem('wb_maintenance_mode') === 'true'; } catch(e) { return false; } })()
+              maintenanceMode: (() => { try { return localStorage.getItem('wb_maintenance_mode') === 'true'; } catch(e) { return false; } })(),
+              outageMode: (() => { try { return localStorage.getItem('wb_outage_mode') === 'true'; } catch(e) { return false; } })()
           });
 
           // Mode Hors Ligne (WorksBox Offline)
@@ -1426,6 +1454,15 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           // Mode Maintenance (WorksBox Limited) : actif si configuré par l'admin et que le mode hors ligne n'est pas déjà actif
           const isMaintenanceMode = Boolean(settings?.maintenanceMode) && !isOfflineMode;
+
+          // Outage Effect (Mode Panne)
+          useEffect(() => {
+              if (settings?.outageMode || localStorage.getItem('wb_outage_mode') === 'true') {
+                  if (!window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
+                      window.location.replace('/panne.html');
+                  }
+              }
+          }, [settings?.outageMode]);
           const [isLoading, setIsLoading] = useState(true);
           const [dataUser, setDataUser] = useState(null);
           const [user, setUser] = useState(null);
@@ -1463,8 +1500,234 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const [isSearchFocused, setIsSearchFocused] = useState(false);
           const [searchSelectedIndex, setSearchSelectedIndex] = useState(-1);
           const [searchFilterTab, setSearchFilterTab] = useState('all'); // 'all' | 'courses' | 'subjects' | 'folders' | 'articles'
+          const [resourceTypeFilter, setResourceTypeFilter] = useState('all'); // 'all' | 'cours' | 'exercices' | 'fiche' | 'ds'
           const searchContainerRef = React.useRef(null);
           const searchInputRef = React.useRef(null);
+
+          // 1. PWA & Installation Prompt
+          const [pwaDeferredPrompt, setPwaDeferredPrompt] = useState(null);
+          const [isPWAInstalled, setIsPWAInstalled] = useState(false);
+          const [showIOSInstallGuide, setShowIOSInstallGuide] = useState(false);
+          const [cacheStorageSize, setCacheStorageSize] = useState('0 Mo');
+
+          // 2. Palette de Commandes (Cmd + K / Ctrl + K)
+          const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+          // 3. Suivi de Progression des Cours (Checklist de Révision)
+          const [courseProgress, setCourseProgress] = useState(() => {
+              try {
+                  const stored = localStorage.getItem('wb_course_progress');
+                  return stored ? JSON.parse(stored) : {};
+              } catch(e) { return {}; }
+          });
+
+          const updateCourseProgress = (courseId, status) => { // 'not_started' | 'in_progress' | 'completed'
+              setCourseProgress(prev => {
+                  const next = { ...prev, [courseId]: status };
+                  try { localStorage.setItem('wb_course_progress', JSON.stringify(next)); } catch(e) {}
+                  return next;
+              });
+          };
+
+          // 4. Accessibilité DYS & Synthèse Vocale Audio
+          const [isDyslexicFont, setIsDyslexicFont] = useState(() => {
+              try { return localStorage.getItem('wb_dyslexic_font') === 'true'; } catch(e) { return false; }
+          });
+          const [textSize, setTextSize] = useState(() => {
+              try { return localStorage.getItem('wb_text_size') || 'normal'; } catch(e) { return 'normal'; } // 'normal' | 'lg' | 'xl'
+          });
+          const [isSpeaking, setIsSpeaking] = useState(false);
+
+          const toggleDyslexicFont = () => {
+              setIsDyslexicFont(prev => {
+                  const next = !prev;
+                  try { localStorage.setItem('wb_dyslexic_font', String(next)); } catch(e) {}
+                  return next;
+              });
+          };
+
+          const handleSpeakText = (text) => {
+              if (!('speechSynthesis' in window)) {
+                  showToast("Synthèse vocale non supportée par votre navigateur", "warning");
+                  return;
+              }
+              window.speechSynthesis.cancel();
+              if (isSpeaking) {
+                  setIsSpeaking(false);
+                  return;
+              }
+              const cleanText = text.replace(/<[^>]*>?/gm, '');
+              const utterance = new SpeechSynthesisUtterance(cleanText);
+              utterance.lang = 'fr-FR';
+              utterance.rate = 0.95;
+              utterance.onend = () => setIsSpeaking(false);
+              utterance.onerror = () => setIsSpeaking(false);
+              setIsSpeaking(true);
+              window.speechSynthesis.speak(utterance);
+          };
+
+          const handleStopSpeech = () => {
+              if ('speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+              }
+              setIsSpeaking(false);
+          };
+
+          // 5. Quizz & Flashcards de Révision Interactives avec IA Gemini
+          const [activeFlashcardCourse, setActiveFlashcardCourse] = useState(null);
+          const [flashcardIndex, setFlashcardIndex] = useState(0);
+          const [isCardFlipped, setIsCardFlipped] = useState(false);
+          const [flashcardsMap, setFlashcardsMap] = useState({});
+          const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+          const [showFlashcardHint, setShowFlashcardHint] = useState(false);
+          const [flashcardSource, setFlashcardSource] = useState('');
+          const [quizUserAnswers, setQuizUserAnswers] = useState({});
+          const [showQuizSummary, setShowQuizSummary] = useState(false);
+
+          const loadFlashcardsForCourse = async (courseToLoad, forceRegenerate = false) => {
+              if (!courseToLoad) return;
+              const courseKey = String(courseToLoad.id);
+
+              if (!forceRegenerate && flashcardsMap[courseKey] && flashcardsMap[courseKey].length > 0) {
+                  setFlashcardIndex(0);
+                  setShowFlashcardHint(false);
+                  setShowQuizSummary(false);
+                  return;
+              }
+
+              setIsGeneratingFlashcards(true);
+              setShowFlashcardHint(false);
+              setShowQuizSummary(false);
+
+              try {
+                  const res = await fetch('/api/quiz/generate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          courseId: courseToLoad.id,
+                          title: courseToLoad.title || 'Cours',
+                          subject: courseToLoad.subject || 'Mathématiques',
+                          chapter: courseToLoad.chapter || 'Général',
+                          tag: courseToLoad.tag || 'Cours',
+                          digitalLink: courseToLoad.digitalLink || courseToLoad.videoLink || courseToLoad.casioLink || '',
+                          notes: courseToLoad.content || courseToLoad.description || '',
+                          classe: courseToLoad.classe || userProfile?.classe || 'Terminale STI2D'
+                      })
+                  });
+
+                  const data = await res.json();
+                  const quizData = data.quiz || data.flashcards;
+                  if (data.success && Array.isArray(quizData) && quizData.length > 0) {
+                      setFlashcardsMap(prev => ({ ...prev, [courseKey]: quizData }));
+                      const lengthInfo = data.extractedLength > 50 ? ` (Document Drive : ${data.extractedLength} caractères)` : '';
+                      setFlashcardSource(data.source === 'gemini-ai' ? `IA Gemini${lengthInfo}` : 'Moteur Pédagogique QCM');
+                      setFlashcardIndex(0);
+                  }
+              } catch (err) {
+                  console.warn("Error loading AI quiz:", err);
+              } finally {
+                  setIsGeneratingFlashcards(false);
+              }
+          };
+
+          const handleSelectQuizOption = (courseId, qIndex, optionIndex) => {
+              const key = `${courseId}_${qIndex}`;
+              if (quizUserAnswers[key] !== undefined) return; // Reponse deja choisie
+              setQuizUserAnswers(prev => ({ ...prev, [key]: optionIndex }));
+          };
+
+          useEffect(() => {
+              if (activeFlashcardCourse) {
+                  loadFlashcardsForCourse(activeFlashcardCourse);
+              }
+          }, [activeFlashcardCourse?.id]);
+
+          // 6. Playground Python (Casio & NumWorks)
+          const [showPythonPlayground, setShowPythonPlayground] = useState(false);
+
+          // PWA Event Listeners & Cache Estimator
+          useEffect(() => {
+              if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.register('/sw.js').catch(err => console.warn('SW Register:', err));
+              }
+
+              const handleBeforeInstall = (e) => {
+                  e.preventDefault();
+                  setPwaDeferredPrompt(e);
+              };
+
+              const handleAppInstalled = () => {
+                  setIsPWAInstalled(true);
+                  setPwaDeferredPrompt(null);
+                  showToast("WorksBox est maintenant installé sur votre appareil !", "success");
+              };
+
+              window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+              window.addEventListener('appinstalled', handleAppInstalled);
+
+              // Calcul de la taille du cache local
+              if ('storage' in navigator && 'estimate' in navigator.storage) {
+                  navigator.storage.estimate().then(estimate => {
+                      if (estimate.usage) {
+                          const mb = (estimate.usage / (1024 * 1024)).toFixed(1);
+                          setCacheStorageSize(`${mb} Mo`);
+                      }
+                  }).catch(() => {});
+              }
+
+              return () => {
+                  window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+                  window.removeEventListener('appinstalled', handleAppInstalled);
+              };
+          }, []);
+
+          // Raccourci Clavier Palette de Commandes (Cmd + K / Ctrl + K / touche /)
+          useEffect(() => {
+              const handleKeyDown = (e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                      e.preventDefault();
+                      setShowCommandPalette(prev => !prev);
+                  } else if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+                      e.preventDefault();
+                      setShowCommandPalette(true);
+                  } else if (e.key === 'Escape') {
+                      setShowCommandPalette(false);
+                  }
+              };
+              window.addEventListener('keydown', handleKeyDown);
+              return () => window.removeEventListener('keydown', handleKeyDown);
+          }, []);
+
+          const triggerPWAInstall = async () => {
+              if (pwaDeferredPrompt) {
+                  try {
+                      await pwaDeferredPrompt.prompt();
+                      const { outcome } = await pwaDeferredPrompt.userChoice;
+                      if (outcome === 'accepted') {
+                          setIsPWAInstalled(true);
+                          setPwaDeferredPrompt(null);
+                          return;
+                      }
+                  } catch(e) {}
+              }
+              // Si l'événement natif n'a pas déclenché l'invite (ex: dans un iframe ou déjà installé/navigateur sans prompt), afficher le guide d'installation complet
+              setShowIOSInstallGuide(true);
+          };
+
+          const handleClearCacheStorage = async () => {
+              try {
+                  localStorage.removeItem('wb_courses_offline_cache');
+                  localStorage.removeItem('wb_courses_offline_cache_timestamp');
+                  if ('caches' in window) {
+                      const keys = await caches.keys();
+                      await Promise.all(keys.map(k => caches.delete(k)));
+                  }
+                  setCacheStorageSize('0 Mo');
+                  showToast("Cache local réinitialisé avec succès.", "success");
+              } catch(e) {
+                  showToast("Erreur lors de la vidange du cache.", "error");
+              }
+          };
 
           // Fermer le menu des propositions lors d'un clic en dehors de la barre de recherche
           useEffect(() => {
@@ -3962,11 +4225,18 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               if (docSnap.exists()) {
                 const data = docSnap.data();
                 const maint = Boolean(data.maintenanceMode);
+                const outage = Boolean(data.outageMode);
                 try { localStorage.setItem('wb_maintenance_mode', String(maint)); } catch(e) {}
+                try { localStorage.setItem('wb_outage_mode', String(outage)); } catch(e) {}
+                if (outage && !window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
+                  window.location.replace('/panne.html');
+                  return;
+                }
                 setSettings(prev => ({
                     ...prev,
                     ...data,
                     maintenanceMode: maint,
+                    outageMode: outage,
                     schools: Array.isArray(data.schools) ? data.schools : prev.schools,
                     classes: Array.isArray(data.classes) ? data.classes : prev.classes,
                     subjects: Array.isArray(data.subjects) ? data.subjects : (Array.isArray(data.subjectOrder) ? data.subjectOrder : prev.subjects),
@@ -4412,6 +4682,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           const openTerms = () => { setSelectedSubject(null); setSelectedSubFolder(null); setCurrentView('terms'); setSearchQuery(''); window.scrollTo({top: 0, behavior: 'smooth'}); };
           const openCasioGuide = () => { setSelectedSubject(null); setSelectedSubFolder(null); setCurrentView('casioGuide'); window.scrollTo({top: 0, behavior: 'smooth'}); };
           
+          const openFlashcardsModal = (course = null) => {
+              const targetCourse = course || (courses && courses.length > 0 ? courses[0] : null) || { 
+                  id: 'demo-fc-1', 
+                  title: 'Théorème des Valeurs Intermédiaires (TVI)', 
+                  subject: 'Mathématiques', 
+                  description: 'Quand peut-on appliquer le TVI pour prouver l\'existence d\'une solution f(x) = k ?', 
+                  content: 'Lorsque f est une fonction continue sur un intervalle [a, b], et que k est compris entre f(a) et f(b).' 
+              };
+              setActiveFlashcardCourse(targetCourse);
+              setFlashcardIndex(0);
+              setShowFlashcardHint(false);
+              setShowQuizSummary(false);
+          };
+          
           const openProfile = (tab = 'overview') => {
               if (!activeUser) {
                   setShowAuthModal(true);
@@ -4775,6 +5059,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                             </button>
                         )}
 
+
                         {/* Bouton de basculement Mode Clair / Sombre */}
                         <button 
                             id="nav-btn-theme-toggle" 
@@ -4976,188 +5261,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         Changer
                                     </button>
                                 </div>
-                                <div ref={searchContainerRef} className="max-w-xl mx-auto relative z-30">
-                                    <div className="relative flex items-center">
-                                        <Search className={`absolute left-4 h-5 w-5 transition-colors duration-200 pointer-events-none ${isSearchFocused ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-400'}`} />
-                                        <input 
-                                            ref={searchInputRef}
-                                            type="text" 
-                                            className="block w-full pl-12 pr-12 py-3.5 sm:py-4 liquid-glass-input rounded-2xl text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 transition-all outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 shadow-sm" 
-                                            placeholder="Rechercher un cours, un dossier, une matière..." 
-                                            value={searchQuery} 
-                                            onChange={(e) => {
-                                                setSearchQuery(e.target.value);
-                                                setSearchSelectedIndex(-1);
-                                                if (!isSearchFocused) setIsSearchFocused(true);
-                                            }} 
-                                            onFocus={() => setIsSearchFocused(true)}
-                                            onKeyDown={handleSearchKeyDown}
-                                        />
-                                        {searchQuery && (
-                                            <button 
-                                                type="button" 
-                                                onClick={handleClearSearch}
-                                                className="absolute right-3.5 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-xl transition cursor-pointer"
-                                                title="Effacer la recherche"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        )}
-                                    </div>
 
-                                    {/* MENU DÉROULANT DES PROPOSITIONS EN DIRECT (Suggestions Dropdown) */}
-                                    {isSearchFocused && (
-                                        <div 
-                                            onMouseDown={(e) => e.preventDefault()}
-                                            className="absolute left-0 right-0 top-full mt-2 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl border border-white/80 dark:border-white/10 overflow-hidden text-left animate-in fade-in slide-in-from-top-2 duration-150"
-                                        >
-                                            {searchQuery.trim().length === 0 ? (
-                                                /* Suggestions rapides quand la barre est vide et sélectionnée */
-                                                <div className="p-4 space-y-3">
-                                                    <div className="flex items-center justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
-                                                        <span className="flex items-center gap-1.5">
-                                                            <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                                                            Matières recommandées ({selectedClass || 'Général'})
-                                                        </span>
-                                                        <span className="text-[10px] uppercase tracking-wider font-extrabold text-blue-600 dark:text-blue-400">Accès direct</span>
-                                                    </div>
-                                                    <div className="flex flex-wrap gap-2 pt-0.5">
-                                                        {sortedSubjects.slice(0, 6).map(sub => (
-                                                            <button
-                                                                key={sub}
-                                                                onClick={() => {
-                                                                    openSubject(sub);
-                                                                    setIsSearchFocused(false);
-                                                                }}
-                                                                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-slate-800/80 hover:bg-blue-500 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 border border-blue-100 dark:border-slate-700/60 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs group"
-                                                            >
-                                                                <Folder className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 group-hover:text-white transition-colors" />
-                                                                <span>{sub}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                    <p className="text-[11px] text-slate-400 dark:text-slate-500 italic pt-1">
-                                                        💡 Commencez à saisir pour voir les cours, dossiers et annonces correspondants.
-                                                    </p>
-                                                </div>
-                                            ) : searchSuggestions.length === 0 ? (
-                                                /* Aucun résultat pour la saisie */
-                                                <div className="p-6 text-center space-y-3">
-                                                    <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center">
-                                                        <Search className="w-5 h-5 opacity-60" />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-extrabold text-sm text-slate-800 dark:text-slate-200">
-                                                            Aucune proposition trouvée pour « {searchQuery} »
-                                                        </p>
-                                                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                                                            Vérifiez l'orthographe ou essayez avec un mot plus court.
-                                                        </p>
-                                                    </div>
-                                                    <div className="pt-2 flex justify-center gap-2">
-                                                        <button 
-                                                            onClick={handleClearSearch}
-                                                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
-                                                        >
-                                                            Effacer la recherche
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                /* Liste de suggestions en direct */
-                                                <div>
-                                                    <div className="px-4 py-2.5 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                                                        <span className="font-extrabold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                                                            <Search className="w-3.5 h-3.5 text-blue-500" />
-                                                            Propositions de recherche
-                                                        </span>
-                                                        <span className="font-bold text-[11px] text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-400/20 px-2 py-0.5 rounded-full">
-                                                            {searchSuggestions.length} proposition{searchSuggestions.length > 1 ? 's' : ''}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100/70 dark:divide-slate-800/60 no-scrollbar">
-                                                        {searchSuggestions.map((item, idx) => {
-                                                            const isSelected = idx === searchSelectedIndex;
-                                                            return (
-                                                                <div 
-                                                                    key={item.id}
-                                                                    onClick={item.action}
-                                                                    onMouseEnter={() => setSearchSelectedIndex(idx)}
-                                                                    className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer transition-colors duration-150 ${
-                                                                        isSelected 
-                                                                            ? 'bg-blue-500/15 dark:bg-blue-400/20 border-l-4 border-blue-600 dark:border-blue-400 pl-3' 
-                                                                            : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/60'
-                                                                    }`}
-                                                                >
-                                                                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                                                                        {item.type === 'subject' && (
-                                                                            <div className="w-9 h-9 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-400/20 shadow-2xs">
-                                                                                <Folder className="w-4.5 h-4.5" />
-                                                                            </div>
-                                                                        )}
-                                                                        {item.type === 'subFolder' && (
-                                                                            <div className="w-9 h-9 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 border border-indigo-400/20 shadow-2xs">
-                                                                                <FolderOpen className="w-4.5 h-4.5" />
-                                                                            </div>
-                                                                        )}
-                                                                        {item.type === 'course' && (
-                                                                            <div className="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-400/20 shadow-2xs">
-                                                                                <FileText className="w-4.5 h-4.5" />
-                                                                            </div>
-                                                                        )}
-                                                                        {item.type === 'article' && (
-                                                                            <div className="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-400/20 shadow-2xs">
-                                                                                <Newspaper className="w-4.5 h-4.5" />
-                                                                            </div>
-                                                                        )}
-
-                                                                        <div className="min-w-0 flex-1">
-                                                                            <p className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white truncate leading-snug">
-                                                                                <HighlightMatch text={item.title} query={searchQuery} />
-                                                                            </p>
-                                                                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                                                                {item.subtitle}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-2 shrink-0">
-                                                                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                                                                            item.badgeColor === 'blue' ? 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/30' :
-                                                                            item.badgeColor === 'indigo' ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-400/30' :
-                                                                            item.badgeColor === 'emerald' ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-400/30' :
-                                                                            'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-400/30'
-                                                                        }`}>
-                                                                            {item.badge}
-                                                                        </span>
-                                                                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-transform group-hover:translate-x-0.5" />
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-
-                                                    <div className="px-4 py-2.5 bg-slate-50/90 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                                                        <span className="hidden sm:inline">
-                                                            {totalSearchResultsCount} résultat{totalSearchResultsCount > 1 ? 's' : ''} trouvé{totalSearchResultsCount > 1 ? 's' : ''} au total
-                                                        </span>
-                                                        <button 
-                                                            onClick={() => {
-                                                                setIsSearchFocused(false);
-                                                                if (searchInputRef.current) searchInputRef.current.blur();
-                                                            }}
-                                                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-                                                        >
-                                                            <span>Afficher tous les résultats sur la page</span>
-                                                            <ChevronRight className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
                             </div>
 
                             {isOfflineMode ? (
@@ -5557,6 +5661,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                                     onShare={() => shareCourse(course)}
                                                                     onSaveToCloud={() => saveCourseToCloudDrive(course)}
                                                                     onTakeNotes={() => handleTakeNotesOnCourse(course)}
+                                                                    onOpenFlashcards={(c) => openFlashcardsModal(c || course)}
                                                                 />
                                                             ))}
                                                         </ul>
@@ -5652,11 +5757,19 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                                 )}
                                                             </div>
 
-                                                            {/* Raccourcis Outils (Note, Cloud, Partager) */}
+                                                            {/* Raccourcis Outils (Flashcard, Note, Cloud, Partager) */}
                                                             <div className="flex items-center justify-between gap-1.5 pt-0.5">
                                                                 <button 
+                                                                    onClick={() => { setActiveFlashcardCourse(course); setFlashcardIndex(0); setIsCardFlipped(false); }} 
+                                                                    className="flex-1 py-1.5 px-1.5 liquid-glass-btn text-amber-600 dark:text-amber-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    title="Réviser ce cours avec les Flashcards interactives"
+                                                                >
+                                                                    <span className="mr-1">⚡</span>
+                                                                    <span>Carte</span>
+                                                                </button>
+                                                                <button 
                                                                     onClick={() => handleTakeNotesOnCourse(course)} 
-                                                                    className="flex-1 py-1.5 px-2 liquid-glass-btn text-sky-600 dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    className="flex-1 py-1.5 px-1.5 liquid-glass-btn text-sky-600 dark:text-sky-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
                                                                     title="Prendre des notes sur ce cours dans WorksBox Note"
                                                                 >
                                                                     <PenTool className="w-3 h-3 mr-1 text-sky-500" />
@@ -5664,7 +5777,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                                 </button>
                                                                 <button 
                                                                     onClick={() => saveCourseToCloudDrive(course)} 
-                                                                    className="flex-1 py-1.5 px-2 liquid-glass-btn text-indigo-600 dark:text-indigo-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    className="flex-1 py-1.5 px-1.5 liquid-glass-btn text-indigo-600 dark:text-indigo-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
                                                                     title="Sauvegarder dans WorksBox Cloud"
                                                                 >
                                                                     <CloudIcon className="w-3 h-3 mr-1 text-indigo-500" />
@@ -5672,7 +5785,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                                 </button>
                                                                 <button 
                                                                     onClick={() => shareCourse(course)} 
-                                                                    className="py-1.5 px-2.5 liquid-glass-btn text-slate-700 dark:text-slate-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
+                                                                    className="py-1.5 px-2 liquid-glass-btn text-slate-700 dark:text-slate-300 text-[11px] font-bold rounded-xl flex items-center justify-center cursor-pointer transition active:scale-95" 
                                                                     title="Partager ce cours (copier le lien direct)"
                                                                 >
                                                                     <Share2 className="w-3 h-3 text-blue-500" />
@@ -6234,6 +6347,106 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         </div>
                                     </div>
 
+                                    {/* Carte Paramètre Utilisateur : Installation PWA & Cache Local */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+                                        <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50">
+                                                    <Sparkles className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Application Mobile / PC</span>
+                                                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                                        <span>Installer l'application WorksBox (PWA)</span>
+                                                        {isPWAInstalled && (
+                                                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950">Installé</span>
+                                                        )}
+                                                    </h3>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={triggerPWAInstall}
+                                                className="px-4 py-2.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white transition-all active:scale-95 cursor-pointer shrink-0 shadow-md flex items-center gap-2"
+                                            >
+                                                <span>📲</span>
+                                                <span>{isPWAInstalled ? 'Ouvrir l\'App' : 'Installer WorksBox sur mon appareil'}</span>
+                                            </button>
+                                        </div>
+
+                                        <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                                            Installez WorksBox directement sur l'écran d'accueil de votre téléphone, tablette ou ordinateur pour un accès instantané et une expérience plein écran sans barre de navigateur.
+                                        </p>
+
+                                        <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300 flex-wrap gap-2">
+                                            <span className="flex items-center gap-1.5 font-bold">
+                                                <span>💾 Espace cache mémoire : {cacheStorageSize}</span>
+                                            </span>
+                                            <button 
+                                                onClick={handleClearCacheStorage}
+                                                className="text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                                            >
+                                                Vider / Rafraîchir le cache local
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Carte Paramètre Utilisateur : Accessibilité DYS & Confort de Lecture */}
+                                    <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-xs space-y-4">
+                                        <div className="flex items-start justify-between gap-4 flex-wrap sm:flex-nowrap">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/50 dark:border-purple-900/50">
+                                                    <BookOpen className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Accessibilité & Confort</span>
+                                                    <h3 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                                                        <span>Police Adaptée Dyslexie & Taille du texte</span>
+                                                    </h3>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={toggleDyslexicFont}
+                                                className={`px-4 py-2.5 rounded-xl font-black text-xs transition-all active:scale-95 cursor-pointer shrink-0 shadow-md flex items-center gap-2 ${
+                                                    isDyslexicFont 
+                                                        ? 'bg-purple-600 hover:bg-purple-500 text-white' 
+                                                        : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-300'
+                                                }`}
+                                            >
+                                                <span>{isDyslexicFont ? '✨ Police DYS Active' : 'Activer Police Adaptée DYS'}</span>
+                                            </button>
+                                        </div>
+
+                                        <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                                            Personnalisez l'affichage des cours pour faciliter la lecture. La police adaptée améliore l'espacement des caractères pour la dyslexie.
+                                        </p>
+
+                                        <div className="flex items-center gap-3 pt-1">
+                                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Taille de police :</span>
+                                            <div className="flex items-center gap-2">
+                                                {['normal', 'lg', 'xl'].map(size => (
+                                                    <button
+                                                        key={size}
+                                                        onClick={() => {
+                                                            setTextSize(size);
+                                                            try { localStorage.setItem('wb_text_size', size); } catch(e) {}
+                                                        }}
+                                                        className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                                            textSize === size 
+                                                                ? 'bg-purple-600 text-white' 
+                                                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
+                                                        }`}
+                                                    >
+                                                        {size === 'normal' ? 'Normal (100%)' : size === 'lg' ? 'Grand (115%)' : 'Très Grand (130%)'}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {/* Accès Admin si applicable */}
                                     {isUserAdmin && (
                                         <div className="bg-gradient-to-r from-red-950/60 to-slate-900 rounded-2xl sm:rounded-3xl border border-red-500/40 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
@@ -6319,6 +6532,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                         onShare={() => shareCourse(course)}
                                                         onSaveToCloud={() => saveCourseToCloudDrive(course)}
                                                         onTakeNotes={() => handleTakeNotesOnCourse(course)}
+                                                        onOpenFlashcards={(c) => openFlashcardsModal(c || course)}
                                                     />
                                                 ))}
                                             </ul>
@@ -7100,6 +7314,11 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                                     onShareCourse={shareCourse}
                                                     onSaveCourseToCloud={saveCourseToCloudDrive}
                                                     onTakeNotesCourse={handleTakeNotesOnCourse}
+                                                    onOpenFlashcardsCourse={(course) => {
+                                                        setActiveFlashcardCourse(course);
+                                                        setFlashcardIndex(0);
+                                                        setIsCardFlipped(false);
+                                                    }}
                                                 />
                                             ))}
                                         </div>
@@ -7194,6 +7413,16 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                               onGoHome={goHome}
                               onOpenFavorites={() => openProfile('favorites')}
                               onShowAuthModal={() => setShowAuthModal(true)}
+                              onOpenFlashcards={(course) => {
+                                  const target = course || courses[0];
+                                  if (target) {
+                                      setActiveFlashcardCourse(target);
+                                      setFlashcardIndex(0);
+                                      setIsCardFlipped(false);
+                                  } else {
+                                      showToast("Aucun cours disponible pour les flashcards.", "info");
+                                  }
+                              }}
                               showToast={showToast}
                           />
                         )}
@@ -7385,6 +7614,426 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                       onClose={() => setShowSuggestDocumentModal(false)}
                       onToast={showToast}
                   />
+              )}
+
+              {/* MODAL 1: PALETTE DE COMMANDES RAPIDE (Cmd + K / Ctrl + K) */}
+              {showCommandPalette && (
+                  <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md flex items-start justify-center pt-16 sm:pt-24 p-4 animate-in fade-in duration-150">
+                      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-3xl border border-white/80 dark:border-white/10 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
+                          <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center gap-3">
+                              <Search className="w-5 h-5 text-blue-500" />
+                              <input 
+                                  type="text" 
+                                  autoFocus
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                  placeholder="Rechercher un cours, une matière, ou taper une commande..." 
+                                  className="w-full bg-transparent text-sm sm:text-base font-bold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none"
+                              />
+                              <kbd className="px-2 py-1 text-[10px] font-mono bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-md border border-slate-200 dark:border-slate-700">ESC</kbd>
+                              <button onClick={() => setShowCommandPalette(false)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                  <X className="w-5 h-5" />
+                              </button>
+                          </div>
+
+                          <div className="p-4 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 space-y-3">
+                              <div className="space-y-1">
+                                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block px-2">Actions Rapides</span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                      <button 
+                                          onClick={() => { 
+                                              setShowCommandPalette(false); 
+                                              if (courses.length > 0) {
+                                                  setActiveFlashcardCourse(courses[0]);
+                                                  setFlashcardIndex(0);
+                                                  setIsCardFlipped(false);
+                                              } else {
+                                                  showToast("Aucun cours disponible pour les flashcards.", "info");
+                                              }
+                                          }}
+                                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                                      >
+                                          <span className="flex items-center gap-2"><span className="text-amber-500 font-black">⚡</span> Flashcards de Révision</span>
+                                          <span className="text-[10px] uppercase font-black text-amber-600 dark:text-amber-400">Cartes</span>
+                                      </button>
+                                      <button 
+                                          onClick={() => { setShowCommandPalette(false); toggleOfflineMode(); }}
+                                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-cyan-50 dark:hover:bg-cyan-950/40 text-left text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                                      >
+                                          <span className="flex items-center gap-2"><WifiOff className="w-4 h-4 text-cyan-500" /> Basculer Mode Hors Ligne</span>
+                                          <span className="text-[10px] uppercase font-black">{isOfflineMode ? 'Actif' : 'Off'}</span>
+                                      </button>
+                                      <button 
+                                          onClick={() => { setShowCommandPalette(false); toggleDyslexicFont(); }}
+                                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-left text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                                      >
+                                          <span className="flex items-center gap-2"><BookOpen className="w-4 h-4 text-purple-500" /> Mode DYS Adapté</span>
+                                          <span className="text-[10px] uppercase font-black">{isDyslexicFont ? 'Actif' : 'Off'}</span>
+                                      </button>
+                                      <button 
+                                          onClick={() => { setShowCommandPalette(false); triggerPWAInstall(); }}
+                                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-left text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                                      >
+                                          <span className="flex items-center gap-2"><Sparkles className="w-4 h-4 text-emerald-500" /> Installer l'App PWA</span>
+                                          <span className="text-[10px] uppercase font-black">📲 App</span>
+                                      </button>
+                                      <button 
+                                          onClick={() => { setShowCommandPalette(false); toggleTheme(); }}
+                                          className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 text-left text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between border border-slate-200/60 dark:border-slate-700/60 cursor-pointer"
+                                      >
+                                          <span className="flex items-center gap-2"><Sun className="w-4 h-4 text-amber-500" /> Thème Clair / Sombre</span>
+                                          <span className="text-[10px] uppercase font-black">{isDark ? 'Sombre' : 'Clair'}</span>
+                                      </button>
+                                  </div>
+                              </div>
+
+                              {searchSuggestions.length > 0 && (
+                                  <div className="pt-3 space-y-1">
+                                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block px-2">Résultats de recherche ({searchSuggestions.length})</span>
+                                      <div className="max-h-60 overflow-y-auto space-y-1">
+                                          {searchSuggestions.map((item) => (
+                                              <div 
+                                                  key={item.id}
+                                                  onClick={() => { setShowCommandPalette(false); item.action(); }}
+                                                  className="p-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between cursor-pointer transition"
+                                              >
+                                                  <span className="flex items-center gap-2">
+                                                      <Folder className="w-4 h-4 text-blue-500" />
+                                                      {item.title}
+                                                  </span>
+                                                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+                              )}
+                          </div>
+                      </div>
+                  </div>
+              )}
+
+              {/* MODAL 2: QUIZZ DE RÉVISION & QCM IA INTERACTIF */}
+              {activeFlashcardCourse && (() => {
+                  const currentCourseCards = flashcardsMap[String(activeFlashcardCourse.id)] || [];
+                  const activeCard = currentCourseCards[flashcardIndex] || null;
+                  const totalCards = currentCourseCards.length;
+
+                  // Score calculation for current course
+                  const courseKey = String(activeFlashcardCourse.id);
+                  let answeredCount = 0;
+                  let correctCount = 0;
+                  currentCourseCards.forEach((q, idx) => {
+                      const userChoice = quizUserAnswers[`${courseKey}_${idx}`];
+                      if (userChoice !== undefined) {
+                          answeredCount++;
+                          if (userChoice === (q.correctIndex || 0)) {
+                              correctCount++;
+                          }
+                      }
+                  });
+
+                  const currentChoice = quizUserAnswers[`${courseKey}_${flashcardIndex}`];
+                  const hasAnsweredCurrent = currentChoice !== undefined;
+
+                  return (
+                      <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200">
+                          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+                              
+                              {/* Header Modal */}
+                              <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                                  <div className="flex items-center space-x-2.5 min-w-0">
+                                      <span className="p-2 bg-gradient-to-tr from-amber-500 to-orange-500 text-white rounded-xl font-black shrink-0 shadow-md text-base">⚡</span>
+                                      <div className="min-w-0">
+                                          <div className="flex items-center gap-1.5 flex-wrap">
+                                              <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">Quizz QCM de Révision</h3>
+                                              {answeredCount > 0 && (
+                                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-400/30">
+                                                      Score : {correctCount}/{answeredCount}
+                                                  </span>
+                                              )}
+                                          </div>
+                                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                                              {activeFlashcardCourse.title} ({activeFlashcardCourse.subject || 'Général'})
+                                          </p>
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                      <button 
+                                          onClick={() => loadFlashcardsForCourse(activeFlashcardCourse, true)} 
+                                          title="Générer de nouvelles questions QCM IA"
+                                          disabled={isGeneratingFlashcards}
+                                          className="p-2 text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 transition cursor-pointer disabled:opacity-50"
+                                      >
+                                          <RefreshCw className={`w-4 h-4 ${isGeneratingFlashcards ? 'animate-spin text-amber-500' : ''}`} />
+                                      </button>
+                                      <button onClick={() => setActiveFlashcardCourse(null)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                                          <X className="w-5 h-5" />
+                                      </button>
+                                  </div>
+                              </div>
+
+                              {/* Info Source / IA Badge */}
+                              <div className="flex items-center justify-between text-[11px] bg-amber-500/10 dark:bg-amber-400/10 px-3 py-1.5 rounded-xl border border-amber-400/20">
+                                  <span className="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                                      <span>🤖 Source :</span> {flashcardSource || 'IA Gemini'}
+                                  </span>
+                                  {totalCards > 0 && (
+                                      <span className="font-extrabold text-slate-600 dark:text-slate-400">
+                                          QCM {flashcardIndex + 1} / {totalCards}
+                                      </span>
+                                  )}
+                              </div>
+
+                              {/* Sélecteur de cours */}
+                              {courses && courses.length > 0 && (
+                                  <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 p-2 rounded-2xl border border-slate-200/80 dark:border-slate-700/60">
+                                      <span className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider shrink-0 pl-1">Cours :</span>
+                                      <select
+                                          value={activeFlashcardCourse.id}
+                                          onChange={(e) => {
+                                              const found = courses.find(c => String(c.id) === String(e.target.value));
+                                              if (found) {
+                                                  setActiveFlashcardCourse(found);
+                                                  setFlashcardIndex(0);
+                                                  setShowFlashcardHint(false);
+                                              }
+                                          }}
+                                          className="w-full text-xs font-bold bg-transparent text-slate-800 dark:text-white focus:outline-none cursor-pointer truncate"
+                                      >
+                                          {courses.map(c => (
+                                              <option key={c.id} value={c.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-white">
+                                                  {c.title} ({c.subject || 'Général'})
+                                              </option>
+                                          ))}
+                                      </select>
+                                  </div>
+                              )}
+
+                              {/* Corps Principal du Quizz */}
+                              {isGeneratingFlashcards ? (
+                                  <div className="liquid-glass-card rounded-2xl p-8 min-h-[240px] flex flex-col items-center justify-center text-center space-y-3 border-2 border-amber-500/40 bg-amber-500/5">
+                                      <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+                                      <p className="text-sm font-black text-slate-800 dark:text-slate-200">
+                                          🤖 Extraction & Analyse du document Drive...
+                                      </p>
+                                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+                                          L'IA lit les formules, définitions et le texte du document pour formuler un Quizz QCM personnalisé.
+                                      </p>
+                                  </div>
+                              ) : activeCard ? (
+                                  <div className="space-y-4">
+                                      {/* Concept Tag & Enoncé de la Question */}
+                                      <div className="liquid-glass-card rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 space-y-2 bg-slate-50/50 dark:bg-slate-800/30">
+                                          {activeCard.concept && (
+                                              <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/30">
+                                                  ⚡ Notion : {activeCard.concept}
+                                              </span>
+                                          )}
+                                          <h4 className={`text-sm sm:text-base font-black text-slate-900 dark:text-white leading-relaxed ${isDyslexicFont ? 'font-dyslexic' : ''}`}>
+                                              {activeCard.question}
+                                          </h4>
+                                      </div>
+
+                                      {/* Options de réponses QCM (A, B, C, D) */}
+                                      <div className="space-y-2.5">
+                                          {(activeCard.options || ["Oui", "Non"]).map((optText, optIdx) => {
+                                              const isSelected = currentChoice === optIdx;
+                                              const isCorrectOption = optIdx === (activeCard.correctIndex || 0);
+
+                                              let btnStyle = "bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700/80 text-slate-800 dark:text-slate-200 hover:border-amber-400 dark:hover:border-amber-400";
+                                              
+                                              if (hasAnsweredCurrent) {
+                                                  if (isCorrectOption) {
+                                                      btnStyle = "bg-emerald-500/20 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-extrabold shadow-sm";
+                                                  } else if (isSelected && !isCorrectOption) {
+                                                      btnStyle = "bg-rose-500/20 border-rose-500 text-rose-900 dark:text-rose-200 font-extrabold";
+                                                  } else {
+                                                      btnStyle = "opacity-50 bg-slate-100 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-500";
+                                                  }
+                                              }
+
+                                              return (
+                                                  <button
+                                                      key={optIdx}
+                                                      disabled={hasAnsweredCurrent}
+                                                      onClick={() => handleSelectQuizOption(courseKey, flashcardIndex, optIdx)}
+                                                      className={`w-full text-left p-3.5 rounded-2xl border-2 text-xs sm:text-sm transition-all flex items-start gap-3 cursor-pointer ${btnStyle}`}
+                                                  >
+                                                      <span className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center shrink-0 border ${
+                                                          hasAnsweredCurrent && isCorrectOption
+                                                              ? 'bg-emerald-500 text-white border-emerald-600'
+                                                              : hasAnsweredCurrent && isSelected && !isCorrectOption
+                                                              ? 'bg-rose-500 text-white border-rose-600'
+                                                              : 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300'
+                                                      }`}>
+                                                          {String.fromCharCode(65 + optIdx)}
+                                                      </span>
+                                                      <span className="flex-1 pt-0.5 leading-snug">{optText}</span>
+                                                      {hasAnsweredCurrent && isCorrectOption && (
+                                                          <span className="text-emerald-600 dark:text-emerald-400 font-black shrink-0">✅ Exact</span>
+                                                      )}
+                                                      {hasAnsweredCurrent && isSelected && !isCorrectOption && (
+                                                          <span className="text-rose-600 dark:text-rose-400 font-black shrink-0">❌ Faux</span>
+                                                      )}
+                                                  </button>
+                                              );
+                                          })}
+                                      </div>
+
+                                      {/* Explication pédagogique automatique après réponse */}
+                                      {hasAnsweredCurrent && (
+                                          <div className="p-4 rounded-2xl bg-blue-500/10 dark:bg-blue-400/10 border border-blue-400/30 space-y-1.5 animate-in fade-in duration-300">
+                                              <div className="flex items-center gap-1.5 text-xs font-black text-blue-700 dark:text-blue-300">
+                                                  <span>💡 Explication Pédagogique :</span>
+                                              </div>
+                                              <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-semibold">
+                                                  {activeCard.explanation || activeCard.answer}
+                                              </p>
+                                          </div>
+                                      )}
+
+                                      {/* Option Indice */}
+                                      {activeCard.hint && !hasAnsweredCurrent && (
+                                          <div className="text-center">
+                                              {showFlashcardHint ? (
+                                                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-800 dark:text-amber-300 text-xs font-semibold animate-in fade-in">
+                                                      💡 <strong>Indice :</strong> {activeCard.hint}
+                                                  </div>
+                                              ) : (
+                                                  <button 
+                                                      onClick={() => setShowFlashcardHint(true)} 
+                                                      className="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
+                                                  >
+                                                      💡 Besoin d'aide ? Voir un indice
+                                                  </button>
+                                              )}
+                                          </div>
+                                      )}
+                                  </div>
+                              ) : (
+                                  <div className="liquid-glass-card rounded-2xl p-6 text-center space-y-2">
+                                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                          Quizz prêt pour ce cours !
+                                      </p>
+                                      <button 
+                                          onClick={() => loadFlashcardsForCourse(activeFlashcardCourse, true)} 
+                                          className="px-4 py-2 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950 hover:bg-amber-400 transition cursor-pointer"
+                                      >
+                                          ⚡ Lancer le Quizz QCM IA
+                                      </button>
+                                  </div>
+                              )}
+
+                              {/* Navigation et Actions du Quizz */}
+                              {totalCards > 0 && !isGeneratingFlashcards && (
+                                  <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                                      <button 
+                                          disabled={flashcardIndex === 0}
+                                          onClick={() => { 
+                                              setFlashcardIndex(prev => Math.max(0, prev - 1));
+                                              setShowFlashcardHint(false);
+                                          }}
+                                          className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 transition cursor-pointer"
+                                      >
+                                          ← Précédente
+                                      </button>
+
+                                      <button 
+                                          onClick={() => { 
+                                              updateCourseProgress(activeFlashcardCourse.id, 'completed'); 
+                                              showToast("Progrès de révision enregistré !", "success");
+                                          }}
+                                          className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600/15 text-emerald-700 dark:text-emerald-300 border border-emerald-400/30 hover:bg-emerald-500/25 transition cursor-pointer"
+                                      >
+                                          ✅ Valider Cours
+                                      </button>
+
+                                      <button 
+                                          disabled={flashcardIndex >= totalCards - 1}
+                                          onClick={() => { 
+                                              setFlashcardIndex(prev => Math.min(totalCards - 1, prev + 1));
+                                              setShowFlashcardHint(false);
+                                          }}
+                                          className="px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40 transition cursor-pointer"
+                                      >
+                                          Suivante →
+                                      </button>
+                                  </div>
+                              )}
+
+                          </div>
+                      </div>
+                  );
+              })()}
+
+              {/* MODAL 3: GUIDE COMPLET D'INSTALLATION PWA (PC / MOBILE) */}
+              {showIOSInstallGuide && (
+                  <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md p-6 space-y-5">
+                          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                              <div className="flex items-center space-x-2">
+                                  <div className="p-2 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                                      <Sparkles className="w-5 h-5" />
+                                  </div>
+                                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                                      Installer l'application WorksBox
+                                  </h3>
+                              </div>
+                              <button onClick={() => setShowIOSInstallGuide(false)} className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                  <X className="w-5 h-5" />
+                              </button>
+                          </div>
+
+                          <div className="space-y-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                              {/* Option 1: Ouvrir dans un nouvel onglet */}
+                              <div className="p-3.5 bg-blue-50 dark:bg-blue-950/60 rounded-2xl border border-blue-200 dark:border-blue-900/60 space-y-2">
+                                  <p className="font-bold text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+                                      <span>💡</span>
+                                      <span>Étape recommandée (Hors Aperçu / iFrame)</span>
+                                  </p>
+                                  <p className="text-[11px] text-blue-800 dark:text-blue-300">
+                                      Les navigateurs bloquent l'installation PWA automatique lorsqu'un site est affiché dans une fenêtre intégrée. Ouvrez le site dans un nouvel onglet pour débloquer l'installation directe :
+                                  </p>
+                                  <button 
+                                      onClick={() => window.open(window.location.href, '_blank')}
+                                      className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-extrabold rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                                  >
+                                      <span>🚀 Ouvrir WorksBox dans un nouvel onglet</span>
+                                      <ExternalLink className="w-3.5 h-3.5" />
+                                  </button>
+                              </div>
+
+                              {/* Instructions Ordinateur (Chrome / Edge / Brave) */}
+                              <div className="space-y-1.5">
+                                  <p className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                      <span>💻 Sur Ordinateur (Chrome, Edge, Brave) :</span>
+                                  </p>
+                                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1 text-[11px]">
+                                      <p>1️⃣ Dans un onglet séparé, regardez dans la <strong>barre d'adresse (en haut à droite)</strong>.</p>
+                                      <p>2️⃣ Cliquez sur l'icône <strong>"Installer WorksBox"</strong> (icône d'écran ou symbole <strong>⊕</strong>).</p>
+                                  </div>
+                              </div>
+
+                              {/* Instructions Mobile (Safari / Chrome) */}
+                              <div className="space-y-1.5">
+                                  <p className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                      <span>📱 Sur Mobile (iPhone / iPad / Android) :</span>
+                                  </p>
+                                  <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1 text-[11px]">
+                                      <p>• <strong>iPhone (Safari)</strong> : Appuyez sur <strong>Partager</strong> <span className="text-xs">⎘</span> puis <strong>Sur l'écran d'accueil</strong> <span className="text-xs">➕</span>.</p>
+                                      <p>• <strong>Android (Chrome)</strong> : Appuyez sur les <strong>3 points</strong> <span className="text-xs">⋮</span> puis <strong>Installer l'application</strong>.</p>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <button 
+                              onClick={() => setShowIOSInstallGuide(false)}
+                              className="w-full py-2.5 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 text-white dark:text-slate-900 font-bold text-xs rounded-xl transition cursor-pointer"
+                          >
+                              J'ai compris
+                          </button>
+                      </div>
+                  </div>
               )}
 
               {showAccountModal && activeUser && (
@@ -7645,6 +8294,20 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                   </div>
                                   <span className="text-xs font-bold text-slate-800 dark:text-white">WorksBox Note</span>
                                   <span className="text-[10px] text-slate-400">Rédiger un cours</span>
+                              </button>
+
+                              <button 
+                                  onClick={() => {
+                                      setShowMobileMenu(false);
+                                      openFlashcardsModal();
+                                  }}
+                                  className="p-3.5 liquid-glass-card rounded-2xl flex flex-col items-start space-y-1.5 cursor-pointer touch-action-feedback border border-amber-400/40 bg-amber-500/5 dark:bg-amber-500/10"
+                              >
+                                  <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black text-sm">
+                                      ⚡
+                                  </div>
+                                  <span className="text-xs font-extrabold text-slate-800 dark:text-white">Flashcards</span>
+                                  <span className="text-[10px] text-slate-400">Cartes de révision</span>
                               </button>
 
                               <button 
@@ -9863,6 +10526,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             onGoHome,
             onOpenFavorites,
             onShowAuthModal,
+            onOpenFlashcards,
             showToast
         }) {
             const [recentFilter, setRecentFilter] = useState('all'); // 'all', 'notes', 'cloud', 'favorites'
@@ -10295,6 +10959,42 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Logiciel 6 : WorksBox Flashcards & Cartes de Révision (span 3 on lg) */}
+                            <div className="lg:col-span-3 liquid-glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between h-full group">
+                                <div>
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 flex items-center justify-center shadow-lg shadow-amber-500/30 group-hover:scale-105 transition-transform shrink-0 font-black text-xl">
+                                            ⚡
+                                        </div>
+                                        <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 rounded-full border border-amber-400/30">
+                                            Révision Interactive
+                                        </span>
+                                    </div>
+                                    <h3 className="text-xl font-black text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                        WorksBox Flashcards
+                                    </h3>
+                                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed min-h-[3.5rem]">
+                                        Cartes mémoire interactives (recto/verso) pour tester vos connaissances, réviser efficacement vos cours et valider vos acquis avant les contrôles.
+                                    </p>
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-slate-200/50 dark:border-white/10 space-y-3">
+                                    <div className="flex items-center justify-between text-xs text-slate-400">
+                                        <span>Cartes interactives</span>
+                                        <span className="font-semibold text-amber-600 dark:text-amber-400">Répétition espacée</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            if (onOpenFlashcards) {
+                                                onOpenFlashcards(courses[0]);
+                                            }
+                                        }}
+                                        className="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold rounded-xl text-xs transition text-center shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
+                                    >
+                                        <span>⚡ Lancer une session de Flashcards</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -10403,7 +11103,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
-        function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false, onCopy, onShare, onSaveToCloud, onTakeNotes }) {
+        function CourseListItem({ course, handleView, tagColors, isFav, toggleFav, showSubject = false, onCopy, onShare, onSaveToCloud, onTakeNotes, onOpenFlashcards }) {
             const courseTag = course.tag || 'Cours';
             const style = COLOR_PALETTES[tagColors?.[courseTag]] || COLOR_PALETTES.slate;
             return (
@@ -10494,6 +11194,17 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                 <span>Drive</span>
                             </button>
                         )}
+                        {onOpenFlashcards && (
+                            <button 
+                                type="button"
+                                onClick={() => onOpenFlashcards(course)}
+                                className="px-2.5 py-1.5 liquid-glass-btn text-amber-600 dark:text-amber-300 rounded-xl text-xs font-bold flex items-center cursor-pointer transition active:scale-95"
+                                title="Réviser ce cours avec les Flashcards interactives"
+                            >
+                                <span className="mr-1">⚡</span>
+                                <span>Flashcard</span>
+                            </button>
+                        )}
                         <button 
                             type="button"
                             onClick={() => onShare ? onShare(course) : (onCopy ? onCopy(course) : null)} 
@@ -10508,7 +11219,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
             );
         }
 
-        function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse, onShareCourse, onSaveCourseToCloud, onTakeNotesCourse }) {
+        function ChapterBlock({ chapter, chapterCourses, handleView, tagColors, favorites, toggleFav, onCopyCourse, onShareCourse, onSaveCourseToCloud, onTakeNotesCourse, onOpenFlashcardsCourse }) {
             const [isExpanded, setIsExpanded] = useState(chapterCourses.length <= 1);
             return (
                 <div className="liquid-glass-card rounded-3xl overflow-hidden shadow-md transition-all duration-200">
@@ -10544,6 +11255,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                                         onShare={onShareCourse ? () => onShareCourse(course) : (onCopyCourse ? () => onCopyCourse(course) : undefined)}
                                         onSaveToCloud={onSaveCourseToCloud ? () => onSaveCourseToCloud(course) : undefined}
                                         onTakeNotes={onTakeNotesCourse ? () => onTakeNotesCourse(course) : undefined}
+                                        onOpenFlashcards={onOpenFlashcardsCourse ? () => onOpenFlashcardsCourse(course) : undefined}
                                     />
                                 ))}
                             </ul>

@@ -534,7 +534,8 @@
                     casioGuideContent: DEFAULT_CASIO_FALLBACK,
                     numworksGuideContent: DEFAULT_NUMWORKS_FALLBACK,
                     subjectDriveFolders: {},
-                    maintenanceMode: false
+                    maintenanceMode: false,
+                    outageMode: false
                 };
             });
 
@@ -3183,14 +3184,16 @@
                                         setIsSettingsOpen(true);
                                     }}
                                     className={`px-2.5 py-1.5 text-xs font-bold rounded-lg flex items-center space-x-1.5 transition shadow-2xs ${
-                                        settings.maintenanceMode 
-                                            ? 'bg-amber-500 hover:bg-amber-600 text-white border border-amber-600 animate-pulse' 
-                                            : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'
+                                        settings.outageMode 
+                                            ? 'bg-red-600 hover:bg-red-700 text-white border border-red-500 animate-bounce ring-2 ring-red-400/50'
+                                            : (settings.maintenanceMode 
+                                                ? 'bg-amber-500 hover:bg-amber-600 text-white border border-amber-600 animate-pulse' 
+                                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300')
                                     }`}
-                                    title="Activer ou désactiver le mode maintenance WorksBox Limited"
+                                    title="Gérer les modes Maintenance (WorksBox Limited) et Panne (Redirection 503)"
                                 >
-                                    <span>🚧</span>
-                                    <span>{settings.maintenanceMode ? 'Maintenance active' : 'Maintenance'}</span>
+                                    <span>{settings.outageMode ? '🚨' : '🚧'}</span>
+                                    <span>{settings.outageMode ? 'MODE PANNE ACTIF' : (settings.maintenanceMode ? 'Maintenance active' : 'Maintenance & Panne')}</span>
                                 </button>
                             </div>
 
@@ -4714,8 +4717,11 @@
                                     </button>
                                     <button onClick={() => setSettingsTab('tags')} className={`pb-2 border-b-2 transition shrink-0 ${settingsTab === 'tags' ? 'border-red-900 text-red-900' : 'border-transparent'}`}>Couleurs Tags</button>
                                     <button onClick={() => setSettingsTab('maintenance')} className={`pb-2 border-b-2 transition shrink-0 flex items-center gap-1.5 ${settingsTab === 'maintenance' ? 'border-amber-600 text-amber-700 font-black' : 'border-transparent text-amber-800/80 hover:text-amber-900'}`}>
-                                        <span className="w-2 h-2 rounded-full inline-block ${settings.maintenanceMode ? 'bg-amber-500 animate-pulse' : 'bg-slate-300'}"></span>
-                                        <span>🚧 Maintenance</span>
+                                        <span className={`w-2 h-2 rounded-full inline-block ${settings.outageMode ? 'bg-red-600 animate-ping' : (settings.maintenanceMode ? 'bg-amber-500 animate-pulse' : 'bg-slate-300')}`}></span>
+                                        <span>🚧 Maintenance & 🚨 Panne</span>
+                                    </button>
+                                    <button onClick={() => setSettingsTab('analytics')} className={`pb-2 border-b-2 transition shrink-0 flex items-center gap-1.5 ${settingsTab === 'analytics' ? 'border-indigo-600 text-indigo-700 font-black' : 'border-transparent text-indigo-800/80 hover:text-indigo-900'}`}>
+                                        <span>📊 Analytics</span>
                                     </button>
                                 </div>
 
@@ -5529,8 +5535,59 @@
                                     )}
 
                                     {/* TAB: MODE MAINTENANCE WORKSBOX LIMITED */}
+                                    {/* TAB: MODE MAINTENANCE & MODE PANNE */}
                                     {settingsTab === 'maintenance' && (
                                         <div className="space-y-6">
+                                            {/* MODE PANNE (REDETICTION 503 DATACENTER) */}
+                                            <div className={`p-5 rounded-2xl border transition-all ${settings.outageMode ? 'bg-red-500/10 border-red-500 text-red-950 shadow-xl ring-2 ring-red-400/30' : 'bg-slate-50 border-slate-200 text-slate-800'}`}>
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-2xl">🚨</span>
+                                                            <h4 className="text-base font-black">Mode Panne (Serveur WorksBox Indisponible)</h4>
+                                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${settings.outageMode ? 'bg-red-600 text-white animate-bounce' : 'bg-slate-200 text-slate-600'}`}>
+                                                                {settings.outageMode ? 'ACTIF • ACCÈS BLOQUÉ' : 'Désactivé'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-xs leading-relaxed text-slate-600 pt-1">
+                                                            L'activation du mode panne déclenche une mesure d'urgence maximale pour les élèves et visiteurs :
+                                                        </p>
+                                                        <ul className="text-xs list-disc list-inside space-y-1 text-slate-600 pt-1">
+                                                            <li><strong>Empêche littéralement l'accès à WorksBox</strong> pour tous les utilisateurs non-administrateurs.</li>
+                                                            <li><strong>Redirige automatiquement</strong> tout le monde vers la page HTML dédiée <code>/panne.html</code>.</li>
+                                                            <li>Affiche le message <em>"Serveur WorksBox indisponible temporairement"</em>.</li>
+                                                            <li>Affiche l'animation interactive où <strong>un technicien court vers les datacenters et fonce dans un mur de sécurité !</strong></li>
+                                                        </ul>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            const nextVal = !settings.outageMode;
+                                                            try {
+                                                                localStorage.setItem('wb_outage_mode', String(nextVal));
+                                                                await fetch('/api/system/outage', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ outageMode: nextVal })
+                                                                });
+                                                            } catch(e) {
+                                                                console.warn('Outage API sync error:', e);
+                                                            }
+                                                            await handleUpdateSettings('outageMode', nextVal);
+                                                            showToast(nextVal ? '🚨 Mode Panne activé ! Serveur verrouillé sur panne.html' : '✅ Mode Panne désactivé ! Serveur WorksBox opérationnel');
+                                                        }}
+                                                        className={`px-5 py-3 rounded-xl font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer shrink-0 ${
+                                                            settings.outageMode 
+                                                                ? 'bg-red-600 hover:bg-red-700 text-white ring-2 ring-red-400/50 animate-pulse' 
+                                                                : 'bg-red-900 hover:bg-red-950 text-white'
+                                                        }`}
+                                                    >
+                                                        {settings.outageMode ? '⚠️ Désactiver le Mode Panne' : '🚨 Activer le Mode Panne'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* MODE MAINTENANCE (WORKSBOX LIMITED) */}
                                             <div className={`p-5 rounded-2xl border transition-all ${settings.maintenanceMode ? 'bg-amber-500/10 border-amber-400 text-amber-950' : 'bg-slate-50 border-slate-200 text-slate-800'}`}>
                                                 <div className="flex items-start justify-between gap-4">
                                                     <div className="space-y-1">
@@ -5576,8 +5633,64 @@
                                                     <span>Information pour l'administrateur</span>
                                                 </p>
                                                 <p className="text-[11px] text-blue-800 leading-relaxed">
-                                                    En tant qu'administrateur (Roman Ferrière), vous conservez toujours l'accès complet au panneau d'administration pour gérer les cours, articles et associations même pendant la période de maintenance.
+                                                    En tant qu'administrateur (Roman Ferrière), vous conservez toujours l'accès complet au panneau d'administration (<code>/admin.html</code>) pour gérer le système et lever l'alerte à tout moment.
                                                 </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* TAB: ANALYTICS & STATISTIQUES DE CONSULTATION */}
+                                    {settingsTab === 'analytics' && (
+                                        <div className="space-y-6">
+                                            <div className="p-5 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-950 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="text-base font-black flex items-center gap-2">
+                                                        <span>📊</span>
+                                                        <span>Statistiques de consultation & Fréquentation</span>
+                                                    </h4>
+                                                    <span className="text-[10px] font-black uppercase px-2.5 py-1 bg-indigo-600 text-white rounded-full">
+                                                        Données Anonymisées
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs leading-relaxed text-indigo-800">
+                                                    Consultez le nombre d'élèves connectés, les cours les plus populaires et les recherches fréquentes pour ajuster le contenu pédagogique.
+                                                </p>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-1">
+                                                    <span className="text-xs text-gray-500 font-bold block">Total Cours Consultés</span>
+                                                    <span className="text-2xl font-black text-gray-900">{courses ? courses.reduce((acc, c) => acc + (c.viewsDigital || 0) + (c.viewsCasio || 0), 0) : 0}</span>
+                                                    <span className="text-[10px] text-emerald-600 font-bold block">📈 Consultations cumulées</span>
+                                                </div>
+
+                                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-1">
+                                                    <span className="text-xs text-gray-500 font-bold block">Total Cours Publiés</span>
+                                                    <span className="text-2xl font-black text-gray-900">{courses ? courses.length : 0}</span>
+                                                    <span className="text-[10px] text-blue-600 font-bold block">📚 Répartis par matières</span>
+                                                </div>
+
+                                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-1">
+                                                    <span className="text-xs text-gray-500 font-bold block">Annonces & Articles</span>
+                                                    <span className="text-2xl font-black text-gray-900">{articles ? articles.length : 0}</span>
+                                                    <span className="text-[10px] text-amber-600 font-bold block">📢 Diffusés sur l'accueil</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-3">
+                                                <h5 className="font-bold text-sm text-gray-900">Top 5 des cours les plus consultés :</h5>
+                                                <div className="divide-y divide-gray-100 text-xs">
+                                                    {courses && courses.slice(0, 5).map((c, i) => (
+                                                        <div key={c.id || i} className="py-2 flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center text-[10px]">{i + 1}</span>
+                                                                <span className="font-bold text-gray-800">{c.title}</span>
+                                                                <span className="text-[10px] text-gray-400">({c.subject || 'Général'})</span>
+                                                            </div>
+                                                            <span className="font-black text-indigo-600">{(c.viewsDigital || 0) + (c.viewsCasio || 0)} vues</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
