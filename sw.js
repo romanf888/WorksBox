@@ -1,16 +1,26 @@
-const CACHE_NAME = 'worksbox-pwa-v1';
+const CACHE_NAME = 'worksbox-pwa-v2';
+
+// Detect base directory dynamically for GitHub Pages subpath deployment
+const getBasePath = () => {
+  const path = self.location.pathname;
+  return path.substring(0, path.lastIndexOf('/'));
+};
+
+const BASE_PATH = getBasePath();
+
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/admin.html',
-  '/manifest.json',
-  '/favicon.svg',
-  '/tailwind.js',
-  '/babel.min.js',
-  '/react.production.min.js',
-  '/react-dom.production.min.js',
-  '/constants.js',
-  '/note-editor.js'
+  BASE_PATH + '/',
+  BASE_PATH + '/index.html',
+  BASE_PATH + '/admin.html',
+  BASE_PATH + '/panne.html',
+  BASE_PATH + '/manifest.json',
+  BASE_PATH + '/favicon.svg',
+  BASE_PATH + '/tailwind.js',
+  BASE_PATH + '/babel.min.js',
+  BASE_PATH + '/react.production.min.js',
+  BASE_PATH + '/react-dom.production.min.js',
+  BASE_PATH + '/constants.js',
+  BASE_PATH + '/note-editor.js'
 ];
 
 self.addEventListener('install', (event) => {
@@ -45,7 +55,6 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Fetch background update for cache
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
@@ -64,9 +73,8 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       }).catch(() => {
-        // Fallback for offline HTML navigation
         if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
+          return caches.match(BASE_PATH + '/index.html') || caches.match('index.html');
         }
       });
     })

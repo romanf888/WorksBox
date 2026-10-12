@@ -12,7 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="alternate icon" href="favicon.svg">
     <link rel="apple-touch-icon" href="favicon.svg">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2563eb">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,7 +23,7 @@
     <script>
         try {
             if (localStorage.getItem('wb_outage_mode') === 'true' && !window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
-                window.location.replace('/panne.html');
+                window.location.replace('panne.html');
             }
         } catch(e) {}
     </script>
@@ -1459,7 +1459,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
           useEffect(() => {
               if (settings?.outageMode || localStorage.getItem('wb_outage_mode') === 'true') {
                   if (!window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
-                      window.location.replace('/panne.html');
+                      window.location.replace('panne.html');
                   }
               }
           }, [settings?.outageMode]);
@@ -4229,7 +4229,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
                 try { localStorage.setItem('wb_maintenance_mode', String(maint)); } catch(e) {}
                 try { localStorage.setItem('wb_outage_mode', String(outage)); } catch(e) {}
                 if (outage && !window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
-                  window.location.replace('/panne.html');
+                  window.location.replace('panne.html');
                   return;
                 }
                 setSettings(prev => ({

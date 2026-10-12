@@ -6,18 +6,27 @@
     <title>WorksBox — Redirection</title>
     <script>
         (function() {
-            // Intelligent GitHub Pages / SPA Redirection Handler
-            var path = window.location.pathname || '';
+            var pathname = window.location.pathname || '';
             var search = window.location.search || '';
             var hash = window.location.hash || '';
 
-            if (path.indexOf('admin') !== -1) {
-                // Route to admin.html in the same directory/repository level
-                window.location.replace('admin.html' + search + hash);
-            } else {
-                // Route to index.html in the same directory/repository level
-                window.location.replace('index.html' + search + hash);
+            var targetPage = 'index.html';
+            if (pathname.indexOf('admin') !== -1) {
+                targetPage = 'admin.html';
+            } else if (pathname.indexOf('panne') !== -1) {
+                targetPage = 'panne.html';
             }
+
+            // Extract directory base path (e.g. /my-repo/admin -> /my-repo/)
+            var parts = pathname.split('/');
+            parts.pop();
+            var dir = parts.join('/');
+            if (dir && !dir.endsWith('/')) {
+                dir += '/';
+            }
+
+            var destination = (dir ? dir : '') + targetPage + search + hash;
+            window.location.replace(destination);
         })();
     </script>
     <style>
