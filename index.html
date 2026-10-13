@@ -21,11 +21,26 @@
 
     <!-- Early Outage Mode Redirect (Mode Panne) -->
     <script>
-        try {
-            if (localStorage.getItem('wb_outage_mode') === 'true' && !window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
-                window.location.replace('panne.html');
-            }
-        } catch(e) {}
+        (async function() {
+            try {
+                if (localStorage.getItem('wb_outage_mode') === 'true' && !window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
+                    try {
+                        const res = await fetch('/api/health', { cache: 'no-store' });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.outageMode === false) {
+                                localStorage.setItem('wb_outage_mode', 'false');
+                                return;
+                            }
+                        } else if (res.status === 404) {
+                            localStorage.setItem('wb_outage_mode', 'false');
+                            return;
+                        }
+                    } catch(e) {}
+                    window.location.replace('panne.html');
+                }
+            } catch(e) {}
+        })();
     </script>
 
     <!-- CSS pour Accessibilité DYS & Styles d'Impression PDF -->
@@ -1444,7 +1459,7 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
               casioGuideContent: DEFAULT_CASIO_FALLBACK,
               sharedCloudConfig: DEFAULT_SHARED_CLOUD_CONFIG,
               maintenanceMode: (() => { try { return localStorage.getItem('wb_maintenance_mode') === 'true'; } catch(e) { return false; } })(),
-              outageMode: (() => { try { return localStorage.getItem('wb_outage_mode') === 'true'; } catch(e) { return false; } })()
+              outageMode: false
           });
 
           // Mode Hors Ligne (WorksBox Offline)
@@ -1457,10 +1472,13 @@ Téléchargez les fichiers au format .txt ou .g1m depuis WorksBox (en cliquant s
 
           // Outage Effect (Mode Panne)
           useEffect(() => {
-              if (settings?.outageMode || localStorage.getItem('wb_outage_mode') === 'true') {
+              if (settings?.outageMode === true) {
+                  try { localStorage.setItem('wb_outage_mode', 'true'); } catch(e) {}
                   if (!window.location.pathname.includes('admin') && !window.location.pathname.includes('panne')) {
                       window.location.replace('panne.html');
                   }
+              } else if (settings?.outageMode === false) {
+                  try { localStorage.setItem('wb_outage_mode', 'false'); } catch(e) {}
               }
           }, [settings?.outageMode]);
           const [isLoading, setIsLoading] = useState(true);

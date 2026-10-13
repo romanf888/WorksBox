@@ -51,7 +51,33 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  
+  if (event.request.url.includes('/api/')) return; // Never cache API calls
+
+  const isHtmlRequest = event.request.headers.get('accept')?.includes('text/html') ||
+                        event.request.url.endsWith('/') ||
+                        event.request.url.endsWith('.html');
+
+  if (isHtmlRequest) {
+    // Network First strategy for HTML pages to ensure outage mode state is always fresh
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith(self.location.origin)) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            return cached || caches.match(BASE_PATH + '/index.html') || caches.match('index.html');
+          });
+        })
+    );
+    return;
+  }
+
+  // Stale-While-Revalidate strategy for static assets (JS, CSS, images)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -72,10 +98,6 @@ self.addEventListener('fetch', (event) => {
           });
         }
         return networkResponse;
-      }).catch(() => {
-        if (event.request.headers.get('accept')?.includes('text/html')) {
-          return caches.match(BASE_PATH + '/index.html') || caches.match('index.html');
-        }
       });
     })
   );

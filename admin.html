@@ -5565,6 +5565,11 @@
                                                             const nextVal = !settings.outageMode;
                                                             try {
                                                                 localStorage.setItem('wb_outage_mode', String(nextVal));
+                                                                try {
+                                                                    const bc = new BroadcastChannel('wb_system_channel');
+                                                                    bc.postMessage({ type: 'OUTAGE_MODE_CHANGE', outageMode: nextVal });
+                                                                } catch(e) {}
+                                                                window.dispatchEvent(new Event('storage'));
                                                                 await fetch('/api/system/outage', {
                                                                     method: 'POST',
                                                                     headers: { 'Content-Type': 'application/json' },

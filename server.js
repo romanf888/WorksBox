@@ -105,7 +105,7 @@ app.post('/api/suggest-document', (req, res) => {
 
 // Route API sécurisée pour fournir la configuration Firebase côté client sans clé en clair dans le code/Git
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+  res.json({ status: 'ok', outageMode: systemOutageMode, uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
 app.get('/api/cloud-status', (req, res) => {
