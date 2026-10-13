@@ -1,0 +1,132 @@
+[
+  {
+    "id": "sample-term-anglais-1",
+    "title": "Technical English: Sustainable Technologies & Eco-Design",
+    "subject": "Anglais",
+    "chapter": "Unit 1: Eco-Design & Smart Technologies",
+    "school": "Lycée François Bazin",
+    "classe": "Terminale STI2D",
+    "tag": "Cours",
+    "url": "/?course=sample-term-anglais-1"
+  },
+  {
+    "id": "sample-math-1",
+    "title": "Suites géométriques, arithmétiques et limites",
+    "subject": "Mathématiques",
+    "chapter": "Chapitre 1 : Les Suites numériques",
+    "school": "Lycée François Bazin",
+    "classe": "Terminale STI2D",
+    "tag": "Cours",
+    "url": "/?course=sample-math-1"
+  },
+  {
+    "id": "sample-math-2",
+    "title": "Formulaire complet dérivées, primitives et intégrales",
+    "subject": "Mathématiques",
+    "chapter": "Chapitre 2 : Analyse et Dérivation",
+    "school": "Lycée François Bazin",
+    "classe": "Terminale STI2D",
+    "tag": "Fiche",
+    "url": "/?course=sample-math-2"
+  },
+  {
+    "id": "sample-pc-1",
+    "title": "Premier principe de la thermodynamique et transferts thermiques",
+    "subject": "Physique Chimie",
+    "chapter": "Chapitre 1 : Énergie et Matière",
+    "school": "Lycée François Bazin",
+    "classe": "Terminale STI2D",
+    "tag": "Cours",
+    "url": "/?course=sample-pc-1"
+  },
+  {
+    "id": "sample-sin-1",
+    "title": "Architecture réseau, adressage IPv4 et trames CAN",
+    "subject": "SIN",
+    "chapter": "Chapitre 1 : Réseaux & Protocoles",
+    "school": "Lycée François Bazin",
+    "classe": "Terminale STI2D",
+    "tag": "TP",
+    "url": "/?course=sample-sin-1"
+  },
+  {
+    "id": "sample-philo-1",
+    "title": "La technique, la liberté et la responsabilité humaine",
+    "subject": "Philosophie",
+    "chapter": "Notions du BAC : La Liberté & La Technique",
+    "school": "Lycée François Bazin",
+    "classe": "Terminale STI2D",
+    "tag": "Résumé",
+    "url": "/?course=sample-philo-1"
+  },
+  {
+    "id": "sample-prem-anglais-1",
+    "title": "General & Technical English B1: Workshop Safety & Tools",
+    "subject": "Anglais",
+    "chapter": "Unit 1: In the Lab & Safety First",
+    "school": "Lycée François Bazin",
+    "classe": "Première STI2D",
+    "tag": "Cours",
+    "url": "/?course=sample-prem-anglais-1"
+  },
+  {
+    "id": "sample-prem-math-1",
+    "title": "Polynômes du second degré, discriminant et racines",
+    "subject": "Mathématiques",
+    "chapter": "Chapitre 1 : Le Second Degré",
+    "school": "Lycée François Bazin",
+    "classe": "Première STI2D",
+    "tag": "Cours",
+    "url": "/?course=sample-prem-math-1"
+  },
+  {
+    "id": "sample-prem-math-2",
+    "title": "Logique booléenne, binaire et matrices pour l'informatique",
+    "subject": "Mathématiques",
+    "chapter": "Chapitre 1 : Mathématiques Numériques",
+    "school": "Lycée François Bazin",
+    "classe": "Première STI2D",
+    "tag": "Cours",
+    "url": "/?course=sample-prem-math-2"
+  },
+  {
+    "id": "sample-prem-francais-1",
+    "title": "La littérature d'idées et le combat des Lumières",
+    "subject": "Français",
+    "chapter": "Objet d'étude EAF : La Littérature d'Idées",
+    "school": "Lycée François Bazin",
+    "classe": "Première STI2D",
+    "tag": "Fiche",
+    "url": "/?course=sample-prem-francais-1"
+  },
+  {
+    "id": "sample-bts-cyber-1",
+    "title": "Sécurisation des accès, cryptographie et analyse de vulnérabilités",
+    "subject": "BLOC 3 CYBER (DALLA-ROSA)",
+    "chapter": "Chapitre 1 : Sécurité des Systèmes d'Information",
+    "school": "Lycée Gaspard Monge",
+    "classe": "BTS SIO 1",
+    "tag": "TP",
+    "url": "/?course=sample-bts-cyber-1"
+  },
+  {
+    "id": "sample-bts-cejm-1",
+    "title": "L'intégration de l'entreprise dans son environnement numérique",
+    "subject": "CULTURE ECO JUR MANAG",
+    "chapter": "Thème 1 : L'entreprise et son écosystème",
+    "school": "Lycée Gaspard Monge",
+    "classe": "BTS SIO 1",
+    "tag": "Cours",
+    "url": "/?course=sample-bts-cejm-1"
+  },
+  {
+    "id": "sample-bts-cprp-anglais-1",
+    "title": "Technical English: Machining Operations, Safety & Quality Standards",
+    "subject": "Anglais",
+    "chapter": "Unit 1: Industrial Machining & Safety Standards",
+    "school": "Lycée François Bazin",
+    "classe": "BTS CPRP",
+    "tag": "Cours",
+    "url": "/?course=sample-bts-cprp-anglais-1"
+  }
+]

@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@google/genai": "^2.22.0",
+    "@resvg/resvg-js": "^2.6.2",
     "express": "^4.21.2",
     "firebase": "^12.19.0",
+    "jszip": "^3.10.2",
     "numworks.js": "^1.2.1",
+    "pngjs": "^7.0.0",
     "webdfu": "^1.0.5"
   },
   "devDependencies": {

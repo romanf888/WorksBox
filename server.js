@@ -108,6 +108,138 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', outageMode: systemOutageMode, uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// Route statique pour servir courses.json sur GitHub Pages / serveur
+app.get('/courses.json', (req, res) => {
+  const jsonPath = path.join(__dirname, 'courses.json');
+  if (fs.existsSync(jsonPath)) {
+    return res.sendFile(jsonPath);
+  }
+  return res.status(404).json({ error: 'courses.json not found' });
+});
+
+// Variable globale en mémoire pour stocker les cours réels en direct du site
+let liveSiteCourses = [];
+
+// Route API pour synchroniser les cours publiés depuis le site principal ou l'interface admin
+app.post('/api/sync-courses', (req, res) => {
+  try {
+    const { courses } = req.body;
+    if (Array.isArray(courses) && courses.length > 0) {
+      liveSiteCourses = courses.map(c => ({
+        id: c.id,
+        title: c.title || 'Sans titre',
+        subject: c.subject || 'Général',
+        classe: c.classe || 'Toutes classes',
+        school: c.school || 'Lycée François Bazin',
+        date: c.date || new Date().toISOString().split('T')[0],
+        type: c.tag || c.type || 'Cours',
+        url: `/?course=${encodeURIComponent(c.id)}`
+      }));
+      return res.json({ success: true, count: liveSiteCourses.length, syncedAt: new Date().toISOString() });
+    }
+    return res.status(400).json({ success: false, error: 'Tableau de cours valide requis' });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Route API pour l'extension Chrome : fournit la liste réelle et mise à jour des cours du site
+app.get('/api/latest-courses', (req, res) => {
+  const fallbackCourses = [
+    {
+      id: "sample-term-anglais-1",
+      title: "Technical English: Sustainable Technologies & Eco-Design",
+      subject: "Anglais",
+      classe: "Terminale STI2D",
+      school: "Lycée François Bazin",
+      date: new Date().toISOString().split('T')[0],
+      type: "Cours",
+      url: "/?course=sample-term-anglais-1"
+    },
+    {
+      id: "sample-math-1",
+      title: "Suites géométriques, arithmétiques et limites",
+      subject: "Mathématiques",
+      classe: "Terminale STI2D",
+      school: "Lycée François Bazin",
+      date: new Date().toISOString().split('T')[0],
+      type: "Cours",
+      url: "/?course=sample-math-1"
+    },
+    {
+      id: "sample-math-2",
+      title: "Formulaire complet dérivées, primitives et intégrales",
+      subject: "Mathématiques",
+      classe: "Terminale STI2D",
+      school: "Lycée François Bazin",
+      date: new Date().toISOString().split('T')[0],
+      type: "Fiche",
+      url: "/?course=sample-math-2"
+    },
+    {
+      id: "sample-bts-cyber-1",
+      title: "Sécurisation des accès, cryptographie et analyse de vulnérabilités",
+      subject: "BLOC 3 CYBER (DALLA-ROSA)",
+      classe: "BTS SIO 1",
+      school: "Lycée Gaspard Monge",
+      date: new Date().toISOString().split('T')[0],
+      type: "TP",
+      url: "/?course=sample-bts-cyber-1"
+    },
+    {
+      id: "sample-bts-cejm-1",
+      title: "L'intégration de l'entreprise dans son environnement numérique",
+      subject: "CULTURE ECO JUR MANAG",
+      classe: "BTS SIO 1",
+      school: "Lycée Gaspard Monge",
+      date: new Date().toISOString().split('T')[0],
+      type: "Cours",
+      url: "/?course=sample-bts-cejm-1"
+    },
+    {
+      id: "sample-prem-math-1",
+      title: "Polynômes du second degré, discriminant et racines",
+      subject: "Mathématiques",
+      classe: "Première STI2D",
+      school: "Lycée François Bazin",
+      date: new Date().toISOString().split('T')[0],
+      type: "Cours",
+      url: "/?course=sample-prem-math-1"
+    },
+    {
+      id: "numworks-python-script",
+      title: "Guide NumWorks : Scripts Python pour la résolution d'équations",
+      subject: "Tutoriel Calculatrice",
+      classe: "Toutes classes",
+      school: "WorksBox System",
+      date: new Date().toISOString().split('T')[0],
+      type: "Guide",
+      url: "/?course=numworks-python-script"
+    }
+  ];
+
+  const coursesToReturn = (liveSiteCourses && liveSiteCourses.length > 0) ? liveSiteCourses : fallbackCourses;
+
+  res.json({
+    success: true,
+    source: liveSiteCourses.length > 0 ? 'live-site' : 'default-platform',
+    count: coursesToReturn.length,
+    courses: coursesToReturn
+  });
+});
+
+// Route de téléchargement direct de l'extension Google Chrome (.zip)
+app.get(['/worksbox-extension.zip', '/download-extension'], (req, res) => {
+  const zipPath = path.join(__dirname, 'worksbox-extension.zip');
+  if (fs.existsSync(zipPath)) {
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="worksbox-extension.zip"');
+    return res.sendFile(zipPath);
+  } else {
+    res.status(404).send('Fichier extension ZIP introuvable');
+  }
+});
+
 app.get('/api/cloud-status', (req, res) => {
   const firebaseConfigured = Boolean(process.env.FIREBASE_API_KEY || true);
   const geminiConfigured = Boolean(process.env.GEMINI_API_KEY);
@@ -1298,6 +1430,24 @@ app.get(['/panne', '/panne.html'], (req, res) => {
   const panneFile = path.join(__dirname, 'panne.html');
   if (fs.existsSync(panneFile)) {
     return res.sendFile(panneFile);
+  }
+  return res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Privacy Policy route
+app.get(['/privacy', '/privacy.html'], (req, res) => {
+  const privacyFile = path.join(__dirname, 'privacy.html');
+  if (fs.existsSync(privacyFile)) {
+    return res.sendFile(privacyFile);
+  }
+  return res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Documentation route
+app.get(['/docs', '/docs.html'], (req, res) => {
+  const docsFile = path.join(__dirname, 'docs.html');
+  if (fs.existsSync(docsFile)) {
+    return res.sendFile(docsFile);
   }
   return res.sendFile(path.join(__dirname, 'index.html'));
 });

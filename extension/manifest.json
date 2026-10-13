@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "WorksBox - Derniers Cours & Ressources",
+  "version": "1.3.3",
+  "description": "Extension officielle WorksBox avec logo officiel et synchronisation permanente de votre compte Google et de vos cours.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "WorksBox - Derniers Cours",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "activeTab",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon.png"
+  }
+}

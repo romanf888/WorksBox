@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation Officielle WorksBox • Guide, FAQ & Extension Chrome</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+        .liquid-glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .liquid-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .liquid-card:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-50 liquid-glass border-b border-slate-800/80 px-4 lg:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <a href="index.html" class="flex items-center space-x-3 group">
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-sky-500 text-white flex items-center justify-center font-black text-lg shadow-lg shadow-blue-500/25 ring-2 ring-white/10 group-hover:scale-105 transition-transform">
+                        WB
+                    </div>
+                    <div>
+                        <span class="text-lg font-black tracking-tight text-white block">WorksBox</span>
+                        <span class="text-[11px] font-semibold text-blue-400 block -mt-1">Documentation Officielle</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Quick Action Links -->
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all active:scale-95 shadow-md flex items-center gap-2 cursor-pointer">
+                    <span>➔ Revenir sur WorksBox</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="relative overflow-hidden pt-12 pb-16 border-b border-slate-800/60 bg-gradient-to-b from-blue-950/30 via-slate-950 to-slate-950 px-4">
+        <div class="max-w-5xl mx-auto text-center space-y-6">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-bold shadow-inner">
+                <span>📖 Centre d'aide & Manuel d'utilisation complet</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+                Tout ce qu'il faut savoir sur <span class="bg-gradient-to-r from-blue-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">WorksBox</span>
+            </h1>
+
+            <p class="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                Explorez la documentation détaillée du portail éducatif : consultation des cours, stockage Cloud 1 Go, guides calculatrices, sécurité du serveur et extension Google Chrome.
+            </p>
+
+            <!-- Search Bar -->
+            <div class="max-w-xl mx-auto relative pt-2">
+                <input 
+                    type="text" 
+                    id="docSearchInput"
+                    placeholder="Rechercher une rubrique, un cours, l'extension Chrome..." 
+                    class="w-full bg-slate-900/90 border border-slate-700/80 rounded-2xl px-5 py-3.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 transition shadow-xl"
+                />
+            </div>
+
+            <!-- Quick Navigation Pills -->
+            <div class="flex items-center justify-center gap-2 flex-wrap pt-4 text-xs font-semibold">
+                <a href="#presentation" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">🚀 Présentation</a>
+                <a href="#cours" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">📚 Consultation de cours</a>
+                <a href="#cloud" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">☁️ WorksBox Cloud</a>
+                <a href="#calculatrices" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">🧮 Calculatrices</a>
+                <a href="#securite" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">🛡️ Sécurité & Mode Panne</a>
+                <a href="#beta-extension" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold transition shadow-md">🧩 BETA Extension Chrome</a>
+                <a href="#parametres" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">⚙️ Paramètres Compte</a>
+                <a href="#faq" class="px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-blue-600 text-slate-300 hover:text-white transition">💬 FAQ</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Documentation Content Grid -->
+    <main class="max-w-6xl mx-auto px-4 py-12 space-y-16 flex-1">
+
+        <!-- CATEGORY 1: PRESENTATION -->
+        <section id="presentation" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xl font-bold">
+                    🚀
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">1. Présentation de la Plateforme WorksBox</h2>
+                    <p class="text-xs text-slate-400">Origine, vision et fonctionnement global</p>
+                </div>
+            </div>
+
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-4 text-sm text-slate-300 leading-relaxed">
+                <p>
+                    <strong class="text-white">WorksBox High School System</strong> est la plateforme numérique centralisée de partage de cours, sujets de travaux pratiques, ressources scolaires et logiciels éducatifs pour les filières de lycée (BTS SIO 1/2, Terminale STI2D, Bac Pro, etc.).
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                        <span class="text-blue-400 font-extrabold text-sm block">📚 Cours & Fiches PDF</span>
+                        <p class="text-xs text-slate-400">Accès instantané aux cours triés par établissement, classe et matière avec lisez-moi intégré.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                        <span class="text-sky-400 font-extrabold text-sm block">☁️ Drive Cloud 1 Go</span>
+                        <p class="text-xs text-slate-400">Espace de stockage personnel sécurisé pour conserver vos TP, devoirs et fiches de révision.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                        <span class="text-indigo-400 font-extrabold text-sm block">💬 Espace Communautaire</span>
+                        <p class="text-xs text-slate-400">Chat en direct par salons, suggestions de documents aux enseignants et editeur de notes WorksBox Note.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 2: COURS & FICHIERS -->
+        <section id="cours" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xl font-bold">
+                    📚
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">2. Consultation, Filtres & Fiches de Cours</h2>
+                    <p class="text-xs text-slate-400">Comment rechercher et utiliser les cours efficacement</p>
+                </div>
+            </div>
+
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-4 text-sm text-slate-300 leading-relaxed">
+                <h3 class="text-base font-bold text-white">Filtrage dynamique par Établissement et Classe</h3>
+                <p>
+                    Sur la page d'accueil de WorksBox, vous pouvez sélectionner votre établissement (ex: <em>Lycée François Bazin</em>, <em>Lycée Monge</em>) et votre classe (ex: <em>BTS SIO 1</em>, <em>Terminale STI2D</em>) pour n'afficher que les ressources qui vous concernent directement.
+                </p>
+
+                <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                    <h4 class="text-xs font-black text-amber-400 uppercase tracking-wider">Fonctionnalités clés du lecteur de cours :</h4>
+                    <ul class="list-disc list-inside space-y-1.5 text-xs text-slate-300">
+                        <li><strong>Aperçu PDF interactif :</strong> Visualisez les fichiers PDF directement dans le navigateur sans téléchargement obligatoire.</li>
+                        <li><strong>Mise en Favoris :</strong> Cliquez sur l'étoile ★ pour retrouver immédiatement le cours dans votre espace profil.</li>
+                        <li><strong>Suggestion de documents :</strong> Un bouton dédié permet d'envoyer un sujet ou cours aux administrateurs pour publication.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 3: CLOUD & DRIVE -->
+        <section id="cloud" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xl font-bold">
+                    ☁️
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">3. WorksBox Cloud & Cloud Partagé</h2>
+                    <p class="text-xs text-slate-400">Gestion des fichiers et quotas de stockage</p>
+                </div>
+            </div>
+
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-4 text-sm text-slate-300 leading-relaxed">
+                <p>
+                    Chaque compte utilisateur connecté via Google bénéficie d'un espace privé <strong>WorksBox Cloud de 1 Go</strong>. Les fichiers sont stockés de manière sécurisée et synchronisés sur vos différents ordinateurs.
+                </p>
+                <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs">
+                    <span class="text-sky-400 font-bold block">👥 Espace Cloud Partagé de l'Établissement</span>
+                    <p class="text-slate-400">
+                        Un espace collaboratif permet aux élèves de partager des exercices résolus, fiches de révision et ressources ouvertes contrôlées par les modérateurs.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 4: CALCULATRICES -->
+        <section id="calculatrices" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xl font-bold">
+                    🧮
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">4. Tutoriels Calculatrices CASIO & NumWorks</h2>
+                    <p class="text-xs text-slate-400">Guides pratiques pour les examens et la programmation Python</p>
+                </div>
+            </div>
+
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-4 text-sm text-slate-300 leading-relaxed">
+                <p>
+                    WorksBox intègre un module de guides étape par étape pour l'utilisation des calculatrices scientifiques et graphiques aux épreuves du Baccalauréat et du BTS.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+                        <strong class="text-emerald-400 block mb-1">Calculatrices CASIO Graph 35+ / 90+E</strong>
+                        <p class="text-slate-400">Activation du mode examen, saisie de matrices et résolutions d'équations polynomiales.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+                        <strong class="text-amber-400 block mb-1">Calculatrices NumWorks</strong>
+                        <p class="text-slate-400">Scripts en langage Python, tracé de fonctions et suites numériques récurrentes.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 5: SECURITE & MODE PANNE -->
+        <section id="securite" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 text-xl font-bold">
+                    🛡️
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">5. Sécurité, Mode Maintenance & Mode Panne</h2>
+                    <p class="text-xs text-slate-400">Protection du système et mécanismes de rétablissement</p>
+                </div>
+            </div>
+
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-4 text-sm text-slate-300 leading-relaxed">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
+                        <strong class="text-amber-400 text-sm block mb-1">🚧 Mode Maintenance (WorksBox Limited)</strong>
+                        <p class="text-slate-300">Désactive la suite logicielle et le Cloud pour maintenir l'accès exclusif aux cours pendant les périodes d'évaluation.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-200">
+                        <strong class="text-red-400 text-sm block mb-1">🚨 Mode Panne (Défense Interactive 503)</strong>
+                        <p class="text-slate-300">En cas d'incident serveur, les utilisateurs sont redirigés sur une page animée interactive avec rétablissement automatique en temps réel dès le déblocage admin.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 6: BETA EXTENSION GOOGLE CHROME -->
+        <section id="beta-extension" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-xl shadow-lg ring-2 ring-blue-400/30">
+                        🧩
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-2xl font-black text-white">6. Extension Google Chrome Official WorksBox</h2>
+                            <span class="px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/40 text-[10px] font-black uppercase">BETA v1.0</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Consultez les derniers cours ajoutés directement depuis la barre d'outils Chrome</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beta Extension Card -->
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-6 border-2 border-blue-500/30 shadow-2xl relative overflow-hidden">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                    <div class="space-y-3 max-w-xl">
+                        <h3 class="text-lg font-black text-white flex items-center gap-2">
+                            <span>Extension Chrome WorksBox - Direct Notification & Courses</span>
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            L'extension officielle WorksBox pour Google Chrome vous permet de suivre en temps réel la publication des nouveaux cours et exercices. Cliquez sur un cours dans le menu popup pour l'ouvrir directement sur le site !
+                        </p>
+                        <div class="flex items-center gap-3 pt-2 flex-wrap">
+                            <a href="worksbox-extension.zip" download="worksbox-extension.zip" class="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black transition active:scale-95 shadow-lg shadow-blue-500/25 flex items-center gap-2 cursor-pointer">
+                                <span>📦 Télécharger l'Extension Completes (.ZIP)</span>
+                            </a>
+                            <a href="extension/manifest.json" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700">
+                                <span>📄 Manifest.json</span>
+                            </a>
+                            <a href="extension/popup.html" target="_blank" class="px-3.5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition flex items-center gap-1.5 border border-slate-700">
+                                <span>👁️ Aperçu Popup</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Live Extension Simulator -->
+                    <div class="w-full lg:w-80 bg-slate-950 rounded-2xl border border-slate-800 p-4 shadow-2xl space-y-3 shrink-0">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center font-black text-[10px]">WB</div>
+                                <span class="text-xs font-black text-white">WorksBox Chrome</span>
+                            </div>
+                            <span class="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">LIVE BETA</span>
+                        </div>
+
+                        <!-- Mini course preview items -->
+                        <div class="space-y-2 text-[11px]">
+                            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                                <div class="min-w-0 pr-2">
+                                    <span class="text-[9px] font-bold text-blue-400 block">BTS SIO 1</span>
+                                    <span class="font-bold text-white truncate block">Bloc 1 - Support Informatique</span>
+                                </div>
+                                <a href="index.html" target="_blank" class="text-xs font-bold text-blue-400 hover:underline">➔</a>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                                <div class="min-w-0 pr-2">
+                                    <span class="text-[9px] font-bold text-amber-400 block">Terminale STI2D</span>
+                                    <span class="font-bold text-white truncate block">Maths - Dérivées & Calcul</span>
+                                </div>
+                                <a href="index.html" target="_blank" class="text-xs font-bold text-blue-400 hover:underline">➔</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Installation Guide Step-by-step -->
+                <div class="pt-6 border-t border-slate-800/80 space-y-4">
+                    <h4 class="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                        <span>📋 Guide d'installation de l'extension BETA sur Google Chrome :</span>
+                    </h4>
+
+                    <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs text-slate-300">
+                        <li class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                            <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] inline-flex items-center justify-center mb-1">1</span>
+                            <strong class="block text-white">Dossier source</strong>
+                            <p class="text-slate-400 text-[11px]">Le code source est prêt dans le dossier <code>/extension</code> de l'application.</p>
+                        </li>
+                        <li class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                            <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] inline-flex items-center justify-center mb-1">2</span>
+                            <strong class="block text-white">chrome://extensions</strong>
+                            <p class="text-slate-400 text-[11px]">Saisissez <code>chrome://extensions/</code> dans la barre d'adresse Chrome.</p>
+                        </li>
+                        <li class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                            <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] inline-flex items-center justify-center mb-1">3</span>
+                            <strong class="block text-white">Mode développeur</strong>
+                            <p class="text-slate-400 text-[11px]">Activez l'interrupteur <em>Mode développeur</em> en haut à droite.</p>
+                        </li>
+                        <li class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-1">
+                            <span class="w-5 h-5 rounded-full bg-blue-600 text-white font-black text-[10px] inline-flex items-center justify-center mb-1">4</span>
+                            <strong class="block text-white">Charger non empaqueté</strong>
+                            <p class="text-slate-400 text-[11px]">Sélectionnez le dossier <code>extension/</code> pour activer l'extension dans votre navigateur !</p>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- CATEGORY 7: PARAMETRES DU COMPTE -->
+        <section id="parametres" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xl font-bold">
+                    ⚙️
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">7. Paramètres du Compte & Personnalisation</h2>
+                    <p class="text-xs text-slate-400">Options d'accessibilité, thème et gestion des données</p>
+                </div>
+            </div>
+
+            <div class="liquid-card rounded-3xl p-6 sm:p-8 space-y-4 text-sm text-slate-300 leading-relaxed">
+                <p>
+                    Depuis votre <strong>Espace Profil</strong> sur WorksBox, un onglet dédié <strong class="text-white">Paramètres du compte</strong> vous permet de configurer vos préférences :
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-xs text-slate-300">
+                    <li><strong>Police Dyslexique (OpenDyslexic) :</strong> Améliore la lisibilité pour les élèves présentant un trouble DYS.</li>
+                    <li><strong>Mode Contraste Élevé :</strong> Renforce les bordures et les couleurs pour une lisibilité maximale.</li>
+                    <li><strong>Gestion du cache local :</strong> Réinitialisez les données locales en un clic en cas de besoin.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- CATEGORY 8: FAQ -->
+        <section id="faq" class="space-y-6 scroll-mt-24">
+            <div class="flex items-center gap-3">
+                <div class="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xl font-bold">
+                    💬
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-white">8. Foire Aux Questions (FAQ)</h2>
+                    <p class="text-xs text-slate-400">Questions fréquentes et assistance</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="liquid-card rounded-2xl p-5 space-y-2 text-xs">
+                    <strong class="text-white font-bold block text-sm">Comment suggérer un nouveau cours ?</strong>
+                    <p class="text-slate-400 leading-relaxed">
+                        Sur la page d'accueil, cliquez sur le bouton <em>Suggérer un document</em> pour soumettre votre fichier ou lien aux administrateurs.
+                    </p>
+                </div>
+                <div class="liquid-card rounded-2xl p-5 space-y-2 text-xs">
+                    <strong class="text-white font-bold block text-sm">Que faire si mon stockage Cloud est plein ?</strong>
+                    <p class="text-slate-400 leading-relaxed">
+                        Chaque compte dispose de 1 Go d'espace. Vous pouvez supprimer d'anciens fichiers ou utiliser le Cloud Partagé de l'établissement.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2">
+                <span class="font-bold text-slate-400">WorksBox System</span>
+                <span>•</span>
+                <span>Documentation & Extension Chrome BETA</span>
+            </div>
+            <a href="index.html" class="text-blue-400 hover:text-blue-300 font-bold">Retourner à l'accueil WorksBox ➔</a>
+        </div>
+    </footer>
+
+    <!-- Documentation Interactive Search Script -->
+    <script>
+        const searchInput = document.getElementById('docSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const sections = document.querySelectorAll('main > section');
+                sections.forEach(sec => {
+                    const text = sec.innerText.toLowerCase();
+                    if (!query || text.includes(query)) {
+                        sec.style.display = 'block';
+                    } else {
+                        sec.style.display = 'none';
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorksBox - Extension</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand-zone">
+      <img src="icon.png" alt="WorksBox Logo" class="brand-logo-img">
+      <div class="brand-info">
+        <h1 class="brand-title">WorksBox</h1>
+        <p class="brand-sub">Ressources & Derniers Cours</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="toggleSettingsBtn" title="Paramètres du compte" class="icon-btn">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+      </button>
+      <button id="refreshBtn" title="Actualiser" class="icon-btn">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Google User Account Profile Banner -->
+  <div id="userAccountBanner" class="user-account-banner">
+    <div class="user-profile-row">
+      <div class="user-avatar" id="userAvatar">G</div>
+      <div class="user-text-col">
+        <div class="user-headline">
+          <span id="userName" class="user-name">Compte Google</span>
+          <span id="userStatusBadge" class="status-indicator">Synchronisé</span>
+        </div>
+        <p id="userEmail" class="user-email">romanferriere4@gmail.com</p>
+        <p id="userSchoolClass" class="user-meta">Lycée François Bazin · Terminale STI2D</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline Account Settings Modal -->
+  <div id="accountConfigPanel" class="account-config-panel hidden">
+    <div class="panel-header">
+      <span class="panel-title">Paramètres du Compte Google</span>
+      <button id="closeConfigBtn" class="close-btn">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="field-group">
+        <label>E-mail Google</label>
+        <input type="email" id="googleEmailInput" placeholder="ex: mon.nom@gmail.com">
+      </div>
+      <div class="field-group">
+        <label>Nom complet</label>
+        <input type="text" id="googleNameInput" placeholder="ex: Roman Ferriere">
+      </div>
+      <div class="field-grid">
+        <div class="field-group">
+          <label>Établissement</label>
+          <select id="googleSchoolSelect">
+            <option value="Lycée François Bazin">Lycée François Bazin</option>
+            <option value="Lycée Gaspard Monge">Lycée Gaspard Monge</option>
+            <option value="Lycée Jean Moulin">Lycée Jean Moulin</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Classe</label>
+          <select id="googleClassSelect">
+            <option value="Terminale STI2D">Terminale STI2D</option>
+            <option value="Première STI2D">Première STI2D</option>
+            <option value="BTS SIO 1">BTS SIO 1</option>
+            <option value="BTS SIO 2">BTS SIO 2</option>
+            <option value="Seconde Générale">Seconde Générale</option>
+          </select>
+        </div>
+      </div>
+      <button id="saveConfigBtn" class="primary-btn">Enregistrer les modifications</button>
+    </div>
+  </div>
+
+  <!-- Filter & Search Section -->
+  <div class="controls-section">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Rechercher un cours, matière...">
+    </div>
+    <div class="segmented-filters" id="filterChipsContainer">
+      <button class="seg-btn active" data-filter="my-school">Mon Lycée</button>
+      <button class="seg-btn" data-filter="all">Tous</button>
+      <button class="seg-btn" data-filter="sio">BTS SIO</button>
+      <button class="seg-btn" data-filter="sti2d">STI2D</button>
+      <button class="seg-btn" data-filter="maths">Maths</button>
+    </div>
+  </div>
+
+  <!-- Course Cards Area -->
+  <main id="courseList" class="course-list">
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>Chargement des cours...</span>
+    </div>
+  </main>
+
+  <!-- Clean Professional Footer -->
+  <footer>
+    <span class="footer-note">WorksBox v1.3 · https://romanf888.github.io/WorksBox</span>
+    <a id="openSiteBtn" href="#" class="footer-btn">
+      <span>Ouvrir le site</span>
+      <span>➔</span>
+    </a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>
